@@ -3,7 +3,6 @@ const mongoose       = require('mongoose');
 const cors           = require('cors');
 const helmet         = require('helmet');
 const rateLimit      = require('express-rate-limit');
-const mongoSanitize  = require('express-mongo-sanitize');
 const cookieParser   = require('cookie-parser');
 require('dotenv').config();
 
@@ -43,8 +42,6 @@ app.use(cookieParser());
 // 4. Body parser
 app.use(express.json({ limit: '500kb' })); // cap body size to prevent DoS
 
-// 5. NoSQL Injection Sanitization — strips $ and . from req.body, query, params
-app.use(mongoSanitize());
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 🚦  RATE LIMITERS

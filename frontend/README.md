@@ -1,16 +1,36 @@
-# React + Vite
+# 📈 Paper Trade | Advanced Market Simulator
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+> Master the markets with institutional-grade execution speed. Our professional simulation environment mirrors live terminal performance without the capital risk.
 
-Currently, two official plugins are available:
+An elite, sleek, and highly responsive paper trading simulator designed for precision and speed. Built with a robust MERN architecture, it features a custom AI "Market Brain" that generates synthetic, mathematically sound market data (using RSI, MACD, and ATR logic) when real markets are closed, ensuring a 24/7 trading experience.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🚀 Key Features
 
-## React Compiler
+* **⚡ Ultra-Low Latency Terminal:** High-performance UI built with Framer Motion and React, ensuring zero-lag navigation and order execution.
+* **🧠 AI Market Engine (Synthetic Data):** When live markets sleep, the AI engine wakes up. It simulates realistic market regimes (Bullish, Bearish, Neutral) using advanced math to draw breathing, dynamic candlestick/area charts.
+* **📊 Institutional-Grade Charting:** Integrated with TradingView's `lightweight-charts` for seamless, glitch-free data visualization, complete with auto-scaling and time normalization.
+* **🔐 Secure Protocol Architecture:** Dual-layer authentication featuring Google OAuth 2.0 (SSO) and JWT-based custom encrypted sessions.
+* **💰 Real-Time Portfolio Tracking:** Virtual ledger system starting with ₹1,00,000 capital to track P&L, average cost basis, and real-time margin updates.
+* **📰 Live Sentiment & Market Updates:** Sub-zone analysis engine and dynamic news feed to keep traders informed of global market conditions.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 💻 Tech Stack
 
-## Expanding the ESLint configuration
+**Frontend (Client Terminal):**
+* React.js (Vite)
+* Tailwind CSS (Custom sleek dark mode UI `#0e0e0e`)
+* Framer Motion (Advanced animations & loaders)
+* Lightweight Charts (TradingView)
+* Google OAuth (`@react-oauth/google`)
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+**Backend (Core Engine):**
+* Node.js & Express.js
+* MongoDB Atlas & Mongoose (Data modeling)
+* JSON Web Tokens (JWT) & Google Auth Library
+* Server-Sent Events (SSE) for real-time synthetic data streaming
+* Yahoo Finance API (`yahoo-finance2`) for live market checks
+
+## ⚙️ Quick Setup (Local Development)
+
+1. **Clone the repository:**
+   ```bash
+   git clone [https://github.com/YOUR_USERNAME/paper-trade-terminal.git](https://github.com/YOUR_USERNAME/paper-trade-terminal.git)
