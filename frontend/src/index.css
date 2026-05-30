@@ -1,0 +1,75 @@
+/* 1. Google Fonts Import (Sabse upar aayega) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Work+Sans:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0');
+
+/* 2. Tailwind v4 Engine Start */
+@import "tailwindcss";
+
+/* 3. Paper Trade Elite Theme (No tailwind.config.js needed!) */
+@theme {
+  --color-surface-container-lowest: #0e0e0e;
+  --color-surface: #131313;
+  --color-on-surface: #e5e2e1;
+  --color-on-surface-variant: #bbcbb2;
+  --color-background: #131313;
+  --color-primary: #3de530;
+  --color-primary-container: #00c805;
+  --color-on-primary: #003a00;
+
+  --font-label-sm: "Work Sans", sans-serif;
+  --font-h2: "Inter", sans-serif;
+  --font-data-mono: "Work Sans", monospace;
+  --font-body-md: "Inter", sans-serif;
+  --font-h1: "Inter", sans-serif;
+
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 48px;
+  --spacing-xs: 4px;
+  --spacing-base: 4px;
+}
+
+/* 4. Global Font */
+body {
+  font-family: 'Inter', sans-serif;
+}
+.font-inter { font-family: 'Inter', sans-serif; }
+
+/* 5. Hide number input spinners globally */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] { -moz-appearance: textfield; }
+
+/* 6. Custom Pro Classes */
+.glass-panel {
+    background: rgba(26, 31, 44, 0.8);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.trading-bg {
+    background-color: #121212;
+    background-image: radial-gradient(circle at top right, rgba(61, 229, 48, 0.05), transparent 50%),
+                      radial-gradient(circle at bottom left, rgba(61, 229, 48, 0.05), transparent 50%);
+}
+
+/* 7. Chrome Autofill Glitch Fix */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px #0e0e0e inset !important;
+    -webkit-text-fill-color: #e5e2e1 !important;
+    caret-color: white !important;
+    transition: background-color 5000s ease-in-out 0s !important; 
+}
+
+/* 8. Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 999px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
