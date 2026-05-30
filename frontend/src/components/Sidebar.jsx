@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 
 const NAV_ITEMS = [
   { path: '/dashboard', icon: 'grid_view',  label: 'Dashboard' },
