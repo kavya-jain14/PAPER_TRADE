@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -151,8 +151,9 @@ function Markets() {
   const [userName, setUserName] = useState('');
   const [balance, setBalance] = useState(0);
   const [avatar, setAvatar] = useState('');
+  const [holdings, setHoldings] = useState([]);  // portfolio holdings for ownedQty
   const [marketPrices, setMarketPrices] = useState({});
-  const [priceHistory, setPriceHistory] = useState({}); // 🚀 Sparkline History
+  const [priceHistory, setPriceHistory] = useState({}); // Sparkline History
   const [selectedAsset, setSelectedAsset] = useState(null);
   const [isMarketOpen, setIsMarketOpen] = useState(false); 
   
@@ -184,8 +185,20 @@ function Markets() {
       const data = await response.json();
       if (response.ok) {
         setUserName(data.name ? data.name.split(' ')[0] : 'Trader');
+        setAvatar(data.avatar || '');
         setBalance(data.virtualBalance !== undefined ? data.virtualBalance : data.balance || 0);
       }
+
+      // Also fetch portfolio so we know how many units user owns per stock
+      try {
+        const portRes = await fetch(`${API_URL}/api/trade/portfolio`, {
+          headers: { "Content-Type": "application/json", "auth-token": token }
+        });
+        if (portRes.ok) {
+          const portData = await portRes.json();
+          setHoldings(portData || []);
+        }
+      } catch (_) {}
     } catch (error) { console.error(error); }
   };
 
@@ -349,12 +362,13 @@ function Markets() {
 
       <AnimatePresence>
          {selectedAsset && (
-            <UniversalTradeModal 
-               symbol={selectedAsset} 
-               marketData={marketPrices[selectedAsset] || {}} 
-               onClose={() => setSelectedAsset(null)} 
-               balance={balance} token={token} refreshData={fetchUserData}
-            />
+         <UniversalTradeModal 
+            symbol={selectedAsset} 
+            marketData={marketPrices[selectedAsset] || {}} 
+            onClose={() => setSelectedAsset(null)} 
+            balance={balance} token={token} refreshData={fetchUserData}
+            ownedQty={holdings.find(h => h.symbol === selectedAsset)?.quantity || 0}
+         />
          )}
       </AnimatePresence>
     </motion.div>

@@ -10,7 +10,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 const TOP_STOCKS = ['RELIANCE', 'TCS', 'HDFCBANK', 'ICICIBANK', 'INFY', 'ITC', 'SBIN', 'BHARTIARTL', 'LT', 'AXISBANK'];
 const INDICES = ['NIFTY 50', 'SENSEX', 'NIFTY BANK'];
 
-const UniversalTradeModal = ({ symbol, marketData, onClose, balance, token, refreshData }) => {
+const UniversalTradeModal = ({ symbol, marketData, onClose, balance, token, refreshData, ownedQty = 0 }) => {
   const [qty, setQty] = useState('');
   const [activeTab, setActiveTab] = useState('BUY');
 
@@ -20,10 +20,14 @@ const UniversalTradeModal = ({ symbol, marketData, onClose, balance, token, refr
   const dayLow = marketData?.low || currentPrice;
   const isGreen = changePercent >= 0; 
 
+  const maxBuyQty = currentPrice > 0 ? Math.floor(balance / currentPrice) : 0;
+  const handleMax = () => setQty(String(activeTab === 'BUY' ? maxBuyQty : ownedQty));
+
   const handleExecute = async (e) => {
     e.preventDefault();
     const cost = Number(qty) * currentPrice;
     if (activeTab === 'BUY' && cost > balance) return toast.error('Insufficient Funds!');
+    if (activeTab === 'SELL' && Number(qty) > ownedQty) return toast.error(`You only own ${ownedQty} units!`);
     
     const endpoint = activeTab === 'BUY' ? '/api/trade/buy' : '/api/trade/sell';
     const tid = toast.loading(`Routing ${activeTab} Order...`);
@@ -74,9 +78,17 @@ const UniversalTradeModal = ({ symbol, marketData, onClose, balance, token, refr
             <button onClick={() => setActiveTab('SELL')} className={`flex-1 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'SELL' ? 'bg-red-500 text-white shadow-md' : 'text-white/50 hover:text-white'}`}>Sell</button>
           </div>
           <form onSubmit={handleExecute} className="flex-1 flex flex-col">
-            <div className="space-y-6 flex-1">
+            <div className="space-y-4 flex-1">
+              {/* Available Units Chip */}
+              <div className="flex justify-between items-center bg-[#0d0d0d] rounded-xl px-4 py-2.5 border border-white/5">
+                <span className="text-[10px] text-white/40 uppercase tracking-widest font-bold">{activeTab === 'BUY' ? 'Max Affordable' : 'Units Owned'}</span>
+                <span className={`text-sm font-black font-mono ${activeTab === 'BUY' ? 'text-green-400' : 'text-blue-400'}`}>{activeTab === 'BUY' ? maxBuyQty.toLocaleString() : ownedQty.toLocaleString()} units</span>
+              </div>
               <div>
-                <label className="block text-white/50 mb-2 text-[10px] uppercase tracking-widest font-bold">Quantity (Units)</label>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-white/50 text-[10px] uppercase tracking-widest font-bold">Quantity (Units)</label>
+                  <button type="button" onClick={handleMax} className={`text-[10px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider transition-colors ${activeTab === 'BUY' ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20 border border-green-500/20' : 'bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border border-blue-500/20'}`}>MAX</button>
+                </div>
                 <input autoFocus type="number" value={qty} onChange={(e) => setQty(e.target.value)} className={`w-full bg-[#0a0a0a] border rounded-2xl p-4 text-white outline-none font-mono text-xl transition-colors ${activeTab === 'BUY' ? 'border-white/10 focus:border-green-500' : 'border-white/10 focus:border-red-500'}`} placeholder="0" required min="1" />
               </div>
               <div className="p-4 bg-[#171717] rounded-2xl border border-white/5">
@@ -104,6 +116,7 @@ function Dashboard() {
   const [userName, setUserName] = useState('');
   const [balance, setBalance] = useState(0);
   const [avatar, setAvatar] = useState('');
+  const [holdings, setHoldings] = useState([]);
   const [marketPrices, setMarketPrices] = useState({}); 
   const [newStock, setNewStock] = useState('');
   const [selectedAsset, setSelectedAsset] = useState(null);
@@ -149,6 +162,16 @@ function Dashboard() {
         setAvatar(data.avatar || '');
         setBalance(data.virtualBalance !== undefined ? data.virtualBalance : data.balance || 0);
       }
+      
+      try {
+        const portRes = await fetch(`${API_URL}/api/trade/portfolio`, {
+          headers: { "Content-Type": "application/json", "auth-token": token }
+        });
+        if (portRes.ok) {
+          const portData = await portRes.json();
+          setHoldings(portData || []);
+        }
+      } catch (_) {}
     } catch (error) { console.error(error); }
   };
 
@@ -442,12 +465,13 @@ function Dashboard() {
 
       <AnimatePresence>
          {selectedAsset && (
-            <UniversalTradeModal 
-               symbol={selectedAsset} 
-               marketData={marketPrices[selectedAsset] || {}} 
-               onClose={() => setSelectedAsset(null)} 
-               balance={balance} token={token} refreshData={fetchUserData}
-            />
+         <UniversalTradeModal 
+            symbol={selectedAsset} 
+            marketData={marketPrices[selectedAsset] || {}} 
+            onClose={() => setSelectedAsset(null)} 
+            balance={balance} token={token} refreshData={fetchUserData}
+            ownedQty={holdings.find(h => h.symbol === selectedAsset)?.quantity || 0}
+         />
          )}
       </AnimatePresence>
     </motion.div>
