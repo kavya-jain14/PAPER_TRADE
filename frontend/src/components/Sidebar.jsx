@@ -111,20 +111,25 @@ function Sidebar({ userName = '', balance, isMarketOpen = false, avatar = '' }) 
       </div>
 
       {/* ── BOTTOM ───────────────────────────── */}
-      <div className="px-3 pb-4 pt-3 border-t border-white/5 space-y-0.5 shrink-0">
-        <button className="flex items-center gap-3 px-4 py-3 text-white/40 hover:text-white transition-all duration-150 w-full rounded-xl hover:bg-white/[0.03] group">
-          <span className="material-symbols-outlined text-[20px] group-hover:text-white/70">support_agent</span>
-          <span className="text-sm font-semibold">Support</span>
-        </button>
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-3 px-4 py-3 text-red-400/60 hover:text-red-400 transition-all duration-150 w-full rounded-xl hover:bg-red-500/[0.06] group"
+      <div className="p-4 border-t border-white/5 space-y-2">
+        {/* AI Assistant Button */}
+        <button 
+          onClick={() => window.dispatchEvent(new Event('toggle-ai-chat'))}
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-purple-600/10 to-blue-600/10 border border-purple-500/20 text-purple-300 hover:bg-purple-500/20 transition-all group"
         >
-          <span className="material-symbols-outlined text-[20px]">logout</span>
-          <span className="text-sm font-semibold">Sign Out</span>
+          <span className="text-lg group-hover:scale-110 transition-transform">🤖</span>
+          <span className="font-bold text-sm">AI Assistant</span>
+        </button>
+
+        <a href="mailto:support@papertrade.com" className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-white/30 hover:text-white hover:bg-white/[0.03] transition-colors">
+          <span className="material-symbols-outlined text-[18px]">support_agent</span>
+          <span className="font-bold text-sm">Support</span>
+        </a>
+        <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-red-500/50 hover:text-red-500 hover:bg-red-500/10 transition-colors">
+          <span className="material-symbols-outlined text-[18px]">logout</span>
+          <span className="font-bold text-sm">Sign Out</span>
         </button>
       </div>
-
     </aside>
   );
 }

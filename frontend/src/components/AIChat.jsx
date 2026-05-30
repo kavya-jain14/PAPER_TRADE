@@ -159,6 +159,13 @@ export default function AIChat({ symbol = null }) {
   // Focus input when open
   useEffect(() => { if (isOpen) setTimeout(() => inputRef.current?.focus(), 100); }, [isOpen]);
 
+  // Global toggle listener
+  useEffect(() => {
+    const toggle = () => setIsOpen(v => !v);
+    window.addEventListener('toggle-ai-chat', toggle);
+    return () => window.removeEventListener('toggle-ai-chat', toggle);
+  }, []);
+
   const sendMessage = async (text) => {
     const q = text.trim();
     if (!q) return;
@@ -180,18 +187,6 @@ export default function AIChat({ symbol = null }) {
 
   return (
     <>
-      {/* Floating Button */}
-      <button
-        onClick={() => setIsOpen(v => !v)}
-        className={`fixed bottom-6 right-6 z-50 w-14 h-14 rounded-2xl flex items-center justify-center shadow-2xl transition-all duration-300 hover:scale-110 active:scale-95 ${isOpen ? 'bg-[#1a1a1a] border border-white/20' : 'bg-gradient-to-br from-purple-600 to-blue-600 shadow-purple-500/30'}`}
-        title="AI Market Assistant"
-      >
-        {isOpen
-          ? <span className="material-symbols-outlined text-white text-2xl">close</span>
-          : <span className="text-xl">🤖</span>
-        }
-      </button>
-
       {/* Chat Panel */}
       {isOpen && (
         <div className="fixed bottom-24 right-6 z-50 w-[360px] max-h-[500px] bg-[#111111] border border-white/10 rounded-3xl shadow-2xl flex flex-col overflow-hidden font-inter">

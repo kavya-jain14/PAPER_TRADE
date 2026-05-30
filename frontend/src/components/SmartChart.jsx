@@ -90,10 +90,15 @@ const SmartChart = ({ symbol, currentPrice, isGreen, mini = false }) => {
 
   const processAndSetData = (rawData) => {
     // 1. Normalize and Clean
-    let cleanData = rawData.map(d => ({
-      time: normalizeTime(d.time || d.date),
-      value: Number(d.value || d.close || currentPrice)
-    })).filter(d => !isNaN(d.time) && !isNaN(d.value));
+    let cleanData = rawData
+      .map(d => {
+        const val = d.value !== undefined ? d.value : d.close;
+        return {
+          time: normalizeTime(d.time || d.date),
+          value: val !== null && !isNaN(val) ? Number(val) : null
+        };
+      })
+      .filter(d => d.value !== null && d.value > 0 && !isNaN(d.time));
 
     // 2. Sort Strict Ascending
     cleanData.sort((a, b) => a.time - b.time);
@@ -186,6 +191,14 @@ const SmartChart = ({ symbol, currentPrice, isGreen, mini = false }) => {
 
     if (isMarketOpen()) loadRealData();
     else loadAIData();
+
+    // Dynamically update colors if isGreen changes after init
+    if (seriesRef.current) {
+      seriesRef.current.applyOptions({
+        lineColor,
+        topColor,
+      });
+    }
 
     const ro = new ResizeObserver(entries => {
       if (!entries.length) return;
