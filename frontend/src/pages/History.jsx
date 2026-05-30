@@ -102,7 +102,7 @@ function History() {
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2, ease: 'easeOut' }} className="flex h-screen bg-[#0a0a0a] text-white/90 font-inter overflow-hidden selection:bg-green-500/30">
 
-      <Sidebar userName={userName} isMarketOpen={isMarketOpen} />
+      <Sidebar userName={userName} isMarketOpen={isMarketOpen} avatar={avatar} />
 
       {/* 🔴 MAIN CONTENT */}
       <main className="flex-1 overflow-y-auto p-6 lg:p-10 relative custom-scrollbar">

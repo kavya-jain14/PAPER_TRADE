@@ -1,6 +1,19 @@
 import React from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 
+// Professional "neural network / brain" SVG icon for AI Assistant
+const AIBrainIcon = ({ className = 'w-5 h-5' }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 2C9.5 2 7.5 3.5 7 5.5C5.5 5.5 4 7 4 8.5C4 9.2 4.3 9.9 4.7 10.4C4.3 11 4 11.7 4 12.5C4 14.2 5.2 15.6 6.8 16C7.2 17.7 8.9 19 10.8 19H13.2C15.1 19 16.8 17.7 17.2 16C18.8 15.6 20 14.2 20 12.5C20 11.7 19.7 11 19.3 10.4C19.7 9.9 20 9.2 20 8.5C20 7 18.5 5.5 17 5.5C16.5 3.5 14.5 2 12 2Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+    <circle cx="9" cy="10" r="1" fill="currentColor"/>
+    <circle cx="15" cy="10" r="1" fill="currentColor"/>
+    <circle cx="12" cy="13" r="1" fill="currentColor"/>
+    <path d="M9 10 L12 13 L15 10" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
+    <path d="M12 16 L12 19" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+    <path d="M10 22 L14 22" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+  </svg>
+);
+
 const NAV_ITEMS = [
   { path: '/dashboard', icon: 'grid_view',  label: 'Dashboard' },
   { path: '/markets',   icon: 'monitoring', label: 'Markets'   },
@@ -10,18 +23,10 @@ const NAV_ITEMS = [
   { path: '/profile',   icon: 'person',     label: 'Profile'   },
 ];
 
-/**
- * Unified Sidebar — single source of truth for all pages.
- * Props:
- *  userName    – display name (string)
- *  balance     – virtualBalance number; omit to hide the balance chip
- *  isMarketOpen– boolean (market hours indicator)
- */
 function Sidebar({ userName = '', balance, isMarketOpen = false, avatar = '' }) {
   const navigate  = useNavigate();
   const location  = useLocation();
 
-  // Build 1–2 letter initials from the user's name
   const initials = userName
     ? userName.trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2)
     : '?';
@@ -30,6 +35,9 @@ function Sidebar({ userName = '', balance, isMarketOpen = false, avatar = '' }) 
     localStorage.removeItem('token');
     navigate('/login');
   };
+
+  const isAIActive     = location.pathname === '/ai';
+  const isLegalActive  = location.pathname === '/legal';
 
   return (
     <aside className="w-64 bg-[#121212] border-r border-white/5 flex flex-col justify-between hidden md:flex z-10 shrink-0">
@@ -67,8 +75,7 @@ function Sidebar({ userName = '', balance, isMarketOpen = false, avatar = '' }) 
             <span className="material-symbols-outlined text-[14px] text-white/20 group-hover:text-white/50 transition-colors shrink-0">chevron_right</span>
           </button>
 
-
-          {/* Balance chip — only shown when balance is provided */}
+          {/* Balance chip */}
           {balance !== undefined && (
             <div className="mt-2.5 px-3 py-2 rounded-xl bg-[#0d0d0d] border border-white/[0.06]">
               <p className="text-[9px] font-bold text-white/30 uppercase tracking-widest mb-0.5">Available Margin</p>
@@ -93,7 +100,6 @@ function Sidebar({ userName = '', balance, isMarketOpen = false, avatar = '' }) 
                     : 'text-white/40 hover:text-white hover:bg-white/[0.03]'
                   }`}
               >
-                {/* Active accent bar on the left edge */}
                 {isActive && (
                   <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-[#3de530] rounded-r-full" />
                 )}
@@ -107,20 +113,28 @@ function Sidebar({ userName = '', balance, isMarketOpen = false, avatar = '' }) 
               </a>
             );
           })}
+
+          {/* AI Assistant — in the main nav, below Profile */}
+          <Link
+            to="/ai"
+            className={`relative flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-150 group
+              ${isAIActive
+                ? 'bg-purple-600/20 text-purple-300'
+                : 'text-white/40 hover:text-purple-300 hover:bg-purple-600/10'
+              }`}
+          >
+            {isAIActive && (
+              <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-purple-400 rounded-r-full" />
+            )}
+            <AIBrainIcon className={`w-5 h-5 shrink-0 transition-colors ${isAIActive ? 'text-purple-400' : 'text-white/40 group-hover:text-purple-400'}`} />
+            <span className={`text-sm ${isAIActive ? 'font-bold' : 'font-semibold'}`}>AI Assistant</span>
+            <span className="ml-auto text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-purple-500/20 text-purple-400 border border-purple-500/30">Beta</span>
+          </Link>
         </nav>
       </div>
 
       {/* ── BOTTOM ───────────────────────────── */}
-      <div className="p-4 border-t border-white/5 space-y-2">
-        {/* AI Assistant Button */}
-        <Link 
-          to="/ai"
-          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all group ${location.pathname === '/ai' ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg shadow-purple-500/20 border border-transparent' : 'bg-gradient-to-r from-purple-600/10 to-blue-600/10 border border-purple-500/20 text-purple-300 hover:bg-purple-500/20'}`}
-        >
-          <span className="text-lg group-hover:scale-110 transition-transform">🤖</span>
-          <span className="font-bold text-sm">AI Assistant</span>
-        </Link>
-
+      <div className="p-4 border-t border-white/5 space-y-1">
         <a href="mailto:support@papertrade.com" className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-white/30 hover:text-white hover:bg-white/[0.03] transition-colors">
           <span className="material-symbols-outlined text-[18px]">support_agent</span>
           <span className="font-bold text-sm">Support</span>
@@ -129,9 +143,12 @@ function Sidebar({ userName = '', balance, isMarketOpen = false, avatar = '' }) 
           <span className="material-symbols-outlined text-[18px]">logout</span>
           <span className="font-bold text-sm">Sign Out</span>
         </button>
-        <Link to="/legal" className="w-full flex items-center gap-3 px-4 py-2 rounded-xl text-white/30 hover:text-white hover:bg-white/[0.03] transition-colors mt-2 border-t border-white/5 pt-4">
-          <span className="material-symbols-outlined text-[18px]">gavel</span>
-          <span className="font-bold text-[11px] uppercase tracking-widest">Legal & Privacy</span>
+        <Link
+          to="/legal"
+          className={`w-full flex items-center gap-3 px-4 py-2 rounded-xl transition-colors border-t border-white/5 pt-3 mt-1 ${isLegalActive ? 'text-white/60' : 'text-white/20 hover:text-white/50 hover:bg-white/[0.02]'}`}
+        >
+          <span className="material-symbols-outlined text-[16px]">gavel</span>
+          <span className="font-bold text-[10px] uppercase tracking-widest">Legal & Privacy</span>
         </Link>
       </div>
     </aside>

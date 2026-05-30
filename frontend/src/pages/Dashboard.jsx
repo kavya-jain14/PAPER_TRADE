@@ -103,6 +103,7 @@ const UniversalTradeModal = ({ symbol, marketData, onClose, balance, token, refr
 function Dashboard() {
   const [userName, setUserName] = useState('');
   const [balance, setBalance] = useState(0);
+  const [avatar, setAvatar] = useState('');
   const [marketPrices, setMarketPrices] = useState({}); 
   const [newStock, setNewStock] = useState('');
   const [selectedAsset, setSelectedAsset] = useState(null);
@@ -145,6 +146,7 @@ function Dashboard() {
       if (response.ok) {
         const firstName = data.name ? data.name.split(' ')[0] : 'Trader';
         setUserName(firstName);
+        setAvatar(data.avatar || '');
         setBalance(data.virtualBalance !== undefined ? data.virtualBalance : data.balance || 0);
       }
     } catch (error) { console.error(error); }
@@ -250,7 +252,7 @@ function Dashboard() {
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2, ease: 'easeOut' }} className="flex h-screen bg-[#0a0a0a] text-white/90 font-inter overflow-hidden selection:bg-green-500/30">
 
-      <Sidebar userName={userName} balance={balance} isMarketOpen={isMarketOpen} />
+      <Sidebar userName={userName} balance={balance} isMarketOpen={isMarketOpen} avatar={avatar} />
 
       {/* 🔴 MAIN DASHBOARD */}
       <main className="flex-1 overflow-y-auto p-6 lg:p-10 relative custom-scrollbar">
