@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -150,6 +150,7 @@ const UniversalTradeModal = ({ symbol, marketData, onClose, balance, token, refr
 function Markets() {
   const [userName, setUserName] = useState('');
   const [balance, setBalance] = useState(0);
+  const [avatar, setAvatar] = useState('');
   const [marketPrices, setMarketPrices] = useState({});
   const [priceHistory, setPriceHistory] = useState({}); // 🚀 Sparkline History
   const [selectedAsset, setSelectedAsset] = useState(null);

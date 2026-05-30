@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -8,6 +8,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 function History() {
   const [userName, setUserName] = useState('');
+  const [avatar, setAvatar] = useState('');
   const [tradeHistory, setTradeHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isMarketOpen, setIsMarketOpen] = useState(false); 
@@ -34,7 +35,10 @@ function History() {
         headers: { "Content-Type": "application/json", "auth-token": token }
       });
       const userData = await userRes.json();
-      if (userRes.ok) setUserName(userData.name ? userData.name.split(' ')[0] : 'Trader');
+      if (userRes.ok) {
+        setUserName(userData.name ? userData.name.split(' ')[0] : 'Trader');
+        setAvatar(userData.avatar || '');
+      }
 
       const histRes = await fetch(`${API_URL}/api/trade/history`, {
         headers: { "Content-Type": "application/json", "auth-token": token }

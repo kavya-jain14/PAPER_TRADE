@@ -155,6 +155,7 @@ const UniversalTradeModal = ({ symbol, marketData, onClose, balance, token, refr
 function Portfolio() {
   const [userName, setUserName] = useState('');
   const [balance, setBalance] = useState(0);
+  const [avatar, setAvatar] = useState('');
   const [holdings, setHoldings] = useState([]);
   const [livePrices, setLivePrices] = useState({});
   const [selectedAsset, setSelectedAsset] = useState(null);
@@ -183,6 +184,7 @@ function Portfolio() {
       const userData = await userRes.json();
       if (userRes.ok) {
         setUserName(userData.name ? userData.name.split(' ')[0] : 'Trader');
+        setAvatar(userData.avatar || '');
         setBalance(userData.virtualBalance !== undefined ? userData.virtualBalance : userData.balance || 0);
       }
       const portRes = await fetch(`${API_URL}/api/trade/portfolio`, { headers: { "Content-Type": "application/json", "auth-token": token } });
