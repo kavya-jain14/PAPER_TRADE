@@ -113,13 +113,13 @@ function Sidebar({ userName = '', balance, isMarketOpen = false, avatar = '' }) 
       {/* ── BOTTOM ───────────────────────────── */}
       <div className="p-4 border-t border-white/5 space-y-2">
         {/* AI Assistant Button */}
-        <button 
-          onClick={() => window.dispatchEvent(new Event('toggle-ai-chat'))}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-purple-600/10 to-blue-600/10 border border-purple-500/20 text-purple-300 hover:bg-purple-500/20 transition-all group"
+        <Link 
+          to="/ai"
+          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all group ${location.pathname === '/ai' ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg shadow-purple-500/20 border border-transparent' : 'bg-gradient-to-r from-purple-600/10 to-blue-600/10 border border-purple-500/20 text-purple-300 hover:bg-purple-500/20'}`}
         >
           <span className="text-lg group-hover:scale-110 transition-transform">🤖</span>
           <span className="font-bold text-sm">AI Assistant</span>
-        </button>
+        </Link>
 
         <a href="mailto:support@papertrade.com" className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-white/30 hover:text-white hover:bg-white/[0.03] transition-colors">
           <span className="material-symbols-outlined text-[18px]">support_agent</span>
@@ -129,6 +129,10 @@ function Sidebar({ userName = '', balance, isMarketOpen = false, avatar = '' }) 
           <span className="material-symbols-outlined text-[18px]">logout</span>
           <span className="font-bold text-sm">Sign Out</span>
         </button>
+        <Link to="/legal" className="w-full flex items-center gap-3 px-4 py-2 rounded-xl text-white/30 hover:text-white hover:bg-white/[0.03] transition-colors mt-2 border-t border-white/5 pt-4">
+          <span className="material-symbols-outlined text-[18px]">gavel</span>
+          <span className="font-bold text-[11px] uppercase tracking-widest">Legal & Privacy</span>
+        </Link>
       </div>
     </aside>
   );

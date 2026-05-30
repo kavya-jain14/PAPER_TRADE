@@ -10,7 +10,8 @@ import Portfolio from './pages/Portfolio';
 import Academy   from './pages/Academy';
 import History   from './pages/History';
 import Profile   from './pages/Profile';
-import AIChat    from './components/AIChat';
+import Legal     from './pages/Legal';
+import AIPage    from './pages/AIPage';
 import CommandPalette from './components/CommandPalette';
 
 function AnimatedRoutes() {
@@ -27,6 +28,8 @@ function AnimatedRoutes() {
         <Route path="/academy"   element={<Academy />} />
         <Route path="/history"   element={<History />} />
         <Route path="/profile"   element={<Profile />} />
+        <Route path="/legal"     element={<Legal />} />
+        <Route path="/ai"        element={<AIPage />} />
       </Routes>
     </AnimatePresence>
   );
@@ -44,8 +47,7 @@ function App() {
 
       <AnimatedRoutes />
 
-      {/* 🤖 Global AI Chat & Command Palette */}
-      <AIChat />
+      {/* ⌨️ Global Command Palette */}
       <CommandPalette />
     </BrowserRouter>
   );

@@ -3,6 +3,7 @@ const router = express.Router();
 const User = require('../models/User');
 const Transaction = require('../models/Transaction');
 const fetchuser = require('../middleware/fetchuser');
+const brain = require('../engine/marketBrain');
 const YahooFinance = require('yahoo-finance2').default;
 
 const yahooFinance = new YahooFinance({
@@ -216,19 +217,34 @@ router.post('/live-prices', async (req, res) => {
     );
 
     const livePrices = {};
+    const isMarketOpen = brain.isMarketOpen();
+
     Object.keys(symbolMap).forEach((originalSym, index) => {
       const result = quotes[index];
+      let p = 0, c = 0, h = 0, l = 0;
+
       if (result.status === 'fulfilled' && result.value) {
         const q = result.value;
-        livePrices[originalSym] = {
-          price: Number(q.regularMarketPrice?.toFixed(2)) || 0,
-          change: Number(q.regularMarketChangePercent?.toFixed(2)) || 0,
-          high: q.regularMarketDayHigh || 0,
-          low: q.regularMarketDayLow || 0,
-        };
-      } else {
-        livePrices[originalSym] = { price: 0, change: 0, high: 0, low: 0 };
+        p = Number(q.regularMarketPrice?.toFixed(2)) || 0;
+        c = Number(q.regularMarketChangePercent?.toFixed(2)) || 0;
+        h = q.regularMarketDayHigh || 0;
+        l = q.regularMarketDayLow || 0;
       }
+
+      // If market is closed, override current price with synthetic price
+      if (!isMarketOpen) {
+        const history = brain.getSyntheticHistory(originalSym);
+        if (history && history.length > 0) {
+          const lastCandle = history[history.length - 1];
+          p = lastCandle.close;
+          h = Math.max(h, lastCandle.high);
+          l = l === 0 ? lastCandle.low : Math.min(l, lastCandle.low);
+          // Optional: adjust change % relative to original price, but let's just use the real one for trend consistency,
+          // or we can recalculate it. Let's recalculate it based on seed price if needed, but keeping c is fine.
+        }
+      }
+
+      livePrices[originalSym] = { price: p, change: c, high: h, low: l };
     });
 
     res.json(livePrices);

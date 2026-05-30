@@ -7,7 +7,7 @@ const fetchuser  = require('../middleware/fetchuser');
 
 const ALL_SYMBOLS = [
   'RELIANCE','TCS','HDFCBANK','ICICIBANK','INFY',
-  'ITC','SBIN','BHARTIARTL','LT','ZOMATO',
+  'ITC','SBIN','BHARTIARTL','LT','AXISBANK',
   'NIFTY 50','SENSEX','NIFTY BANK',
 ];
 

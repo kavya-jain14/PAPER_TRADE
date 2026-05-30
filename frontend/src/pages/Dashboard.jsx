@@ -7,7 +7,7 @@ import Sidebar from '../components/Sidebar';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-const TOP_STOCKS = ['RELIANCE', 'TCS', 'HDFCBANK', 'ICICIBANK', 'INFY', 'ITC', 'SBIN', 'BHARTIARTL', 'LT', 'ZOMATO'];
+const TOP_STOCKS = ['RELIANCE', 'TCS', 'HDFCBANK', 'ICICIBANK', 'INFY', 'ITC', 'SBIN', 'BHARTIARTL', 'LT', 'AXISBANK'];
 const INDICES = ['NIFTY 50', 'SENSEX', 'NIFTY BANK'];
 
 const UniversalTradeModal = ({ symbol, marketData, onClose, balance, token, refreshData }) => {

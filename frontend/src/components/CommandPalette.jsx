@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const TOP_STOCKS = [
   'RELIANCE','TCS','HDFCBANK','ICICIBANK','INFY',
-  'ITC','SBIN','BHARTIARTL','LT','ZOMATO'
+  'ITC','SBIN','BHARTIARTL','LT','AXISBANK'
 ];
 
 const INDICES = ['NIFTY 50', 'SENSEX', 'NIFTY BANK'];

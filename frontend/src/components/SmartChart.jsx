@@ -258,7 +258,7 @@ const SmartChart = ({ symbol, currentPrice, isGreen, mini = false }) => {
       )}
 
       {!mini && !loading && !error && mode && (
-        <div className="absolute top-3 left-3 right-3 z-20 flex flex-col gap-2">
+        <div className="absolute top-3 left-3 max-w-[70%] z-20 flex flex-col gap-2 pointer-events-none">
           {/* Live Market Badge */}
           {mode === 'REAL' && (
             <div className="flex items-center gap-1.5 bg-green-500/10 border border-green-500/30 px-2.5 py-1.5 rounded-lg w-fit">
