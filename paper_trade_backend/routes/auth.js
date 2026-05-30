@@ -6,7 +6,7 @@ const bcrypt       = require('bcryptjs');
 const fetchuser    = require('../middleware/fetchuser');
 const { OAuth2Client } = require('google-auth-library');
 
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID?.trim());
 
 // ─────────────────────────────────────────────────────────────────
 // 🔑 Token Helpers
@@ -213,7 +213,7 @@ router.post('/googlelogin', async (req, res) => {
     const { tokenId } = req.body;
     if (!tokenId) return res.status(400).json({ success: false, message: 'Token is required.' });
 
-    const ticket = await client.verifyIdToken({ idToken: tokenId, audience: process.env.GOOGLE_CLIENT_ID });
+    const ticket = await client.verifyIdToken({ idToken: tokenId, audience: process.env.GOOGLE_CLIENT_ID?.trim() });
     const { name, email, picture } = ticket.getPayload();
 
     let user = await User.findOne({ email: email.toLowerCase() });

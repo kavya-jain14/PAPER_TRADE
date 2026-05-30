@@ -60,7 +60,7 @@ app.use(globalLimiter);
 // Auth limiter: 10 requests per 15 minutes per IP (prevents brute force)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: 100,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many auth attempts. Try again in 15 minutes.' },
