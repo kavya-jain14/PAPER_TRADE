@@ -1,6 +1,8 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { AnimatePresence } from 'framer-motion';
+
 import Login     from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Markets   from './pages/Markets';
@@ -9,6 +11,26 @@ import Academy   from './pages/Academy';
 import History   from './pages/History';
 import Profile   from './pages/Profile';
 import AIChat    from './components/AIChat';
+import CommandPalette from './components/CommandPalette';
+
+function AnimatedRoutes() {
+  const location = useLocation();
+  
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route path="/"          element={<Navigate to="/login" />} />
+        <Route path="/login"     element={<Login />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/markets"   element={<Markets />} />
+        <Route path="/portfolio" element={<Portfolio />} />
+        <Route path="/academy"   element={<Academy />} />
+        <Route path="/history"   element={<History />} />
+        <Route path="/profile"   element={<Profile />} />
+      </Routes>
+    </AnimatePresence>
+  );
+}
 
 function App() {
   return (
@@ -20,19 +42,11 @@ function App() {
         }} 
       />
 
-      <Routes>
-        <Route path="/"          element={<Navigate to="/login" />} />
-        <Route path="/login"     element={<Login />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/markets"   element={<Markets />} />
-        <Route path="/portfolio" element={<Portfolio />} />
-        <Route path="/academy"   element={<Academy />} />
-        <Route path="/history"   element={<History />} />
-        <Route path="/profile"   element={<Profile />} />
-      </Routes>
+      <AnimatedRoutes />
 
-      {/* 🤖 Global AI Chat — visible on all authenticated pages except login */}
+      {/* 🤖 Global AI Chat & Command Palette */}
       <AIChat />
+      <CommandPalette />
     </BrowserRouter>
   );
 }

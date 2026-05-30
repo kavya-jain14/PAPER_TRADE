@@ -82,9 +82,9 @@ const UniversalTradeModal = ({ symbol, marketData, onClose, balance, token, refr
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center backdrop-blur-sm z-50 p-4 font-inter">
-      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-[#121212] rounded-3xl border border-white/10 shadow-2xl w-full max-w-[900px] overflow-hidden flex flex-col md:flex-row max-h-[90vh]">
-        <div className="bg-[#0a0a0a] w-full md:w-[65%] p-6 border-b md:border-b-0 md:border-r border-white/5 flex flex-col">
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center backdrop-blur-md z-50 p-4 font-inter">
+      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-[#121212]/80 backdrop-blur-2xl rounded-3xl border border-white/10 shadow-2xl w-full max-w-[900px] overflow-hidden flex flex-col md:flex-row max-h-[90vh]">
+        <div className="bg-black/40 w-full md:w-[65%] p-6 border-b md:border-b-0 md:border-r border-white/5 flex flex-col">
           <div className="flex justify-between items-start mb-6">
             <div>
               <h3 className="text-3xl font-black text-white tracking-tight">{symbol}</h3>
@@ -109,7 +109,7 @@ const UniversalTradeModal = ({ symbol, marketData, onClose, balance, token, refr
             </div>
           </div>
         </div>
-        <div className="w-full md:w-[35%] p-6 flex flex-col bg-[#121212]">
+        <div className="w-full md:w-[35%] p-6 flex flex-col bg-transparent">
           <div className="flex justify-end mb-6">
             <button onClick={onClose} className="text-white/40 hover:text-white bg-[#1c1b1b] p-1.5 rounded-xl transition-colors"><span className="material-symbols-outlined text-[20px]">close</span></button>
           </div>
@@ -238,7 +238,7 @@ function Portfolio() {
   const isOverallGreen = totalPnL >= 0;
 
   return (
-    <div className="flex h-screen bg-[#0a0a0a] text-white/90 font-inter overflow-hidden selection:bg-green-500/30">
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2, ease: 'easeOut' }} className="flex h-screen bg-[#0a0a0a] text-white/90 font-inter overflow-hidden selection:bg-green-500/30">
 
       <Sidebar userName={userName} balance={balance} isMarketOpen={isMarketOpen} />
 
@@ -477,7 +477,7 @@ function Portfolio() {
             />
          )}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 }
 

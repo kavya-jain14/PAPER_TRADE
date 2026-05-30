@@ -100,7 +100,7 @@ export default function Profile() {
   const avatarGrad = gradients[(initials.charCodeAt(0) - 65) % gradients.length];
 
   return (
-    <div className="flex h-screen bg-[#0a0a0a] text-white/90 font-inter overflow-hidden">
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2, ease: 'easeOut' }} className="flex h-screen bg-[#0a0a0a] text-white/90 font-inter overflow-hidden">
       <Sidebar userName={userName} balance={balance} isMarketOpen={isMarketOpen} />
 
       <main className="flex-1 overflow-y-auto p-6 lg:p-10 custom-scrollbar">
@@ -223,3 +223,4 @@ export default function Profile() {
     </div>
   );
 }
+

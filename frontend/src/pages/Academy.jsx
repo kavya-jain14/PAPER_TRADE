@@ -171,7 +171,7 @@ function Academy() {
 
 
   return (
-    <div className="flex h-screen bg-[#0a0a0a] text-white/90 font-inter overflow-hidden selection:bg-green-500/30">
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2, ease: 'easeOut' }} className="flex h-screen bg-[#0a0a0a] text-white/90 font-inter overflow-hidden selection:bg-green-500/30">
 
       <Sidebar userName="Simulated Account" isMarketOpen={isMarketOpen} />
 
@@ -341,7 +341,7 @@ function Academy() {
         )}
       </AnimatePresence>
 
-    </div>
+    </motion.div>
   );
 }
 

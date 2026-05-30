@@ -189,7 +189,7 @@ export default function AIChat({ symbol = null }) {
     <>
       {/* Chat Panel */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 z-50 w-[360px] max-h-[500px] bg-[#111111] border border-white/10 rounded-3xl shadow-2xl flex flex-col overflow-hidden font-inter">
+        <div className="fixed bottom-24 right-6 z-50 w-[360px] max-h-[500px] bg-[#111111]/80 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl flex flex-col overflow-hidden font-inter">
           {/* Header */}
           <div className="flex items-center gap-3 px-5 py-4 border-b border-white/8 bg-gradient-to-r from-purple-900/40 to-blue-900/40">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-sm font-black text-white">AI</div>
