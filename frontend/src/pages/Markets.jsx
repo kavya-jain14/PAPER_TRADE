@@ -60,19 +60,22 @@ const UniversalTradeModal = ({ symbol, marketData, onClose, balance, token, refr
 
   const handleExecute = async (e) => {
     e.preventDefault();
-    const cost = Number(qty) * currentPrice;
+    const numQty = Number(qty);
+    if (!numQty || numQty <= 0 || !Number.isInteger(numQty)) return toast.error('Enter a valid whole number quantity.');
+    const cost = numQty * currentPrice;
     if (activeTab === 'BUY' && cost > balance) return toast.error('Insufficient Funds!');
-    if (activeTab === 'SELL' && Number(qty) > ownedQty) return toast.error(`You only own ${ownedQty} units!`);
+    if (activeTab === 'SELL' && numQty > ownedQty) return toast.error(`You only own ${ownedQty} units!`);
     
     const endpoint = activeTab === 'BUY' ? '/api/trade/buy' : '/api/trade/sell';
     const tid = toast.loading(`Routing ${activeTab} Order...`);
     try {
       const res = await fetch(`${API_URL}${endpoint}`, {
         method: "POST", headers: { "Content-Type": "application/json", "auth-token": token },
-        body: JSON.stringify({ symbol, quantity: Number(qty), currentPrice })
+        body: JSON.stringify({ symbol, quantity: numQty, currentPrice })
       });
+      const d = await res.json();
       if (res.ok) { toast.success('Order Filled!', { id: tid }); refreshData(); onClose(); }
-      else { const d = await res.json(); toast.error(d.message, { id: tid }); }
+      else { toast.error(d.message || 'Order failed', { id: tid }); }
     } catch (err) { toast.error('Network Error', { id: tid }); }
   };
 
@@ -124,7 +127,7 @@ const UniversalTradeModal = ({ symbol, marketData, onClose, balance, token, refr
                   <label className="text-white/50 text-[10px] uppercase tracking-widest font-bold">Quantity (Units)</label>
                   <button type="button" onClick={handleMax} className={`text-[10px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider transition-colors ${activeTab === 'BUY' ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20 border border-green-500/20' : 'bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border border-blue-500/20'}`}>MAX</button>
                 </div>
-                <input autoFocus type="number" value={qty} onChange={(e) => setQty(e.target.value)} className={`w-full bg-[#0a0a0a] border rounded-2xl p-4 text-white outline-none font-mono text-xl transition-colors ${activeTab === 'BUY' ? 'border-white/10 focus:border-green-500' : 'border-white/10 focus:border-red-500'}`} placeholder="0" required min="1" />
+                <input autoFocus type="number" value={qty} onChange={(e) => setQty(e.target.value)} className={`w-full bg-[#0a0a0a] border rounded-2xl p-4 text-white outline-none font-mono text-xl transition-colors ${activeTab === 'BUY' ? 'border-white/10 focus:border-green-500' : 'border-white/10 focus:border-red-500'}`} placeholder="0" required min="1" step="1" />
               </div>
               <div className="p-4 bg-[#171717] rounded-2xl border border-white/5">
                 <span className="block text-[10px] uppercase text-white/50 font-bold tracking-widest mb-1">Limit Price</span>
@@ -134,7 +137,7 @@ const UniversalTradeModal = ({ symbol, marketData, onClose, balance, token, refr
             <div className="mt-8">
               <div className="flex justify-between items-center mb-6 px-1">
                 <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest">Est. Margin</span>
-                <span className="text-xl font-black font-mono text-white">₹{(Number(qty) * currentPrice).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits:2 })}</span>
+                <span className="text-xl font-black font-mono text-white">₹{(Number(qty) * currentPrice || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits:2 })}</span>
               </div>
               <button type="submit" className={`w-full py-4 font-black rounded-2xl uppercase tracking-[0.2em] transition-all hover:scale-[1.02] active:scale-[0.98] text-sm ${activeTab === 'BUY' ? 'bg-green-500 text-[#003a00]' : 'bg-red-500 text-white'}`}>
                 Place Order

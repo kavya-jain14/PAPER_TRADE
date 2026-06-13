@@ -141,14 +141,15 @@ function Login() {
           setIsInitializing(true);
           setTimeout(() => { navigate('/dashboard'); }, 500); 
         } else {
-          toast.success('System Initialized! ₹1,00,000 credited.', { id: toastId, duration: 4000 });
+          toast.success('Account created! ₹10,00,000 virtual capital credited.', { id: toastId, duration: 4000 });
           setIsLoginView(true);
           setPassword(''); 
+          setName('');
           setIsLoading(false);
         }
       } else {
         const errorMsg = data.error || data.message || "Invalid request";
-        toast.error(`Error: ${errorMsg}`, { id: toastId });
+        toast.error(errorMsg, { id: toastId });
         setIsLoading(false);
       }
     } catch (error) {
@@ -284,7 +285,7 @@ function Login() {
                   {isLoginView && <button type="button" className="text-xs font-semibold text-[#3de530] hover:underline transition-all">Forgot Password?</button>}
                 </div>
                 <div className="relative group">
-                  <input className="w-full bg-[#0e0e0e]/80 border border-white/10 rounded-lg px-4 py-3 text-white outline-none focus:border-[#3de530] focus:ring-1 focus:ring-[#3de530] transition-all font-mono tracking-widest" id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required minLength={5} />
+                  <input className="w-full bg-[#0e0e0e]/80 border border-white/10 rounded-lg px-4 py-3 text-white outline-none focus:border-[#3de530] focus:ring-1 focus:ring-[#3de530] transition-all font-mono tracking-widest" id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required minLength={8} />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-white/20 group-focus-within:text-[#3de530] transition-colors">lock</span>
                 </div>
               </div>

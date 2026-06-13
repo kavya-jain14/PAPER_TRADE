@@ -2,6 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ReferenceLine,
+} from 'recharts';
 import SmartChart from '../components/SmartChart';
 import Sidebar from '../components/Sidebar';
 
@@ -49,6 +59,26 @@ const ResetConfirmToast = ({ t, onConfirm }) => {
   );
 };
 
+// 📊 CUSTOM TOOLTIP FOR P&L CHART
+const PnLTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    const pnl = payload[0]?.value || 0;
+    const isProfit = pnl >= 0;
+    return (
+      <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl px-4 py-3 shadow-2xl backdrop-blur-xl">
+        <p className="text-[10px] text-white/40 uppercase tracking-widest font-bold mb-1">{label}</p>
+        <p className={`text-base font-black font-mono ${isProfit ? 'text-green-400' : 'text-red-400'}`}>
+          {isProfit ? '+' : ''}₹{Math.abs(pnl).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        </p>
+        <p className={`text-[9px] font-bold uppercase mt-0.5 ${isProfit ? 'text-green-500/60' : 'text-red-500/60'}`}>
+          {isProfit ? 'Profit' : 'Loss'}
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
+
 // 📊 UNIVERSAL PRO-TRADE MODAL
 const UniversalTradeModal = ({ symbol, marketData, onClose, balance, token, refreshData, ownedQty = 0 }) => {
   const [qty, setQty] = useState('');
@@ -65,19 +95,22 @@ const UniversalTradeModal = ({ symbol, marketData, onClose, balance, token, refr
 
   const handleExecute = async (e) => {
     e.preventDefault();
-    const cost = Number(qty) * currentPrice;
+    const numQty = Number(qty);
+    if (!numQty || numQty <= 0 || !Number.isInteger(numQty)) return toast.error('Enter a valid whole number quantity.');
+    const cost = numQty * currentPrice;
     if (activeTab === 'BUY' && cost > balance) return toast.error('Insufficient Funds!');
-    if (activeTab === 'SELL' && Number(qty) > ownedQty) return toast.error(`You only own ${ownedQty} units!`);
+    if (activeTab === 'SELL' && numQty > ownedQty) return toast.error(`You only own ${ownedQty} units!`);
     
     const endpoint = activeTab === 'BUY' ? '/api/trade/buy' : '/api/trade/sell';
     const tid = toast.loading(`Routing ${activeTab} Order...`);
     try {
       const res = await fetch(`${API_URL}${endpoint}`, {
         method: "POST", headers: { "Content-Type": "application/json", "auth-token": token },
-        body: JSON.stringify({ symbol, quantity: Number(qty), currentPrice })
+        body: JSON.stringify({ symbol, quantity: numQty, currentPrice })
       });
+      const d = await res.json();
       if (res.ok) { toast.success('Order Filled Successfully!', { id: tid }); refreshData(); onClose(); }
-      else { const d = await res.json(); toast.error(d.message, { id: tid }); }
+      else { toast.error(d.message || 'Order failed', { id: tid }); }
     } catch (err) { toast.error('Network Error', { id: tid }); }
   };
 
@@ -101,11 +134,11 @@ const UniversalTradeModal = ({ symbol, marketData, onClose, balance, token, refr
           <div className="grid grid-cols-2 gap-4 mt-6">
             <div className="bg-[#171717] p-4 rounded-2xl border border-white/5 flex justify-between items-center">
               <span className="text-[10px] uppercase text-white/50 font-bold tracking-widest">Day Low</span>
-              <span className="text-sm font-mono text-white/90">₹{dayLow.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
+              <span className="text-sm font-mono text-white/90">₹{dayLow.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
             </div>
             <div className="bg-[#171717] p-4 rounded-2xl border border-white/5 flex justify-between items-center">
               <span className="text-[10px] uppercase text-white/50 font-bold tracking-widest">Day High</span>
-              <span className="text-sm font-mono text-white/90">₹{dayHigh.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
+              <span className="text-sm font-mono text-white/90">₹{dayHigh.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
             </div>
           </div>
         </div>
@@ -119,7 +152,6 @@ const UniversalTradeModal = ({ symbol, marketData, onClose, balance, token, refr
           </div>
           <form onSubmit={handleExecute} className="flex-1 flex flex-col">
             <div className="space-y-4 flex-1">
-              {/* Available Units Chip */}
               <div className="flex justify-between items-center bg-[#0d0d0d] rounded-xl px-4 py-2.5 border border-white/5">
                 <span className="text-[10px] text-white/40 uppercase tracking-widest font-bold">{activeTab === 'BUY' ? 'Max Affordable' : 'Units Owned'}</span>
                 <span className={`text-sm font-black font-mono ${activeTab === 'BUY' ? 'text-green-400' : 'text-blue-400'}`}>{activeTab === 'BUY' ? maxBuyQty.toLocaleString() : ownedQty.toLocaleString()} units</span>
@@ -129,7 +161,7 @@ const UniversalTradeModal = ({ symbol, marketData, onClose, balance, token, refr
                   <label className="text-white/50 text-[10px] uppercase tracking-widest font-bold">Quantity (Units)</label>
                   <button type="button" onClick={handleMax} className={`text-[10px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider transition-colors ${activeTab === 'BUY' ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20 border border-green-500/20' : 'bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border border-blue-500/20'}`}>MAX</button>
                 </div>
-                <input autoFocus type="number" value={qty} onChange={(e) => setQty(e.target.value)} className={`w-full bg-[#0a0a0a] border rounded-2xl p-4 text-white outline-none font-mono text-xl transition-colors ${activeTab === 'BUY' ? 'border-white/10 focus:border-green-500' : 'border-white/10 focus:border-red-500'}`} placeholder="0" required min="1" />
+                <input autoFocus type="number" value={qty} onChange={(e) => setQty(e.target.value)} className={`w-full bg-[#0a0a0a] border rounded-2xl p-4 text-white outline-none font-mono text-xl transition-colors ${activeTab === 'BUY' ? 'border-white/10 focus:border-green-500' : 'border-white/10 focus:border-red-500'}`} placeholder="0" required min="1" step="1" />
               </div>
               <div className="p-4 bg-[#171717] rounded-2xl border border-white/5">
                 <span className="block text-[10px] uppercase text-white/50 font-bold tracking-widest mb-1">Limit Price</span>
@@ -139,10 +171,10 @@ const UniversalTradeModal = ({ symbol, marketData, onClose, balance, token, refr
             <div className="mt-8">
               <div className="flex justify-between items-center mb-6 px-1">
                 <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest">Est. Total</span>
-                <span className="text-xl font-black font-mono text-white">₹{(Number(qty) * currentPrice).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits:2 })}</span>
+                <span className="text-xl font-black font-mono text-white">₹{(Number(qty) * currentPrice || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits:2 })}</span>
               </div>
-              <button type="submit" className={`w-full py-4 font-black rounded-2xl uppercase tracking-[0.2em] transition-all hover:scale-[1.02] active:scale-[0.98] text-sm ${activeTab === 'BUY' ? 'bg-green-500 text-[#003a00]' : 'bg-red-500 text-white'}`}>
-                Execute Trade
+              <button type="submit" className={`w-full py-4 font-black rounded-2xl uppercase tracking-[0.2em] transition-all hover:scale-[1.02] active:scale-[0.98] text-sm shadow-lg ${activeTab === 'BUY' ? 'bg-green-500 text-[#003a00] shadow-green-500/20' : 'bg-red-500 text-white shadow-red-500/20'}`}>
+                Execute {activeTab === 'BUY' ? 'Buy' : 'Sell'} Order
               </button>
             </div>
           </form>
@@ -160,12 +192,11 @@ function Portfolio() {
   const [livePrices, setLivePrices] = useState({});
   const [selectedAsset, setSelectedAsset] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isMarketOpen, setIsMarketOpen] = useState(false); // 🚀 IST Tracking
+  const [isMarketOpen, setIsMarketOpen] = useState(false);
 
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
 
-  // 🚀 STRICT FIX: IST Timezone Checker
   useEffect(() => {
     const checkMarketStatus = () => {
       const istTime = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
@@ -174,7 +205,7 @@ function Portfolio() {
       setIsMarketOpen(day >= 1 && day <= 5 && timeInMinutes >= 555 && timeInMinutes < 930);
     };
     checkMarketStatus();
-    const interval = setInterval(checkMarketStatus, 60000); 
+    const interval = setInterval(checkMarketStatus, 60000);
     return () => clearInterval(interval);
   }, []);
 
@@ -196,7 +227,7 @@ function Portfolio() {
         if (symbols.length > 0) {
            const priceRes = await fetch(`${API_URL}/api/trade/live-prices`, {
              method: "POST", headers: { "Content-Type": "application/json" },
-             body: JSON.stringify({ symbols }) 
+             body: JSON.stringify({ symbols })
            });
            const pricesData = await priceRes.json();
            setLivePrices(pricesData);
@@ -208,7 +239,7 @@ function Portfolio() {
   useEffect(() => {
     if (!token) { navigate('/login'); return; }
     fetchUserDataAndPortfolio();
-    const interval = setInterval(fetchUserDataAndPortfolio, 5000); 
+    const interval = setInterval(fetchUserDataAndPortfolio, 5000);
     return () => clearInterval(interval);
   }, [token, navigate]);
 
@@ -239,12 +270,25 @@ function Portfolio() {
   const pnlPercentage = totalInvested > 0 ? (totalPnL / totalInvested) * 100 : 0;
   const isOverallGreen = totalPnL >= 0;
 
+  const pnlChartData = holdings.map((pos) => {
+    const liveData = livePrices[pos.symbol] || {};
+    const ltp = liveData.price || pos.avgPrice;
+    const inv = pos.investedValue || (pos.avgPrice * pos.quantity);
+    const cur = ltp * pos.quantity;
+    const pnl = parseFloat((cur - inv).toFixed(2));
+    return {
+      name: pos.symbol,
+      pnl,
+      invested: parseFloat(inv.toFixed(2)),
+      current: parseFloat(cur.toFixed(2)),
+    };
+  }).sort((a, b) => b.pnl - a.pnl);
+
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2, ease: 'easeOut' }} className="flex h-screen bg-[#0a0a0a] text-white/90 font-inter overflow-hidden selection:bg-green-500/30">
 
       <Sidebar userName={userName} balance={balance} isMarketOpen={isMarketOpen} avatar={avatar} />
 
-      {/* 🔴 MAIN CONTENT */}
       <main className="flex-1 overflow-y-auto p-6 lg:p-10 relative custom-scrollbar">
         <div className="max-w-7xl mx-auto space-y-8 relative z-10">
           
@@ -298,66 +342,97 @@ function Portfolio() {
             </div>
           </div>
 
-          {/* 📊 Invested vs P&L Graph */}
           {holdings.length > 0 && (
             <div className="bg-[#121212] border border-white/5 rounded-3xl p-6 shadow-xl">
-              <div className="flex items-center justify-between mb-5">
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-white/50 text-[20px]">bar_chart</span>
-                  <h3 className="font-bold text-white text-base">Portfolio Breakdown</h3>
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center">
+                    <span className="material-symbols-outlined text-white/50 text-[20px]">area_chart</span>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-white text-base">Profit & Loss by Position</h3>
+                    <p className="text-[10px] text-white/40 uppercase tracking-widest font-semibold mt-0.5">Unrealized P&L per holding</p>
+                  </div>
                 </div>
-                <span className={`text-xs font-black px-3 py-1 rounded-xl ${isOverallGreen ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
+                <span className={`text-xs font-black px-3 py-1.5 rounded-xl ${isOverallGreen ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
                   {isOverallGreen ? '▲' : '▼'} {Math.abs(pnlPercentage).toFixed(2)}% Overall
                 </span>
               </div>
-              <div className="space-y-3">
-                {/* Invested Bar */}
-                <div>
-                  <div className="flex justify-between items-center mb-1.5">
-                    <span className="text-[10px] text-white/50 uppercase tracking-widest font-bold">Invested</span>
-                    <span className="text-sm font-mono font-bold text-white">₹{totalInvested.toLocaleString('en-IN', {minimumFractionDigits: 0, maximumFractionDigits: 0})}</span>
-                  </div>
-                  <div className="h-2.5 bg-white/5 rounded-full overflow-hidden">
-                    <div className="h-full bg-white/30 rounded-full" style={{width: '100%'}} />
-                  </div>
+
+              {pnlChartData.length > 0 ? (
+                <div className="w-full h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={pnlChartData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="pnlGreen" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#22c55e" stopOpacity={0.35} />
+                          <stop offset="95%" stopColor="#22c55e" stopOpacity={0.02} />
+                        </linearGradient>
+                        <linearGradient id="pnlRed" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#ef4444" stopOpacity={0.35} />
+                          <stop offset="95%" stopColor="#ef4444" stopOpacity={0.02} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
+                      <XAxis
+                        dataKey="name"
+                        tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 10, fontWeight: 700 }}
+                        axisLine={false}
+                        tickLine={false}
+                        dy={8}
+                      />
+                      <YAxis
+                        tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 9, fontWeight: 600 }}
+                        axisLine={false}
+                        tickLine={false}
+                        tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
+                        width={48}
+                      />
+                      <Tooltip content={<PnLTooltip />} cursor={{ stroke: 'rgba(255,255,255,0.08)', strokeWidth: 1 }} />
+                      <ReferenceLine y={0} stroke="rgba(255,255,255,0.15)" strokeDasharray="4 4" />
+                      <Area
+                        type="monotone"
+                        dataKey="pnl"
+                        stroke={isOverallGreen ? '#22c55e' : '#ef4444'}
+                        strokeWidth={2.5}
+                        fill={isOverallGreen ? 'url(#pnlGreen)' : 'url(#pnlRed)'}
+                        dot={{
+                          fill: isOverallGreen ? '#22c55e' : '#ef4444',
+                          r: 4,
+                          strokeWidth: 2,
+                          stroke: '#0a0a0a',
+                        }}
+                        activeDot={{
+                          r: 6,
+                          fill: isOverallGreen ? '#22c55e' : '#ef4444',
+                          stroke: '#0a0a0a',
+                          strokeWidth: 2,
+                        }}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
                 </div>
-                {/* Current Value Bar */}
-                <div>
-                  <div className="flex justify-between items-center mb-1.5">
-                    <span className="text-[10px] text-white/50 uppercase tracking-widest font-bold">Current Value</span>
-                    <span className="text-sm font-mono font-bold text-white">₹{currentTotalValue.toLocaleString('en-IN', {minimumFractionDigits: 0, maximumFractionDigits: 0})}</span>
-                  </div>
-                  <div className="h-2.5 bg-white/5 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all duration-700 ${isOverallGreen ? 'bg-gradient-to-r from-green-600 to-green-400' : 'bg-gradient-to-r from-red-600 to-red-400'}`}
-                      style={{width: `${Math.min((currentTotalValue / Math.max(totalInvested, currentTotalValue)) * 100, 100)}%`}}
-                    />
-                  </div>
+              ) : (
+                <div className="h-64 flex items-center justify-center text-white/30 text-sm">
+                  No chart data available
                 </div>
-                {/* P&L Row */}
-                <div className={`flex justify-between items-center pt-3 mt-1 border-t border-white/5`}>
-                  <span className="text-[10px] text-white/50 uppercase tracking-widest font-bold">Net P&amp;L</span>
-                  <span className={`text-base font-black font-mono ${isOverallGreen ? 'text-green-400' : 'text-red-400'}`}>
-                    {isOverallGreen ? '+' : ''}₹{totalPnL.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                  </span>
-                </div>
-                {/* Per-stock breakdown */}
-                <div className="pt-3 border-t border-white/5 space-y-2">
-                  <p className="text-[10px] text-white/30 uppercase tracking-widest font-bold mb-2">By Stock</p>
-                  {holdings.map((pos, i) => {
-                    const lp = livePrices[pos.symbol]?.price || pos.avgPrice;
-                    const inv = pos.investedValue || (pos.avgPrice * pos.quantity);
-                    const cur = lp * pos.quantity;
-                    const pct = inv > 0 ? ((cur - inv) / inv) * 100 : 0;
-                    const isP = cur >= inv;
+              )}
+
+              <div className="mt-6 pt-5 border-t border-white/5">
+                <p className="text-[10px] text-white/30 uppercase tracking-widest font-bold mb-3">Position Summary</p>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                  {pnlChartData.map((d, i) => {
+                    const isP = d.pnl >= 0;
+                    const pct = d.invested > 0 ? ((d.pnl / d.invested) * 100) : 0;
                     return (
-                      <div key={i} className="flex items-center gap-3">
-                        <span className="text-[11px] font-bold text-white/60 w-24 truncate">{pos.symbol}</span>
-                        <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
-                          <div className={`h-full rounded-full ${isP ? 'bg-green-500' : 'bg-red-500'}`}
-                            style={{width: `${Math.min(Math.abs(pct) * 5, 100)}%`, opacity: 0.7}} />
-                        </div>
-                        <span className={`text-[11px] font-mono font-bold w-16 text-right ${isP ? 'text-green-400' : 'text-red-400'}`}>{isP ? '+' : ''}{pct.toFixed(2)}%</span>
+                      <div key={i} className={`rounded-2xl p-3 border ${isP ? 'bg-green-500/5 border-green-500/15' : 'bg-red-500/5 border-red-500/15'}`}>
+                        <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest truncate">{d.name}</p>
+                        <p className={`text-sm font-black font-mono mt-1 ${isP ? 'text-green-400' : 'text-red-400'}`}>
+                          {isP ? '+' : ''}₹{Math.abs(d.pnl).toLocaleString('en-IN', {minimumFractionDigits: 0, maximumFractionDigits: 0})}
+                        </p>
+                        <p className={`text-[10px] font-bold font-mono mt-0.5 ${isP ? 'text-green-500/60' : 'text-red-500/60'}`}>
+                          {isP ? '+' : ''}{pct.toFixed(2)}%
+                        </p>
                       </div>
                     );
                   })}
@@ -398,8 +473,14 @@ function Portfolio() {
                      </tr>
                    ) : holdings.length === 0 ? (
                      <tr>
-                       <td colSpan="7" className="px-8 py-16 text-center text-white/40 font-medium">
-                         Your portfolio is empty. Go to Markets to make your first trade.
+                       <td colSpan="7" className="px-8 py-16 text-center">
+                         <div className="flex flex-col items-center gap-4">
+                           <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center">
+                             <span className="material-symbols-outlined text-white/20 text-3xl">inbox</span>
+                           </div>
+                           <p className="text-white/40 font-medium">Your portfolio is empty.</p>
+                           <p className="text-white/25 text-sm">Visit Markets to make your first trade.</p>
+                         </div>
                        </td>
                      </tr>
                    ) : (
