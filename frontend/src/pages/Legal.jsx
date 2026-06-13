@@ -114,7 +114,7 @@ const PRIVACY_SECTIONS = [
   {
     num: '07',
     title: 'Your Rights and Choices',
-    content: `You have the following rights regarding your personal data: (i) Access — you may request a copy of all personal data we hold about you; (ii) Rectification — you may correct inaccurate information via your Profile settings; (iii) Erasure — you may request permanent deletion of your account and all associated data; (iv) Portability — you may request an export of your trading history in CSV format; (v) Objection — you may object to specific processing activities. To exercise any of these rights, please contact us at support@papertrade.com. We will respond within 30 days.`,
+    content: `You have the following rights regarding your personal data: (i) Access — you may request a copy of all personal data we hold about you; (ii) Rectification — you may correct inaccurate information via your Profile settings; (iii) Erasure — you may request permanent deletion of your account and all associated data; (iv) Portability — you may request an export of your trading history in CSV format; (v) Objection — you may object to specific processing activities. To exercise any of these rights, please contact us at kavyajain1407@gmail.com. We will respond within 30 days.`,
   },
   {
     num: '08',
@@ -177,7 +177,7 @@ const TERMS_SECTIONS = [
   {
     num: '11',
     title: 'Governing Law and Dispute Resolution',
-    content: `These Terms shall be governed by and construed in accordance with the laws of India, without regard to conflict-of-law principles. Any dispute arising out of or relating to these Terms or the Platform shall be subject to the exclusive jurisdiction of the courts of New Delhi, India. Before initiating formal legal proceedings, you agree to first attempt to resolve the dispute informally by contacting us at support@papertrade.com and allowing 30 days for resolution.`,
+    content: `These Terms shall be governed by and construed in accordance with the laws of India, without regard to conflict-of-law principles. Any dispute arising out of or relating to these Terms or the Platform shall be subject to the exclusive jurisdiction of the courts of New Delhi, India. Before initiating formal legal proceedings, you agree to first attempt to resolve the dispute informally by contacting us at kavyajain1407@gmail.com and allowing 30 days for resolution.`,
   },
 ];
 
@@ -362,10 +362,10 @@ export default function Legal() {
               </div>
               <p className="text-white/40 text-sm mb-1">Questions about this policy?</p>
               <a
-                href="mailto:support@papertrade.com"
+                href="mailto:kavyajain1407@gmail.com"
                 className={`font-bold text-sm transition-colors ${activeTab === 'privacy' ? 'text-cyan-400 hover:text-cyan-300' : 'text-purple-400 hover:text-purple-300'}`}
               >
-                support@papertrade.com
+                kavyajain1407@gmail.com
               </a>
               <div className="mt-6 pt-5 border-t border-white/5">
                 <p className="text-white/20 text-[10px] uppercase tracking-widest font-semibold">
