@@ -2,23 +2,31 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
-import SmartChart from '../components/SmartChart';
+import SmartChart, { CandlestickModal } from '../components/SmartChart';
 import Sidebar from '../components/Sidebar';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
 const TOP_STOCKS = ['RELIANCE', 'TCS', 'HDFCBANK', 'ICICIBANK', 'INFY', 'ITC', 'SBIN', 'BHARTIARTL', 'LT', 'AXISBANK'];
-const INDICES = ['NIFTY 50', 'SENSEX', 'NIFTY BANK'];
+const INDICES    = ['NIFTY 50', 'SENSEX', 'NIFTY BANK'];
+const ALL_SYMBOLS = [...TOP_STOCKS, ...INDICES];
 
 const UniversalTradeModal = ({ symbol, marketData, onClose, balance, token, refreshData, ownedQty = 0 }) => {
-  const [qty, setQty] = useState('');
-  const [activeTab, setActiveTab] = useState('BUY');
+  const [qty, setQty]                 = useState('');
+  const [activeTab, setActiveTab]     = useState('BUY');
+  const [showCandlestick, setShowCandlestick] = useState(false);
 
-  const currentPrice = marketData?.price || 0;
+  const currentPrice  = marketData?.price || 0;
   const changePercent = marketData?.change || 0;
-  const dayHigh = marketData?.high || currentPrice;
-  const dayLow = marketData?.low || currentPrice;
-  const isGreen = changePercent >= 0; 
+  const dayHigh       = marketData?.high || currentPrice;
+  const dayLow        = marketData?.low  || currentPrice;
+  const isGreen       = changePercent >= 0;
+
+  const numQty       = Number(qty) || 0;
+  const estCost      = numQty * currentPrice;
+  const balanceAfter = activeTab === 'BUY'
+    ? balance - estCost
+    : balance + estCost;
 
   const maxBuyQty = currentPrice > 0 ? Math.floor(balance / currentPrice) : 0;
   const handleMax = () => setQty(String(activeTab === 'BUY' ? maxBuyQty : ownedQty));
@@ -45,73 +53,94 @@ const UniversalTradeModal = ({ symbol, marketData, onClose, balance, token, refr
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center backdrop-blur-md z-50 p-4 font-inter">
-      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-[#121212]/80 backdrop-blur-2xl rounded-3xl border border-white/10 shadow-2xl w-full max-w-[900px] overflow-hidden flex flex-col md:flex-row max-h-[90vh]">
-        <div className="bg-black/40 w-full md:w-[65%] p-6 border-b md:border-b-0 md:border-r border-white/5 flex flex-col">
-          <div className="flex justify-between items-start mb-6">
-            <div>
-              <h3 className="text-3xl font-black text-white tracking-tight">{symbol}</h3>
-              <p className="text-[10px] text-white/50 uppercase tracking-widest font-bold mt-1">{INDICES.includes(symbol) ? 'MARKET INDEX' : 'EQUITY • NSE'}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-2xl font-mono text-white font-bold">₹{currentPrice.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}</p>
-              <p className={`text-xs font-bold mt-1 ${isGreen ? 'text-green-500' : 'text-red-500'}`}>{isGreen ? '▲' : '▼'} {isGreen ? '+' : ''}{changePercent}% (1D)</p>
-            </div>
-          </div>
-          <div className="flex-1 min-h-[300px] w-full border border-white/5 rounded-2xl overflow-hidden relative bg-[#0e0e0e] group">
-            <SmartChart symbol={symbol} currentPrice={currentPrice} isGreen={isGreen} />
-          </div>
-          <div className="grid grid-cols-2 gap-4 mt-6">
-            <div className="bg-[#171717] p-4 rounded-2xl border border-white/5 flex justify-between items-center">
-              <span className="text-[10px] uppercase text-white/50 font-bold tracking-widest">Day Low</span>
-              <span className="text-sm font-mono text-white/90">₹{dayLow.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-            </div>
-            <div className="bg-[#171717] p-4 rounded-2xl border border-white/5 flex justify-between items-center">
-              <span className="text-[10px] uppercase text-white/50 font-bold tracking-widest">Day High</span>
-              <span className="text-sm font-mono text-white/90">₹{dayHigh.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-            </div>
-          </div>
-        </div>
-        <div className="w-full md:w-[35%] p-6 flex flex-col bg-transparent">
-          <div className="flex justify-end mb-6">
-            <button onClick={onClose} className="text-white/40 hover:text-white bg-[#1c1b1b] p-1.5 rounded-xl transition-colors"><span className="material-symbols-outlined text-[20px]">close</span></button>
-          </div>
-          <div className="flex bg-[#1c1b1b] p-1.5 rounded-2xl mb-8 border border-white/5">
-            <button onClick={() => setActiveTab('BUY')} className={`flex-1 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'BUY' ? 'bg-green-500 text-[#003a00] shadow-md' : 'text-white/50 hover:text-white'}`}>Buy</button>
-            <button onClick={() => setActiveTab('SELL')} className={`flex-1 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'SELL' ? 'bg-red-500 text-white shadow-md' : 'text-white/50 hover:text-white'}`}>Sell</button>
-          </div>
-          <form onSubmit={handleExecute} className="flex-1 flex flex-col">
-            <div className="space-y-4 flex-1">
-              {/* Available Units Chip */}
-              <div className="flex justify-between items-center bg-[#0d0d0d] rounded-xl px-4 py-2.5 border border-white/5">
-                <span className="text-[10px] text-white/40 uppercase tracking-widest font-bold">{activeTab === 'BUY' ? 'Max Affordable' : 'Units Owned'}</span>
-                <span className={`text-sm font-black font-mono ${activeTab === 'BUY' ? 'text-green-400' : 'text-blue-400'}`}>{activeTab === 'BUY' ? maxBuyQty.toLocaleString() : ownedQty.toLocaleString()} units</span>
-              </div>
+    <>
+      {showCandlestick && (
+        <CandlestickModal symbol={symbol} isGreen={isGreen} onClose={() => setShowCandlestick(false)} />
+      )}
+      <div className="fixed inset-0 bg-black/60 flex items-center justify-center backdrop-blur-md z-50 p-4">
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-[#121212]/80 backdrop-blur-2xl rounded-3xl border border-white/10 shadow-2xl w-full max-w-[900px] overflow-hidden flex flex-col md:flex-row max-h-[90vh]">
+          <div className="bg-black/40 w-full md:w-[65%] p-6 border-b md:border-b-0 md:border-r border-white/5 flex flex-col">
+            <div className="flex justify-between items-start mb-6">
               <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="text-white/50 text-[10px] uppercase tracking-widest font-bold">Quantity (Units)</label>
-                  <button type="button" onClick={handleMax} className={`text-[10px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider transition-colors ${activeTab === 'BUY' ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20 border border-green-500/20' : 'bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border border-blue-500/20'}`}>MAX</button>
-                </div>
-                <input autoFocus type="number" value={qty} onChange={(e) => setQty(e.target.value)} className={`w-full bg-[#0a0a0a] border rounded-2xl p-4 text-white outline-none font-mono text-xl transition-colors ${activeTab === 'BUY' ? 'border-white/10 focus:border-green-500' : 'border-white/10 focus:border-red-500'}`} placeholder="0" required min="1" step="1" />
+                <h3 className="text-3xl font-black text-white tracking-tight">{symbol}</h3>
+                <p className="text-[10px] text-white/50 uppercase tracking-widest font-bold mt-1">{INDICES.includes(symbol) ? 'MARKET INDEX' : 'EQUITY • NSE'}</p>
               </div>
-              <div className="p-4 bg-[#171717] rounded-2xl border border-white/5">
-                <span className="block text-[10px] uppercase text-white/50 font-bold tracking-widest mb-1">Limit Price</span>
-                <span className="text-lg font-mono text-white/90">₹{currentPrice.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits:2})}</span>
+              <div className="text-right">
+                <p className="text-2xl font-mono text-white font-bold">₹{currentPrice.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}</p>
+                <p className={`text-xs font-bold mt-1 ${isGreen ? 'text-green-500' : 'text-red-500'}`}>{isGreen ? '▲' : '▼'} {isGreen ? '+' : ''}{changePercent}% (1D)</p>
               </div>
             </div>
-            <div className="mt-8">
-              <div className="flex justify-between items-center mb-6 px-1">
-                <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest">Est. Margin</span>
-                <span className="text-xl font-black font-mono text-white">₹{(Number(qty) * currentPrice || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits:2 })}</span>
-              </div>
-              <button type="submit" className={`w-full py-4 font-black rounded-2xl uppercase tracking-[0.2em] transition-all hover:scale-[1.02] active:scale-[0.98] text-sm ${activeTab === 'BUY' ? 'bg-green-500 text-[#003a00]' : 'bg-red-500 text-white'}`}>
-                Place Order
+            <div className="flex-1 min-h-[300px] w-full border border-white/5 rounded-2xl overflow-hidden relative bg-[#0e0e0e] group">
+              <SmartChart symbol={symbol} currentPrice={currentPrice} isGreen={isGreen} />
+              {/* Expand to Candlestick Button */}
+              <button
+                onClick={() => setShowCandlestick(true)}
+                title="Expand as Candlestick Chart"
+                className="absolute bottom-3 right-3 z-30 flex items-center gap-1.5 bg-[#1a1a1a]/90 border border-white/10 hover:border-white/30 text-white/50 hover:text-white px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all opacity-0 group-hover:opacity-100 backdrop-blur-sm"
+              >
+                <span className="material-symbols-outlined text-[14px]">candlestick_chart</span>
+                Candlestick
               </button>
             </div>
-          </form>
-        </div>
-      </motion.div>
-    </div>
+            <div className="grid grid-cols-2 gap-4 mt-6">
+              <div className="bg-[#171717] p-4 rounded-2xl border border-white/5 flex justify-between items-center">
+                <span className="text-[10px] uppercase text-white/50 font-bold tracking-widest">Day Low</span>
+                <span className="text-sm font-mono text-white/90">₹{dayLow.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+              </div>
+              <div className="bg-[#171717] p-4 rounded-2xl border border-white/5 flex justify-between items-center">
+                <span className="text-[10px] uppercase text-white/50 font-bold tracking-widest">Day High</span>
+                <span className="text-sm font-mono text-white/90">₹{dayHigh.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+              </div>
+            </div>
+          </div>
+          <div className="w-full md:w-[35%] p-6 flex flex-col bg-transparent">
+            <div className="flex justify-end mb-6">
+              <button onClick={onClose} className="text-white/40 hover:text-white bg-[#1c1b1b] p-1.5 rounded-xl transition-colors"><span className="material-symbols-outlined text-[20px]">close</span></button>
+            </div>
+            <div className="flex bg-[#1c1b1b] p-1.5 rounded-2xl mb-8 border border-white/5">
+              <button onClick={() => setActiveTab('BUY')} className={`flex-1 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'BUY' ? 'bg-green-500 text-[#003a00] shadow-md' : 'text-white/50 hover:text-white'}`}>Buy</button>
+              <button onClick={() => setActiveTab('SELL')} className={`flex-1 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'SELL' ? 'bg-red-500 text-white shadow-md' : 'text-white/50 hover:text-white'}`}>Sell</button>
+            </div>
+            <form onSubmit={handleExecute} className="flex-1 flex flex-col">
+              <div className="space-y-4 flex-1">
+                <div className="flex justify-between items-center bg-[#0d0d0d] rounded-xl px-4 py-2.5 border border-white/5">
+                  <span className="text-[10px] text-white/40 uppercase tracking-widest font-bold">{activeTab === 'BUY' ? 'Max Affordable' : 'Units Owned'}</span>
+                  <span className={`text-sm font-black font-mono ${activeTab === 'BUY' ? 'text-green-400' : 'text-blue-400'}`}>{activeTab === 'BUY' ? maxBuyQty.toLocaleString() : ownedQty.toLocaleString()} units</span>
+                </div>
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="text-white/50 text-[10px] uppercase tracking-widest font-bold">Quantity (Units)</label>
+                    <button type="button" onClick={handleMax} className={`text-[10px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider transition-colors ${activeTab === 'BUY' ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20 border border-green-500/20' : 'bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border border-blue-500/20'}`}>MAX</button>
+                  </div>
+                  <input autoFocus type="number" value={qty} onChange={(e) => setQty(e.target.value)} className={`w-full bg-[#0a0a0a] border rounded-2xl p-4 text-white outline-none font-mono text-xl transition-colors ${activeTab === 'BUY' ? 'border-white/10 focus:border-green-500' : 'border-white/10 focus:border-red-500'}`} placeholder="0" required min="1" step="1" />
+                </div>
+                <div className="p-4 bg-[#171717] rounded-2xl border border-white/5">
+                  <span className="block text-[10px] uppercase text-white/50 font-bold tracking-widest mb-1">Limit Price</span>
+                  <span className="text-lg font-mono text-white/90">₹{currentPrice.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits:2})}</span>
+                </div>
+              </div>
+              <div className="mt-8">
+                <div className="flex justify-between items-center mb-2 px-1">
+                  <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest">Est. Margin</span>
+                  <span className="text-xl font-black font-mono text-white">₹{(estCost || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits:2 })}</span>
+                </div>
+                {numQty > 0 && (
+                  <div className="flex justify-between items-center mb-4 px-1">
+                    <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest">Balance After</span>
+                    <span className={`text-sm font-black font-mono ${balanceAfter >= 0 ? 'text-green-400/80' : 'text-red-400'}`}>
+                      ₹{Math.max(0, balanceAfter).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                )}
+                <button type="submit" className={`w-full py-4 font-black rounded-2xl uppercase tracking-[0.2em] transition-all hover:scale-[1.02] active:scale-[0.98] text-sm ${activeTab === 'BUY' ? 'bg-green-500 text-[#003a00]' : 'bg-red-500 text-white'}`}>
+                  Place Order
+                </button>
+              </div>
+            </form>
+          </div>
+        </motion.div>
+      </div>
+    </>
   );
 };
 
@@ -204,12 +233,17 @@ function Dashboard() {
 
   const addToWatchlist = (e) => {
     e.preventDefault();
-    if(newStock && TOP_STOCKS.includes(newStock.toUpperCase()) && !watchlist.includes(newStock.toUpperCase())) {
-      setWatchlist([...watchlist, newStock.toUpperCase()]);
+    const sym = newStock.trim().toUpperCase();
+    if (sym && ALL_SYMBOLS.includes(sym) && !watchlist.includes(sym)) {
+      setWatchlist([...watchlist, sym]);
       setNewStock('');
-      toast.success(`${newStock.toUpperCase()} added to Watchlist`);
+      toast.success(`${sym} added to Watchlist`);
+    } else if (!sym) {
+      toast.error('Enter a symbol');
+    } else if (!ALL_SYMBOLS.includes(sym)) {
+      toast.error('Symbol not found. Try: RELIANCE, TCS, NIFTY 50...');
     } else {
-      toast.error("Invalid or duplicate symbol");
+      toast.error('Already in watchlist');
     }
   };
 
@@ -302,7 +336,14 @@ function Dashboard() {
                     <div>
                       <p className="text-[10px] text-white/50 uppercase tracking-widest font-bold">{idx}</p>
                       <p className="text-lg font-bold font-mono text-white mt-1">{p > 0 ? p.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '...'}</p>
-                      <p className={`text-[11px] font-bold mt-0.5 ${isGreen ? 'text-green-500' : 'text-red-500'}`}>{isGreen ? '▲' : '▼'} {isGreen ? '+' : ''}{cPercent}%</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <p className={`text-[11px] font-bold ${isGreen ? 'text-green-500' : 'text-red-500'}`}>{isGreen ? '▲' : '▼'} {isGreen ? '+' : ''}{cPercent}%</p>
+                        {liveData.prevClose > 0 && (
+                          <p className={`text-[10px] font-mono ${isGreen ? 'text-green-500/60' : 'text-red-500/60'}`}>
+                            {isGreen ? '+' : ''}₹{(p - (liveData.prevClose || p)).toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}
+                          </p>
+                        )}
+                      </div>
                     </div>
                     <div className="opacity-70 group-hover:opacity-100 transition-opacity w-[90px] h-[40px] relative pointer-events-none">
                       <SmartChart symbol={idx} currentPrice={p} isGreen={isGreen} mini={true} />

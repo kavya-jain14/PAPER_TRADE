@@ -50,11 +50,24 @@ router.get('/bias/:symbol', async (req, res) => {
 });
 
 // ✅ Now just returns pre-seeded data instantly — no blocking loop
+// Returns { time, value } for the AreaSeries (line chart)
 router.get('/history/:symbol', (req, res) => {
   try {
     const symbol  = decodeURIComponent(req.params.symbol).toUpperCase();
     const history = brain.getSyntheticHistory(symbol);
     res.json(history.map(c => ({ time: c.time, value: c.close })));
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ✅ Returns full OHLC data for the CandlestickSeries (candlestick chart)
+router.get('/history-ohlc/:symbol', (req, res) => {
+  try {
+    const symbol  = decodeURIComponent(req.params.symbol).toUpperCase();
+    const history = brain.getSyntheticHistory(symbol);
+    // Return full candle objects: { time, open, high, low, close, volume }
+    res.json(history);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

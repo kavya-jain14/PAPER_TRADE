@@ -195,7 +195,7 @@ export default function Legal() {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
       fetch(`${API_URL}/api/auth/getuser`, { headers: { 'auth-token': token } })
         .then(r => r.json())
         .then(d => {

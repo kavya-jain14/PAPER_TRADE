@@ -16,6 +16,7 @@ const PERSONALITIES = {
   'BHARTIARTL':  { volMult: 1.00, momentumPersist: 0.72, meanReversion: 0.32, name: 'Balanced Mover'  },
   'LT':          { volMult: 0.90, momentumPersist: 0.73, meanReversion: 0.33, name: 'Infrastructure'   },
   'ZOMATO':      { volMult: 1.80, momentumPersist: 0.55, meanReversion: 0.20, name: 'High Volatility'  },
+  'AXISBANK':    { volMult: 0.95, momentumPersist: 0.70, meanReversion: 0.36, name: 'Banking Mover'    },
   'DEFAULT':     { volMult: 1.00, momentumPersist: 0.65, meanReversion: 0.40, name: 'Standard'         },
 };
 
@@ -89,22 +90,62 @@ function calcBollinger(closes, period = 20) {
 function detectPatterns(candles) {
   const patterns = [];
   if (candles.length < 3) return patterns;
-  const c = candles[candles.length - 1], c1 = candles[candles.length - 2], c2 = candles[candles.length - 3];
-  const body = Math.abs(c.close - c.open), range = c.high - c.low, upWick = c.high - Math.max(c.open, c.close), lowWick = Math.min(c.open, c.close) - c.low;
-  
-  if (range > 0 && body / range < 0.10) patterns.push('DOJI');
-  if (lowWick > body * 2 && upWick < body * 0.5) patterns.push('HAMMER');
-  if (upWick > body * 2 && lowWick < body * 0.5) patterns.push('SHOOTING_STAR');
-  if (c1.close < c1.open && c.close > c.open && c.open < c1.close && c.close > c1.open) patterns.push('BULLISH_ENGULFING');
-  if (c1.close > c1.open && c.close < c.open && c.open > c1.close && c.close < c1.open) patterns.push('BEARISH_ENGULFING');
-  // Morning Star / Evening Star (3-candle)
-  const bodyC2 = Math.abs(c2.close - c2.open), bodyC1 = Math.abs(c1.close - c1.open), bodyC = Math.abs(c.close - c.open);
-  if (c2.close < c2.open && bodyC1 / (c2.high - c2.low || 1) < 0.15 && c.close > c.open && bodyC > bodyC2 * 0.5) patterns.push('MORNING_STAR');
-  if (c2.close > c2.open && bodyC1 / (c2.high - c2.low || 1) < 0.15 && c.close < c.open && bodyC > bodyC2 * 0.5) patterns.push('EVENING_STAR');
-  // Gravestone Doji
-  if (range > 0 && body / range < 0.10 && upWick > range * 0.8) patterns.push('GRAVESTONE_DOJI');
-  // Dragonfly Doji
-  if (range > 0 && body / range < 0.10 && lowWick > range * 0.8) patterns.push('DRAGONFLY_DOJI');
+
+  const c  = candles[candles.length - 1];
+  const c1 = candles[candles.length - 2];
+  const c2 = candles[candles.length - 3];
+
+  const body    = Math.abs(c.close - c.open);
+  const range   = c.high - c.low;
+  const upWick  = c.high - Math.max(c.open, c.close);
+  const lowWick = Math.min(c.open, c.close) - c.low;
+
+  const body1   = Math.abs(c1.close - c1.open);
+  const body2   = Math.abs(c2.close - c2.open);
+
+  // ── Single-candle patterns ──────────────────────────────────────────
+  if (range > 0 && body / range < 0.10)                            patterns.push('DOJI');
+  if (lowWick > body * 2 && upWick < body * 0.5)                   patterns.push('HAMMER');
+  if (upWick > body * 2 && lowWick < body * 0.5)                   patterns.push('SHOOTING_STAR');
+  if (range > 0 && body / range < 0.10 && upWick > range * 0.8)   patterns.push('GRAVESTONE_DOJI');
+  if (range > 0 && body / range < 0.10 && lowWick > range * 0.8)  patterns.push('DRAGONFLY_DOJI');
+
+  // ── Two-candle patterns ─────────────────────────────────────────────
+  if (c1.close < c1.open && c.close > c.open && c.open < c1.close && c.close > c1.open)
+    patterns.push('BULLISH_ENGULFING');
+  if (c1.close > c1.open && c.close < c.open && c.open > c1.close && c.close < c1.open)
+    patterns.push('BEARISH_ENGULFING');
+
+  // Piercing Line: bearish candle followed by bullish that closes above midpoint of c1
+  const midpointC1 = (c1.open + c1.close) / 2;
+  if (c1.close < c1.open && c.close > c.open && c.open < c1.close && c.close > midpointC1 && c.close < c1.open)
+    patterns.push('PIERCING_LINE');
+
+  // Dark Cloud Cover: bullish candle followed by bearish that opens above c1 high & closes below midpoint
+  const midpointC1Bull = (c1.open + c1.close) / 2;
+  if (c1.close > c1.open && c.close < c.open && c.open > c1.high && c.close < midpointC1Bull && c.close > c1.open)
+    patterns.push('DARK_CLOUD_COVER');
+
+  // ── Three-candle patterns ───────────────────────────────────────────
+  // Morning Star
+  if (c2.close < c2.open && body1 / ((c1.high - c1.low) || 1) < 0.15 && c.close > c.open && body > body2 * 0.5)
+    patterns.push('MORNING_STAR');
+
+  // Evening Star
+  if (c2.close > c2.open && body1 / ((c1.high - c1.low) || 1) < 0.15 && c.close < c.open && body > body2 * 0.5)
+    patterns.push('EVENING_STAR');
+
+  // Three White Soldiers: 3 consecutive bullish candles, each closing higher
+  if (c2.close > c2.open && c1.close > c1.open && c.close > c.open &&
+      c1.close > c2.close && c.close > c1.close &&
+      body2 > 0 && body1 > body2 * 0.6 && body > body1 * 0.6)
+    patterns.push('THREE_WHITE_SOLDIERS');
+
+  // Three Black Crows: 3 consecutive bearish candles, each closing lower
+  if (c2.close < c2.open && c1.close < c1.open && c.close < c.open &&
+      c1.close < c2.close && c.close < c1.close &&
+      body2 > 0 && body1 > body2 * 0.6 && body > body1 * 0.6)
+    patterns.push('THREE_BLACK_CROWS');
 
   return patterns;
 }
@@ -128,27 +169,50 @@ function detectRegime(closes, rsi, macd, ema20, ema50, bb) {
 
 function calculateBias(rsi, macd, ema20, ema50, bb, regime, patterns, closes) {
   let bullProb = 50;
-  if (rsi < 30) bullProb += 15; else if (rsi < 45) bullProb += 7; else if (rsi > 70) bullProb -= 15; else if (rsi > 55) bullProb -= 5;
+
+  // RSI contribution
+  if (rsi < 30) bullProb += 15; else if (rsi < 45) bullProb += 7;
+  else if (rsi > 70) bullProb -= 15; else if (rsi > 55) bullProb -= 5;
+
+  // EMA trend
   if (ema20 > ema50) bullProb += 10; else bullProb -= 10;
+
+  // MACD
   if (macd.histogram > 0) bullProb += 8; else bullProb -= 8;
+
+  // Bollinger Band position
   const last = closes[closes.length - 1];
   if (last <= bb.lower) bullProb += 10;
   if (last >= bb.upper) bullProb -= 10;
-  if (bb.bandwidth < 0.01) bullProb += 3;
-  if (patterns.includes('BULLISH_ENGULFING'))  bullProb += 12;
-  if (patterns.includes('MORNING_STAR'))        bullProb += 14;
-  if (patterns.includes('DRAGONFLY_DOJI'))      bullProb += 10;
-  if (patterns.includes('HAMMER'))              bullProb += 8;
-  if (patterns.includes('BEARISH_ENGULFING'))   bullProb -= 12;
-  if (patterns.includes('EVENING_STAR'))        bullProb -= 14;
-  if (patterns.includes('GRAVESTONE_DOJI'))     bullProb -= 10;
-  if (patterns.includes('SHOOTING_STAR'))       bullProb -= 8;
-  if (patterns.includes('DOJI'))                bullProb += (bullProb > 50 ? -3 : 3); // Doji creates uncertainty
+  if (bb.bandwidth < 0.01) bullProb += 3; // squeeze = potential breakout
+
+  // ── Bullish patterns ──
+  if (patterns.includes('BULLISH_ENGULFING'))    bullProb += 12;
+  if (patterns.includes('MORNING_STAR'))          bullProb += 14;
+  if (patterns.includes('DRAGONFLY_DOJI'))        bullProb += 10;
+  if (patterns.includes('HAMMER'))                bullProb += 8;
+  if (patterns.includes('PIERCING_LINE'))         bullProb += 9;
+  if (patterns.includes('THREE_WHITE_SOLDIERS'))  bullProb += 16;
+
+  // ── Bearish patterns ──
+  if (patterns.includes('BEARISH_ENGULFING'))    bullProb -= 12;
+  if (patterns.includes('EVENING_STAR'))          bullProb -= 14;
+  if (patterns.includes('GRAVESTONE_DOJI'))       bullProb -= 10;
+  if (patterns.includes('SHOOTING_STAR'))         bullProb -= 8;
+  if (patterns.includes('DARK_CLOUD_COVER'))      bullProb -= 9;
+  if (patterns.includes('THREE_BLACK_CROWS'))     bullProb -= 16;
+
+  // ── Neutral / uncertainty ──
+  if (patterns.includes('DOJI')) bullProb += (bullProb > 50 ? -3 : 3);
+
+  // ── Regime overlay ──
   if (regime === 'TRENDING_BULLISH')   bullProb += 10;
   if (regime === 'TRENDING_BEARISH')   bullProb -= 10;
   if (regime === 'REVERSAL_BULLISH')   bullProb += 15;
   if (regime === 'REVERSAL_BEARISH')   bullProb -= 15;
-  
+  if (regime === 'BREAKOUT_BULLISH')   bullProb += 12;
+  if (regime === 'BREAKOUT_BEARISH')   bullProb -= 12;
+
   return Math.min(82, Math.max(18, Math.round(bullProb)));
 }
 
@@ -159,19 +223,29 @@ function generateCandle(prevClose, bias, atr, personality, time) {
   const vol = baseVol * (0.7 + Math.random() * 0.6);
   const bodySize = vol * (0.3 + Math.random() * 0.5);
 
-  const open = prevClose;
-  const close = goUp ? open + bodySize * (0.5 + Math.random() * 0.5) : open - bodySize * (0.5 + Math.random() * 0.5);
-  
+  const open  = prevClose;
+  const close = goUp
+    ? open + bodySize * (0.5 + Math.random() * 0.5)
+    : open - bodySize * (0.5 + Math.random() * 0.5);
+
   const high = Math.max(open, close) + vol * (goUp ? 0.1 + Math.random() * 0.3 : 0.2 + Math.random() * 0.5);
-  const low = Math.min(open, close) - vol * (goUp ? 0.2 + Math.random() * 0.5 : 0.1 + Math.random() * 0.3);
-  
-  const midPoint = bias.fairValue || prevClose;
-  const deviation = (prevClose - midPoint) / (midPoint || 1);
+  const low  = Math.min(open, close) - vol * (goUp ? 0.2 + Math.random() * 0.5 : 0.1 + Math.random() * 0.3);
+
+  const midPoint      = bias.fairValue || prevClose;
+  const deviation     = (prevClose - midPoint) / (midPoint || 1);
   const reversionNudge = -deviation * meanReversion * vol;
 
   const finalClose = parseFloat((close + reversionNudge).toFixed(2));
-  const finalOpen = parseFloat(open.toFixed(2));
-  return { time, open: finalOpen, high: parseFloat(Math.max(high, finalClose, finalOpen).toFixed(2)), low: parseFloat(Math.min(low, finalClose, finalOpen).toFixed(2)), close: finalClose, volume: Math.round(100000 + Math.random() * 500000) };
+  const finalOpen  = parseFloat(open.toFixed(2));
+
+  return {
+    time,
+    open:   finalOpen,
+    high:   parseFloat(Math.max(high, finalClose, finalOpen).toFixed(2)),
+    low:    parseFloat(Math.min(low,  finalClose, finalOpen).toFixed(2)),
+    close:  finalClose,
+    volume: Math.round(100000 + Math.random() * 500000),
+  };
 }
 
 class MarketBrain {
@@ -180,6 +254,7 @@ class MarketBrain {
     this.syntheticHistory = {};
     this.clients          = {};
     this.macroEvents      = {}; // Active macro events per symbol: { remainingCandles, bullImpact, event }
+    this.seedPrices       = {}; // Track seed prices per symbol for % change calculation
   }
 
   // ─── Macro Event System ───────────────────────────────────────────────────
@@ -193,18 +268,25 @@ class MarketBrain {
 
   _maybeInjectMacroEvent(symbol, bias) {
     if (this.macroEvents[symbol]) return; // Already one active
-    if (Math.random() > 0.015) return;    // ~1.5% chance per candle = realistic rare events
+    if (Math.random() > 0.015) return;    // ~1.5% chance per candle
 
     const events = [
-      { name: 'FII_SELLOFF',      bullImpact: -20, candles: 8,  label: 'FII Sell-Off: Institutional outflow detected' },
-      { name: 'FII_BUYING',       bullImpact: +18, candles: 8,  label: 'FII Buying: Institutions accumulating aggressively' },
-      { name: 'EARNINGS_BEAT',    bullImpact: +22, candles: 12, label: 'Earnings Beat: Revenue and PAT above estimates' },
-      { name: 'EARNINGS_MISS',    bullImpact: -22, candles: 10, label: 'Earnings Miss: Management lowers guidance' },
-      { name: 'RBI_RATE_CUT',     bullImpact: +15, candles: 10, label: 'RBI Surprise Rate Cut: Liquidity boost' },
-      { name: 'RBI_RATE_HIKE',    bullImpact: -15, candles: 8,  label: 'RBI Rate Hike: Tightening liquidity' },
-      { name: 'GLOBAL_RALLY',     bullImpact: +12, candles: 6,  label: 'Global Markets Rally: Risk-on sentiment' },
-      { name: 'GLOBAL_SELLOFF',   bullImpact: -18, candles: 8,  label: 'Global Risk-Off: Panic selling spreads' },
-      { name: 'PROMOTER_BUY',     bullImpact: +10, candles: 5,  label: 'Promoter Buying: Insider confidence signal' },
+      // ── Original events ──────────────────────────────────────────────
+      { name: 'FII_SELLOFF',        bullImpact: -20, candles: 8,  label: 'FII Sell-Off: Institutional outflow detected'         },
+      { name: 'FII_BUYING',         bullImpact: +18, candles: 8,  label: 'FII Buying: Institutions accumulating aggressively'   },
+      { name: 'EARNINGS_BEAT',      bullImpact: +22, candles: 12, label: 'Earnings Beat: Revenue and PAT above estimates'       },
+      { name: 'EARNINGS_MISS',      bullImpact: -22, candles: 10, label: 'Earnings Miss: Management lowers guidance'            },
+      { name: 'RBI_RATE_CUT',       bullImpact: +15, candles: 10, label: 'RBI Surprise Rate Cut: Liquidity boost'               },
+      { name: 'RBI_RATE_HIKE',      bullImpact: -15, candles: 8,  label: 'RBI Rate Hike: Tightening liquidity'                  },
+      { name: 'GLOBAL_RALLY',       bullImpact: +12, candles: 6,  label: 'Global Markets Rally: Risk-on sentiment'              },
+      { name: 'GLOBAL_SELLOFF',     bullImpact: -18, candles: 8,  label: 'Global Risk-Off: Panic selling spreads'               },
+      { name: 'PROMOTER_BUY',       bullImpact: +10, candles: 5,  label: 'Promoter Buying: Insider confidence signal'           },
+      // ── 5 new macro events ───────────────────────────────────────────
+      { name: 'SEBI_ACTION',        bullImpact: -25, candles: 6,  label: 'SEBI Enforcement Action: Regulatory crackdown feared' },
+      { name: 'UNION_BUDGET',       bullImpact: +20, candles: 15, label: 'Union Budget: Pro-growth capex measures announced'    },
+      { name: 'UPPER_CIRCUIT',      bullImpact: +30, candles: 4,  label: 'Upper Circuit Hit: Demand exceeds supply limit'       },
+      { name: 'BLOCK_DEAL',         bullImpact: -12, candles: 5,  label: 'Large Block Deal: Institutional stake sale detected'  },
+      { name: 'DIVIDEND_EX_DATE',   bullImpact: -8,  candles: 3,  label: 'Ex-Dividend Date: Price adjustment expected'          },
     ];
 
     const ev = events[Math.floor(Math.random() * events.length)];
@@ -238,7 +320,6 @@ class MarketBrain {
 
       let dailyRaw = [];
       try {
-        // 🚀 FIX: Use .chart() everywhere to bypass Yahoo V3 historical errors
         const dailyResult = await yahooFinance.chart(yfSym, { period1: start1m, period2: end, interval: '1d' }, { validateResult: false });
         dailyRaw = dailyResult?.quotes ?? [];
       } catch (err) { console.warn(`[MarketBrain] Daily fetch failed for ${yfSym}`); }
@@ -256,34 +337,54 @@ class MarketBrain {
       const closes = workingCandles.map(c => c.close);
       if (closes.length < 5) throw new Error('Insufficient data');
 
-      const rsi = calcRSI(closes), ema20 = calcEMA(closes, 20), ema50 = calcEMA(closes, 50), macd = calcMACD(closes);
-      const atr = calcATR(workingCandles), bb = calcBollinger(closes), patterns = detectPatterns(workingCandles.slice(-3));
-      const regime = detectRegime(closes, rsi, macd, ema20, ema50, bb);
+      const rsi     = calcRSI(closes);
+      const ema20   = calcEMA(closes, 20);
+      const ema50   = calcEMA(closes, 50);
+      const macd    = calcMACD(closes);
+      const atr     = calcATR(workingCandles);
+      const bb      = calcBollinger(closes);
+      const patterns = detectPatterns(workingCandles.slice(-3));
+      const regime  = detectRegime(closes, rsi, macd, ema20, ema50, bb);
       const bullishProbability = calculateBias(rsi, macd, ema20, ema50, bb, regime, patterns, closes);
 
-      const bias = { symbol, bullishProbability, regime, rsi, ema20, ema50, macd, atr, bb, patterns, fairValue: bb.middle, lastRealPrice: closes[closes.length - 1], lastDirection: 'up', analyzedAt: now };
-      
+      const lastRealPrice = closes[closes.length - 1];
+
+      // Store seed price for % change calculation when market is closed
+      if (!this.seedPrices[symbol]) {
+        this.seedPrices[symbol] = lastRealPrice;
+      }
+
+      const bias = {
+        symbol, bullishProbability, regime, rsi, ema20, ema50, macd,
+        atr, bb, patterns, fairValue: bb.middle,
+        lastRealPrice, lastDirection: 'up', analyzedAt: now,
+      };
+
       this.cache[symbol] = { bias, analyzedAt: now };
       console.log(`🧠 [MarketBrain] ${symbol} → Regime: ${regime} | BullProb: ${bullishProbability}%`);
       return bias;
     } catch (err) {
       console.error(`🚨 [MarketBrain] Fallback Triggered for ${symbol}:`, err.message);
-      const fallbackBias = { symbol, bullishProbability: 50, regime: 'SIDEWAYS', rsi: 50, atr: 0.005, fairValue: 1000, lastRealPrice: 1000, lastDirection: 'up', analyzedAt: now };
+      const fallbackBias = {
+        symbol, bullishProbability: 50, regime: 'SIDEWAYS', rsi: 50,
+        atr: 0.005, fairValue: 1000, lastRealPrice: 1000, lastDirection: 'up', analyzedAt: now,
+      };
       this.cache[symbol] = { bias: fallbackBias, analyzedAt: now };
       return fallbackBias;
     }
   }
 
-  getSyntheticHistory(symbol) { return this.syntheticHistory[symbol] || []; }
+  getSyntheticHistory(symbol)     { return this.syntheticHistory[symbol] || []; }
+  getSeedPrice(symbol)            { return this.seedPrices[symbol] || null; }
 
   async getNextCandle(symbol, prevClose = null) {
     let bias = await this.analyze(symbol);
     const personality = PERSONALITIES[symbol] || PERSONALITIES['DEFAULT'];
     const history = this.syntheticHistory[symbol] || [];
     const lastCandle = history[history.length - 1];
-    
+
     const startPrice = prevClose ?? lastCandle?.close ?? bias.lastRealPrice ?? 1000;
-    const nextTime = (lastCandle?.time ?? Math.floor(Date.now() / 1000)) + 300;
+    const nextTime   = (lastCandle?.time ?? Math.floor(Date.now() / 1000)) + 300;
 
     // Apply macro event bias modifier
     this._maybeInjectMacroEvent(symbol, bias);
@@ -291,7 +392,6 @@ class MarketBrain {
     const effectiveBias = { ...bias, bullishProbability: Math.min(90, Math.max(10, bias.bullishProbability + macroBias)) };
 
     const candle = generateCandle(startPrice, effectiveBias, bias.atr || startPrice * 0.005, personality, nextTime);
-
 
     if (!this.cache[symbol]) this.cache[symbol] = { bias };
     if (!this.cache[symbol].bias) this.cache[symbol].bias = bias;
@@ -309,7 +409,11 @@ class MarketBrain {
   }
 
   async seedFromRealClose(symbol, lastRealPrice, lastRealTime) {
-    this.syntheticHistory[symbol] = [{ time: lastRealTime ?? Math.floor(Date.now() / 1000), open: lastRealPrice, high: lastRealPrice, low: lastRealPrice, close: lastRealPrice, volume: 0 }];
+    this.seedPrices[symbol] = lastRealPrice; // Store for % change calculation
+    this.syntheticHistory[symbol] = [{
+      time: lastRealTime ?? Math.floor(Date.now() / 1000),
+      open: lastRealPrice, high: lastRealPrice, low: lastRealPrice, close: lastRealPrice, volume: 0,
+    }];
     await this.analyze(symbol);
   }
 
@@ -343,7 +447,13 @@ class MarketBrain {
   getBiasSummary(symbol) {
     const cached = this.cache[symbol];
     if (!cached) return null;
-    return { symbol: cached.bias.symbol, regime: cached.bias.regime, bullishProbability: cached.bias.bullishProbability, rsi: cached.bias.rsi, patterns: cached.bias.patterns };
+    return {
+      symbol:              cached.bias.symbol,
+      regime:              cached.bias.regime,
+      bullishProbability:  cached.bias.bullishProbability,
+      rsi:                 cached.bias.rsi,
+      patterns:            cached.bias.patterns,
+    };
   }
 }
 

@@ -167,6 +167,7 @@ router.post('/deposit', fetchuser, async (req, res) => {
 router.get('/history', fetchuser, async (req, res) => {
   try {
     const userId = req.user.userId;
+    // Sort ascending for cost-basis calc, then reverse at the end for display
     const orders = await Transaction.find({ userId }).sort({ createdAt: 1 });
 
     const costBasis = {};
@@ -232,15 +233,19 @@ router.post('/live-prices', async (req, res) => {
       }
 
       // If market is closed, override current price with synthetic price
+      // and recalculate change% from the real seed price so it reflects synthetic movement
       if (!isMarketOpen) {
         const history = brain.getSyntheticHistory(originalSym);
         if (history && history.length > 0) {
           const lastCandle = history[history.length - 1];
+          const seedPrice  = brain.getSeedPrice(originalSym);
           p = lastCandle.close;
           h = Math.max(h, lastCandle.high);
           l = l === 0 ? lastCandle.low : Math.min(l, lastCandle.low);
-          // Optional: adjust change % relative to original price, but let's just use the real one for trend consistency,
-          // or we can recalculate it. Let's recalculate it based on seed price if needed, but keeping c is fine.
+          // Recalculate % change from seed (real close) price
+          if (seedPrice && seedPrice > 0) {
+            c = parseFloat((((p - seedPrice) / seedPrice) * 100).toFixed(2));
+          }
         }
       }
 

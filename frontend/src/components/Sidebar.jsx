@@ -91,9 +91,9 @@ function Sidebar({ userName = '', balance, isMarketOpen = false, avatar = '' }) 
           {NAV_ITEMS.map(({ path, icon, label }) => {
             const isActive = location.pathname === path;
             return (
-              <a
+              <Link
                 key={path}
-                href={path}
+                to={path}
                 className={`relative flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-150 group
                   ${isActive
                     ? 'bg-white/[0.05] text-white'
@@ -110,7 +110,7 @@ function Sidebar({ userName = '', balance, isMarketOpen = false, avatar = '' }) 
                 <span className={`text-sm ${isActive ? 'font-bold' : 'font-semibold'}`}>
                   {label}
                 </span>
-              </a>
+              </Link>
             );
           })}
 
@@ -135,7 +135,7 @@ function Sidebar({ userName = '', balance, isMarketOpen = false, avatar = '' }) 
 
       {/* ── BOTTOM ───────────────────────────── */}
       <div className="p-4 border-t border-white/5 space-y-1">
-        <a href="mailto:support@papertrade.com" className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-white/30 hover:text-white hover:bg-white/[0.03] transition-colors">
+        <a href="mailto:kavyajain1407@gmail.com" className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-white/30 hover:text-white hover:bg-white/[0.03] transition-colors">
           <span className="material-symbols-outlined text-[18px]">support_agent</span>
           <span className="font-bold text-sm">Support</span>
         </a>
