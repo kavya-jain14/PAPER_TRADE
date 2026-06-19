@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import Sidebar from '../components/Sidebar';
+import Sidebar, { MobileBottomNav } from '../components/Sidebar';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
@@ -102,13 +102,19 @@ export default function Profile() {
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2, ease: 'easeOut' }} className="flex h-screen bg-[#0a0a0a] text-white/90 font-inter overflow-hidden">
       <Sidebar userName={userName} balance={balance} isMarketOpen={isMarketOpen} avatar={avatar} />
+      <MobileBottomNav />
 
-      <main className="flex-1 overflow-y-auto p-6 lg:p-10 custom-scrollbar">
-        <div className="max-w-3xl mx-auto space-y-8">
+      <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-10 pb-24 md:pb-0 custom-scrollbar">
+        <div className="max-w-3xl mx-auto space-y-6 md:space-y-8">
+
+          {/* 📱 Mobile top bar */}
+          <div className="md:hidden flex items-center justify-between pt-2">
+            <h1 className="text-lg font-black tracking-tight"><span className="text-[#3de530]">PAPER</span> TRADE</h1>
+          </div>
 
           {/* Header */}
           <div>
-            <h2 className="text-3xl font-black text-white tracking-tight">My Profile</h2>
+            <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight">My Profile</h2>
             <p className="text-white/50 text-sm mt-1">Manage your account details and preferences.</p>
           </div>
 

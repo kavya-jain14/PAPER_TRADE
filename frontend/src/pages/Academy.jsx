@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
-import Sidebar from '../components/Sidebar';
+import Sidebar, { MobileBottomNav } from '../components/Sidebar';
 
 // 🚀 IMPORTING THE MASTER DATA BRAIN
 import { patternsData } from '../data/patterns';
@@ -174,16 +174,22 @@ function Academy() {
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2, ease: 'easeOut' }} className="flex h-screen bg-[#0a0a0a] text-white/90 font-inter overflow-hidden selection:bg-green-500/30">
 
       <Sidebar userName="Simulated Account" isMarketOpen={isMarketOpen} />
+      <MobileBottomNav />
 
       {/* 🔴 MAIN CONTENT AREA */}
-      <main className="flex-1 overflow-y-auto p-6 lg:p-10 relative custom-scrollbar">
+      <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-10 pb-24 md:pb-0 relative custom-scrollbar">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:60px_60px] opacity-[0.02] pointer-events-none"></div>
 
-        <div className="max-w-7xl mx-auto space-y-8 relative z-10">
+        <div className="max-w-7xl mx-auto space-y-6 md:space-y-8 relative z-10">
           
-          <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+          {/* 📱 Mobile top bar */}
+          <div className="md:hidden flex items-center justify-between pt-2 mb-2">
+            <h1 className="text-lg font-black tracking-tight"><span className="text-[#3de530]">PAPER</span> TRADE</h1>
+          </div>
+
+          <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6 mb-4 md:mb-8">
             <div>
-              <h2 className="text-3xl font-bold text-white mb-1 tracking-tight">Trading Academy</h2>
+              <h2 className="text-2xl md:text-3xl font-bold text-white mb-1 tracking-tight">Trading Academy</h2>
               <p className="text-[#bbcbb2] text-sm">Master technical analysis with 1D swing trade examples.</p>
             </div>
             

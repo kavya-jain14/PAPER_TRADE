@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import SmartChart, { CandlestickModal } from '../components/SmartChart';
-import Sidebar from '../components/Sidebar';
+import Sidebar, { MobileBottomNav } from '../components/Sidebar';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
@@ -321,18 +321,30 @@ function Dashboard() {
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2, ease: 'easeOut' }} className="flex h-screen bg-[#0a0a0a] text-white/90 font-inter overflow-hidden selection:bg-green-500/30">
 
       <Sidebar userName={userName} balance={balance} isMarketOpen={isMarketOpen} avatar={avatar} />
+      <MobileBottomNav />
 
       {/* 🔴 MAIN DASHBOARD */}
-      <main className="flex-1 overflow-y-auto p-6 lg:p-10 relative custom-scrollbar">
-        <div className="max-w-7xl mx-auto space-y-8 relative z-10">
+      <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-10 pb-24 md:pb-0 relative custom-scrollbar">
+        {/* 📱 Mobile top bar — visible only on phones */}
+        <div className="md:hidden flex items-center justify-between mb-6 pt-2">
+          <div>
+            <h1 className="text-lg font-black tracking-tight"><span className="text-[#3de530]">PAPER</span> TRADE</h1>
+            <p className="text-[10px] text-white/40 mt-0.5">Welcome back, {userName}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className={`w-2 h-2 rounded-full ${isMarketOpen ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
+            <span className="text-[10px] font-bold text-white/50 uppercase tracking-wider">{isMarketOpen ? 'Live' : 'Closed'}</span>
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto space-y-6 md:space-y-8 relative z-10">
           
-          <header className="flex flex-col xl:flex-row xl:items-end justify-between gap-6">
-            <div>
+          <header className="flex flex-col xl:flex-row xl:items-end justify-between gap-4 md:gap-6">
+            <div className="hidden md:block">
               <h2 className="text-3xl font-black text-white tracking-tight">{greeting}, {userName}</h2>
               <p className="text-white/60 text-sm mt-1">Available Margin: <span className="text-[#3de530] font-mono font-bold text-base">₹{balance.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></p>
             </div>
             
-            <div className="flex gap-4 overflow-x-auto pb-2 xl:pb-0 custom-scrollbar">
+            <div className="flex gap-3 md:gap-4 overflow-x-auto pb-2 xl:pb-0 custom-scrollbar -mx-4 md:mx-0 px-4 md:px-0">
               {INDICES.map((idx) => {
                 const liveData = marketPrices[idx] || {};
                 const p = liveData.price || 0;
@@ -340,7 +352,7 @@ function Dashboard() {
                 const isGreen = cPercent >= 0;
                 
                 return (
-                  <div key={idx} onClick={() => setSelectedAsset(idx)} className="bg-[#121212] border border-white/5 rounded-2xl p-5 flex justify-between items-center min-w-[240px] cursor-pointer hover:border-white/20 transition-all shadow-md group">
+                  <div key={idx} onClick={() => setSelectedAsset(idx)} className="bg-[#121212] border border-white/5 rounded-2xl p-4 md:p-5 flex justify-between items-center min-w-[200px] md:min-w-[240px] cursor-pointer hover:border-white/20 transition-all shadow-md group">
                     <div>
                       <p className="text-[10px] text-white/50 uppercase tracking-widest font-bold">{idx}</p>
                       <p className="text-lg font-bold font-mono text-white mt-1">{p > 0 ? p.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '...'}</p>

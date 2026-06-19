@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import Sidebar from '../components/Sidebar';
+import Sidebar, { MobileBottomNav } from '../components/Sidebar';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
@@ -48,7 +48,8 @@ export default function AIPage() {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex h-screen bg-[#0a0a0a] text-white/90 font-inter overflow-hidden">
       <Sidebar />
-      <main className="flex-1 p-6 lg:p-10 relative flex flex-col h-full">
+      <MobileBottomNav />
+      <main className="flex-1 p-3 md:p-6 lg:p-10 pb-24 md:pb-6 relative flex flex-col h-full">
         <div className="max-w-4xl mx-auto w-full flex-1 flex flex-col h-full bg-[#111111]/80 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl overflow-hidden">
           
           {/* Header */}

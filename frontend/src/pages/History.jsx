@@ -1,8 +1,8 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import Sidebar from '../components/Sidebar';
+import Sidebar, { MobileBottomNav } from '../components/Sidebar';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
@@ -107,17 +107,26 @@ function History() {
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2, ease: 'easeOut' }} className="flex h-screen bg-[#0a0a0a] text-white/90 font-inter overflow-hidden selection:bg-green-500/30">
 
       <Sidebar userName={userName} isMarketOpen={isMarketOpen} avatar={avatar} />
+      <MobileBottomNav />
 
       {/* 🔴 MAIN CONTENT */}
-      <main className="flex-1 overflow-y-auto p-6 lg:p-10 relative custom-scrollbar">
-        <div className="max-w-7xl mx-auto space-y-8 relative z-10">
+      <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-10 pb-24 md:pb-0 relative custom-scrollbar">
+        <div className="max-w-7xl mx-auto space-y-6 md:space-y-8 relative z-10">
           
-          <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+          {/* 📱 Mobile top bar */}
+          <div className="md:hidden flex items-center justify-between pt-2 mb-2">
+            <h1 className="text-lg font-black tracking-tight"><span className="text-[#3de530]">PAPER</span> TRADE</h1>
+            <button onClick={fetchUserDataAndHistory} className="flex items-center gap-1.5 text-[10px] font-bold text-white/50 bg-[#1c1b1b] px-3 py-2 rounded-xl border border-white/5">
+              <span className="material-symbols-outlined text-[14px]">refresh</span> Refresh
+            </button>
+          </div>
+
+          <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6 mb-4 md:mb-8">
             <div>
-              <h2 className="text-3xl font-black text-white tracking-tight">Trade Ledger</h2>
+              <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight">Trade Ledger</h2>
               <p className="text-white/60 text-sm mt-1">Review your past executions and overall terminal performance.</p>
             </div>
-            <button onClick={fetchUserDataAndHistory} className="flex items-center gap-2 text-[11px] font-bold text-white/50 hover:text-white uppercase tracking-widest transition-colors bg-[#1c1b1b] px-4 py-2.5 rounded-xl border border-white/5 hover:border-white/20">
+            <button onClick={fetchUserDataAndHistory} className="hidden md:flex items-center gap-2 text-[11px] font-bold text-white/50 hover:text-white uppercase tracking-widest transition-colors bg-[#1c1b1b] px-4 py-2.5 rounded-xl border border-white/5 hover:border-white/20">
                <span className="material-symbols-outlined text-[16px]">refresh</span> Refresh Ledger
             </button>
           </header>
@@ -151,8 +160,54 @@ function History() {
             </div>
           </div>
 
-          {/* 🔵 HISTORY TABLE */}
-          <div className="bg-[#121212] border border-white/5 rounded-3xl overflow-hidden shadow-xl">
+          {/* 📱 MOBILE: card view of trade history */}
+          <div className="md:hidden bg-[#121212] border border-white/5 rounded-3xl overflow-hidden shadow-xl">
+            <div className="p-4 border-b border-white/5 bg-[#171717]/50">
+              <h3 className="font-bold text-white text-base flex items-center gap-2">
+                <span className="material-symbols-outlined text-white/50 text-[18px]">history</span> Transaction History
+              </h3>
+            </div>
+            {isLoading ? (
+              <div className="p-10 flex justify-center">
+                <span className="w-8 h-8 border-2 border-green-500 border-t-transparent rounded-full animate-spin inline-block" />
+              </div>
+            ) : tradeHistory.length === 0 ? (
+              <div className="p-10 text-center text-white/40 text-sm">No trading history yet.</div>
+            ) : (
+              <div className="divide-y divide-white/5">
+                {tradeHistory.map((trade, i) => {
+                  const isBuy = trade.transactionType?.toUpperCase() === 'BUY';
+                  const pnl = trade.realizedPnL || 0;
+                  const isProfit = pnl > 0;
+                  const isLoss = pnl < 0;
+                  return (
+                    <div key={i} className="p-4 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className={`px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest border ${isBuy ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 'bg-purple-500/10 text-purple-400 border-purple-500/20'}`}>
+                          {trade.transactionType}
+                        </span>
+                        <div>
+                          <p className="font-bold text-white/90 text-sm">{trade.symbol}</p>
+                          <p className="text-[10px] text-white/40 mt-0.5">{trade.quantity} units · ₹{Number(trade.pricePerShare).toLocaleString('en-IN', {minimumFractionDigits: 0, maximumFractionDigits: 0})}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-mono text-white font-bold text-sm">₹{(trade.quantity * trade.pricePerShare).toLocaleString('en-IN', {minimumFractionDigits: 0, maximumFractionDigits: 0})}</p>
+                        {!isBuy && (
+                          <p className={`text-[11px] font-bold font-mono mt-0.5 ${isProfit ? 'text-green-500' : isLoss ? 'text-red-500' : 'text-white/40'}`}>
+                            {isProfit ? '+' : ''}₹{Math.abs(pnl).toLocaleString('en-IN', {minimumFractionDigits: 0, maximumFractionDigits: 0})}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* 🖥️ DESKTOP: full table */}
+          <div className="hidden md:block bg-[#121212] border border-white/5 rounded-3xl overflow-hidden shadow-xl">
              <div className="p-6 border-b border-white/5 bg-[#171717]/50 flex justify-between items-center">
                <h3 className="font-bold text-white text-lg flex items-center gap-2">
                  <span className="material-symbols-outlined text-white/50 text-[20px]">history</span> Transaction History

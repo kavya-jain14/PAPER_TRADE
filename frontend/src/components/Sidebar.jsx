@@ -23,6 +23,54 @@ const NAV_ITEMS = [
   { path: '/profile',   icon: 'person',     label: 'Profile'   },
 ];
 
+// ─────────────────────────────────────────────────────────────────────────────
+// 📱 MOBILE BOTTOM NAV — fixed bottom bar, visible only on < md screens
+// ─────────────────────────────────────────────────────────────────────────────
+const BOTTOM_NAV = [
+  { path: '/dashboard', icon: 'grid_view',  label: 'Home'      },
+  { path: '/markets',   icon: 'monitoring', label: 'Markets'   },
+  { path: '/ai',        icon: 'psychology', label: 'AI'        },
+  { path: '/portfolio', icon: 'pie_chart',  label: 'Portfolio' },
+  { path: '/profile',   icon: 'person',     label: 'Profile'   },
+];
+
+export function MobileBottomNav() {
+  const location = useLocation();
+
+  return (
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#111111]/95 backdrop-blur-xl border-t border-white/[0.07]">
+      <div className="flex items-stretch h-16">
+        {BOTTOM_NAV.map(({ path, icon, label }) => {
+          const isActive = location.pathname === path;
+          return (
+            <Link
+              key={path}
+              to={path}
+              className={`flex-1 relative flex flex-col items-center justify-center gap-0.5 transition-all active:scale-95 ${
+                isActive ? 'text-[#3de530]' : 'text-white/35'
+              }`}
+            >
+              {isActive && (
+                <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-[2px] bg-[#3de530] rounded-b-full" />
+              )}
+              <span className={`material-symbols-outlined transition-all ${
+                isActive ? 'text-[22px]' : 'text-[20px]'
+              }`}>
+                {icon}
+              </span>
+              <span className={`text-[9px] font-bold uppercase tracking-wider leading-none ${
+                isActive ? 'text-[#3de530]' : 'text-white/30'
+              }`}>
+                {label}
+              </span>
+            </Link>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}
+
 function Sidebar({ userName = '', balance, isMarketOpen = false, avatar = '' }) {
   const navigate  = useNavigate();
   const location  = useLocation();

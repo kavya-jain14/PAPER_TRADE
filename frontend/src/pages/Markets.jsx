@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import SmartChart, { CandlestickModal } from '../components/SmartChart';
-import Sidebar from '../components/Sidebar';
+import Sidebar, { MobileBottomNav } from '../components/Sidebar';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
@@ -272,19 +272,31 @@ function Markets() {
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2, ease: 'easeOut' }} className="flex h-screen bg-[#0a0a0a] text-white/90 font-inter overflow-hidden selection:bg-green-500/30">
 
       <Sidebar userName={userName} balance={balance} isMarketOpen={isMarketOpen} avatar={avatar} />
+      <MobileBottomNav />
 
       {/* 🔴 MAIN MARKETS CONTENT */}
-      <main className="flex-1 overflow-y-auto p-6 lg:p-10 relative custom-scrollbar">
-        <div className="max-w-7xl mx-auto space-y-8 relative z-10">
+      <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-10 pb-24 md:pb-0 relative custom-scrollbar">
+        <div className="max-w-7xl mx-auto space-y-6 md:space-y-8 relative z-10">
           
-          <header className="mb-8">
-            <h2 className="text-3xl font-black text-white tracking-tight">Market Explorer</h2>
+          {/* 📱 Mobile top bar */}
+          <div className="md:hidden flex items-center justify-between pt-2 mb-2">
+            <div>
+              <h1 className="text-lg font-black tracking-tight"><span className="text-[#3de530]">PAPER</span> TRADE</h1>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className={`w-2 h-2 rounded-full ${isMarketOpen ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
+              <span className="text-[10px] font-bold text-white/50 uppercase tracking-wider">{isMarketOpen ? 'Live' : 'Closed'}</span>
+            </div>
+          </div>
+
+          <header className="mb-4 md:mb-8">
+            <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight">Market Explorer</h2>
             <p className="text-white/60 text-sm mt-1">Discover, analyze, and trade listed equities.</p>
           </header>
 
           {/* INDICES OVERVIEW */}
           {/* INDICES OVERVIEW */}
-          <div className="flex gap-6 overflow-x-auto pb-4 custom-scrollbar">
+          <div className="flex gap-3 md:gap-6 overflow-x-auto pb-4 custom-scrollbar -mx-4 md:mx-0 px-4 md:px-0">
             {INDICES.map((idx) => {
               const liveData = marketPrices[idx] || {};
               const p = liveData.price || 0;
@@ -292,7 +304,7 @@ function Markets() {
               const isGreen = cPercent >= 0;
               
               return (
-                <div key={idx} onClick={() => setSelectedAsset(idx)} className="bg-[#121212] border border-white/5 rounded-3xl p-6 flex flex-col min-w-[280px] cursor-pointer hover:border-white/20 transition-all shadow-xl group">
+                <div key={idx} onClick={() => setSelectedAsset(idx)} className="bg-[#121212] border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-6 flex flex-col min-w-[200px] md:min-w-[280px] cursor-pointer hover:border-white/20 transition-all shadow-xl group">
                   <div className="flex justify-between items-start mb-4">
                     <div>
                       <p className="text-[10px] text-white/50 uppercase tracking-widest font-bold">{idx}</p>
@@ -328,11 +340,11 @@ function Markets() {
                <table className="w-full text-left border-collapse whitespace-nowrap">
                  <thead>
                    <tr className="text-white/40 text-[10px] font-bold uppercase tracking-widest border-b border-white/5 bg-[#0a0a0a]/50">
-                     <th className="px-8 py-5">Instrument</th>
-                     <th className="px-8 py-5 text-center hidden md:table-cell">Trend (1D)</th>
-                     <th className="px-8 py-5 text-right">LTP</th>
-                     <th className="px-8 py-5 text-right">Change</th>
-                     <th className="px-8 py-5 text-center">Action</th>
+                      <th className="px-4 md:px-8 py-5">Instrument</th>
+                      <th className="px-4 md:px-8 py-5 text-center hidden md:table-cell">Trend (1D)</th>
+                      <th className="px-4 md:px-8 py-5 text-right">LTP</th>
+                      <th className="px-4 md:px-8 py-5 text-right">Change</th>
+                      <th className="px-4 md:px-8 py-5 text-center hidden sm:table-cell">Action</th>
                    </tr>
                  </thead>
                  <tbody className="divide-y divide-white/5">
@@ -341,46 +353,44 @@ function Markets() {
                      const price = liveData.price || 0;
                      const change = liveData.change || 0;
                      const isUp = change >= 0;
-                     const trendData = priceHistory[sym]?.length > 1 ? priceHistory[sym] : [liveData.prevClose || price, price];
 
                      return (
                        <tr key={i} className="hover:bg-white/[0.02] transition-colors group cursor-pointer" onClick={() => setSelectedAsset(sym)}>
-                         <td className="px-8 py-4">
-                           <div className="flex items-center gap-4">
-                             <div className="w-10 h-10 rounded-xl bg-[#1c1c1c] border border-white/5 flex items-center justify-center font-bold text-xs text-white/80 group-hover:bg-white/10 transition-colors">
-                               {sym.substring(0, 1)}
-                             </div>
-                             <div>
-                               <p className="font-bold text-white/90 group-hover:text-white transition-colors">{sym}</p>
-                               <p className="text-[10px] text-white/40 uppercase tracking-widest font-semibold mt-0.5">Equity • NSE</p>
-                             </div>
+                          <td className="px-4 md:px-8 py-4">
+                            <div className="flex items-center gap-3 md:gap-4">
+                              <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-[#1c1c1c] border border-white/5 flex items-center justify-center font-bold text-xs text-white/80 group-hover:bg-white/10 transition-colors">
+                                {sym.substring(0, 1)}
+                              </div>
+                              <div>
+                                <p className="font-bold text-white/90 group-hover:text-white transition-colors text-sm">{sym}</p>
+                                <p className="text-[10px] text-white/40 uppercase tracking-widest font-semibold mt-0.5 hidden sm:block">Equity • NSE</p>
+                              </div>
+                            </div>
+                          </td>
+                         <td className="px-4 md:px-8 py-4 text-center hidden md:table-cell opacity-50 group-hover:opacity-100 transition-opacity align-middle">
+                           <div className="inline-block w-[140px] h-[40px] relative pointer-events-none mt-1">
+                             <SmartChart symbol={sym} currentPrice={price} isGreen={isUp} mini={true} />
                            </div>
                          </td>
-                         {/* 🚀 MAGIC: EMBEDDED REAL MINI CHART FOR MARKETS TABLE */}
-                        <td className="px-8 py-4 text-center hidden md:table-cell opacity-50 group-hover:opacity-100 transition-opacity align-middle">
-                          <div className="inline-block w-[140px] h-[40px] relative pointer-events-none mt-1">
-                            <SmartChart symbol={sym} currentPrice={price} isGreen={isUp} mini={true} />
-                          </div>
-                        </td>
-                         <td className="px-8 py-4 text-right">
-                            <p className="font-mono text-white font-bold text-base">₹{price.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
-                         </td>
-                         <td className="px-8 py-4 text-right">
-                            <div className="inline-block px-3 py-1 rounded bg-[#1c1c1c] border border-white/5">
-                              <p className={`text-[11px] font-bold font-mono ${isUp ? 'text-green-500' : 'text-red-500'}`}>
-                                {isUp ? '+' : ''}{change.toFixed(2)}%
-                              </p>
-                            </div>
-                         </td>
-                         <td className="px-8 py-4 text-center">
-                            <button 
-                              onClick={(e) => { e.stopPropagation(); setSelectedAsset(sym); }} 
-                              className="bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors"
-                            >
-                              Trade
-                            </button>
-                         </td>
-                       </tr>
+                          <td className="px-4 md:px-8 py-4 text-right">
+                             <p className="font-mono text-white font-bold text-sm md:text-base">₹{price.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+                          </td>
+                          <td className="px-4 md:px-8 py-4 text-right">
+                             <div className="inline-block px-2 md:px-3 py-1 rounded bg-[#1c1c1c] border border-white/5">
+                               <p className={`text-[11px] font-bold font-mono ${isUp ? 'text-green-500' : 'text-red-500'}`}>
+                                 {isUp ? '+' : ''}{change.toFixed(2)}%
+                               </p>
+                             </div>
+                          </td>
+                          <td className="px-4 md:px-8 py-4 text-center hidden sm:table-cell">
+                             <button 
+                               onClick={(e) => { e.stopPropagation(); setSelectedAsset(sym); }} 
+                               className="bg-white/5 hover:bg-white/10 text-white px-3 md:px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors"
+                             >
+                               Trade
+                             </button>
+                          </td>
+                        </tr>
                      );
                    })}
                  </tbody>

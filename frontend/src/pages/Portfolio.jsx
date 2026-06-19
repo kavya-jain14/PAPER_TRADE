@@ -13,7 +13,7 @@ import {
   ReferenceLine,
 } from 'recharts';
 import SmartChart from '../components/SmartChart';
-import Sidebar from '../components/Sidebar';
+import Sidebar, { MobileBottomNav } from '../components/Sidebar';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
@@ -31,7 +31,7 @@ const ResetConfirmToast = ({ t, onConfirm }) => {
   }, [countdown]);
 
   return (
-    <div className="flex flex-col gap-8 p-8 font-inter w-[500px] border border-red-500/20 bg-[#0a0a0a] rounded-3xl">
+    <div className="flex flex-col gap-6 p-6 font-inter w-full max-w-[500px] border border-red-500/20 bg-[#0a0a0a] rounded-3xl">
       <div className="text-center">
         <div className="w-28 h-28 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-red-500/20 shadow-[0_0_30px_rgba(239,68,68,0.2)]">
            <span className="material-symbols-outlined text-red-500 text-6xl">warning</span>
@@ -288,11 +288,21 @@ function Portfolio() {
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2, ease: 'easeOut' }} className="flex h-screen bg-[#0a0a0a] text-white/90 font-inter overflow-hidden selection:bg-green-500/30">
 
       <Sidebar userName={userName} balance={balance} isMarketOpen={isMarketOpen} avatar={avatar} />
+      <MobileBottomNav />
 
-      <main className="flex-1 overflow-y-auto p-6 lg:p-10 relative custom-scrollbar">
-        <div className="max-w-7xl mx-auto space-y-8 relative z-10">
+      <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-10 pb-24 md:pb-0 relative custom-scrollbar">
+        <div className="max-w-7xl mx-auto space-y-6 md:space-y-8 relative z-10">
           
-          <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+          {/* 📱 Mobile top bar */}
+          <div className="md:hidden flex items-center justify-between pt-2 mb-2">
+            <h1 className="text-lg font-black tracking-tight"><span className="text-[#3de530]">PAPER</span> TRADE</h1>
+            <div className="flex items-center gap-2">
+              <div className={`w-2 h-2 rounded-full ${isMarketOpen ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
+              <span className="text-[10px] font-bold text-white/50 uppercase tracking-wider">{isMarketOpen ? 'Live' : 'Closed'}</span>
+            </div>
+          </div>
+
+          <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6 mb-4 md:mb-8">
             <div>
               <h2 className="text-3xl font-black text-white tracking-tight">Your Portfolio</h2>
               <p className="text-white/60 text-sm mt-1">Track your holdings, analyze P&L, and manage positions.</p>
@@ -441,7 +451,60 @@ function Portfolio() {
             </div>
           )}
 
-          <div className="bg-[#121212] border border-white/5 rounded-3xl overflow-hidden shadow-xl">
+          {/* 📱 MOBILE: card view of holdings */}
+          <div className="md:hidden bg-[#121212] border border-white/5 rounded-3xl overflow-hidden shadow-xl">
+            <div className="p-4 border-b border-white/5 bg-[#171717]/50 flex justify-between items-center">
+              <h3 className="font-bold text-white text-base flex items-center gap-2">
+                <span className="material-symbols-outlined text-white/50 text-[18px]">inventory_2</span> Active Positions
+              </h3>
+              <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest bg-white/5 px-3 py-1 rounded-lg">{holdings.length} Assets</span>
+            </div>
+            {isLoading ? (
+              <div className="p-10 flex justify-center">
+                <span className="w-8 h-8 border-2 border-green-500 border-t-transparent rounded-full animate-spin inline-block" />
+              </div>
+            ) : holdings.length === 0 ? (
+              <div className="p-10 text-center">
+                <span className="material-symbols-outlined text-white/20 text-4xl">inbox</span>
+                <p className="text-white/40 font-medium mt-3">Portfolio is empty.</p>
+                <p className="text-white/25 text-sm mt-1">Visit Markets to trade.</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-white/5">
+                {holdings.map((pos, i) => {
+                  const liveData = livePrices[pos.symbol] || {};
+                  const currentPrice = liveData.price || pos.avgPrice;
+                  const investedValue = pos.investedValue || (pos.avgPrice * pos.quantity);
+                  const currentValue = currentPrice * pos.quantity;
+                  const pnl = currentValue - investedValue;
+                  const pnlPercent = investedValue > 0 ? ((pnl / investedValue) * 100) : 0;
+                  const isProfit = pnl >= 0;
+                  return (
+                    <div key={i} onClick={() => setSelectedAsset(pos.symbol)} className="p-4 flex items-center justify-between hover:bg-white/[0.02] active:bg-white/5 transition-colors cursor-pointer">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-[#1c1c1c] border border-white/5 flex items-center justify-center font-bold text-xs text-white/80">
+                          {pos.symbol.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="font-bold text-white/90 text-sm">{pos.symbol}</p>
+                          <p className="text-[10px] text-white/40 mt-0.5">{pos.quantity} units · avg ₹{pos.avgPrice.toLocaleString('en-IN', {minimumFractionDigits: 0, maximumFractionDigits: 0})}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-mono text-white font-bold text-sm">₹{currentPrice.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+                        <p className={`text-[11px] font-bold font-mono mt-0.5 ${isProfit ? 'text-green-500' : 'text-red-500'}`}>
+                          {isProfit ? '+' : ''}₹{Math.abs(pnl).toLocaleString('en-IN', {minimumFractionDigits: 0, maximumFractionDigits: 0})} ({isProfit ? '+' : ''}{pnlPercent.toFixed(1)}%)
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* 🖥️ DESKTOP: table view — hidden on mobile */}
+          <div className="hidden md:block bg-[#121212] border border-white/5 rounded-3xl overflow-hidden shadow-xl">
              <div className="p-6 border-b border-white/5 bg-[#171717]/50 flex justify-between items-center">
                <h3 className="font-bold text-white text-lg flex items-center gap-2">
                  <span className="material-symbols-outlined text-white/50 text-[20px]">inventory_2</span> Active Positions
