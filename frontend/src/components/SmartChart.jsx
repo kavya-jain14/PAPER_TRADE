@@ -400,19 +400,23 @@ const SmartChart = ({ symbol, currentPrice, isGreen, mini = false }) => {
     }
   };
 
-  const loadAIData = async () => {
+  const loadAIData = async (signal) => {
     try {
-      const res = await fetch(`${BASE_URL}/api/synthetic/history/${encodeURIComponent(symbol)}`);
+      const res = await fetch(`${BASE_URL}/api/synthetic/history/${encodeURIComponent(symbol)}`, { signal });
       if (!res.ok) throw new Error('Synthetic history fetch failed');
       const historyData = await res.json();
+
+      // Bail out if the component was unmounted while we were fetching
+      if (signal?.aborted) return;
 
       if (historyData.length > 0) processAndSetData(historyData);
 
       setMode('AI');
       setLoading(false);
 
+      // Only open SSE for the full (non-mini) chart
       if (!mini) {
-        if (sseRef.current) sseRef.current.close();
+        if (sseRef.current) { sseRef.current.close(); sseRef.current = null; }
         const sse = new EventSource(`${BASE_URL}/api/synthetic/stream/${encodeURIComponent(symbol)}`);
         sseRef.current = sse;
 
@@ -426,15 +430,21 @@ const SmartChart = ({ symbol, currentPrice, isGreen, mini = false }) => {
             if (payload.type === 'CANDLE' && payload.symbol === symbol && seriesRef.current) {
               const cTime = normalizeTime(payload.candle.time);
               const cVal  = Number(payload.candle.close);
-              if (cTime >= lastTimeRef.current) {
+              // STRICT greater-than guard — lightweight-charts throws on equal/backward time
+              if (cTime > lastTimeRef.current) {
                 lastTimeRef.current = cTime;
                 seriesRef.current.update({ time: cTime, value: cVal });
               }
             }
           } catch (_) {}
         };
+
+        sse.onerror = () => {
+          // Don't crash — SSE will auto-reconnect or stay silent
+        };
       }
     } catch (err) {
+      if (err.name === 'AbortError') return; // Component unmounted — ignore
       setError(err.message);
       setLoading(false);
     }
@@ -446,8 +456,11 @@ const SmartChart = ({ symbol, currentPrice, isGreen, mini = false }) => {
     const h = containerRef.current.clientHeight;
     initChart(w || 400, h || 300);
 
+    // AbortController lets us cancel in-flight fetches on unmount
+    const controller = new AbortController();
+
     if (isMarketOpen()) loadRealData();
-    else loadAIData();
+    else loadAIData(controller.signal);
 
     // Update colors on isGreen change
     seriesRef.current?.applyOptions({ lineColor, topColor });
@@ -462,23 +475,36 @@ const SmartChart = ({ symbol, currentPrice, isGreen, mini = false }) => {
     ro.observe(containerRef.current);
 
     return () => {
+      controller.abort();           // Cancel any pending fetch
       ro.disconnect();
-      if (sseRef.current) sseRef.current.close();
-      if (chartRef.current) chartRef.current.remove();
-      chartRef.current  = null;
+      if (sseRef.current) { sseRef.current.close(); sseRef.current = null; }
+      if (chartRef.current) { chartRef.current.remove(); chartRef.current = null; }
       seriesRef.current = null;
     };
   }, [symbol]);
 
   useEffect(() => {
-    if (seriesRef.current && currentPrice && (mode === 'REAL' || mini)) {
+    if (!seriesRef.current || !currentPrice) return;
+    // Only push live price ticks for real-mode full charts or mini charts.
+    // CRITICAL: lightweight-charts requires strictly increasing timestamps.
+    // Use a 5-second bucket to avoid duplicate-time crashes on rapid re-renders.
+    if (mode === 'REAL' || mini) {
       try {
-        let t = Math.floor(Date.now() / 1000);
-        if (t < lastTimeRef.current) t = lastTimeRef.current;
-        lastTimeRef.current = t;
-        seriesRef.current.update({ time: t, value: Number(currentPrice) });
+        const raw = Math.floor(Date.now() / 1000);
+        // Round down to the nearest 5-second bucket so rapid re-renders
+        // produce the same timestamp and trigger an update (not an insert)
+        const t = Math.floor(raw / 5) * 5;
+        if (t > lastTimeRef.current) {
+          lastTimeRef.current = t;
+          seriesRef.current.update({ time: t, value: Number(currentPrice) });
+        } else if (t === lastTimeRef.current) {
+          // Same bucket — update the existing candle value without advancing time
+          seriesRef.current.update({ time: lastTimeRef.current, value: Number(currentPrice) });
+        }
+        // If t < lastTimeRef.current, silently skip — time cannot go backward
       } catch (err) {
-        console.warn('Chart update skipped:', err.message);
+        // Don't propagate chart errors — just log in dev
+        if (import.meta.env.DEV) console.warn('Chart update skipped:', err.message);
       }
     }
   }, [currentPrice, mode, mini]);

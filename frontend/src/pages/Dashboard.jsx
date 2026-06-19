@@ -208,20 +208,28 @@ function Dashboard() {
   };
 
   useEffect(() => {
+    let abortCtrl = new AbortController();
+
     const fetchLivePrices = async () => {
+      // Cancel any in-flight request before starting a new one
+      abortCtrl.abort();
+      abortCtrl = new AbortController();
       try {
         const response = await fetch(`${API_URL}/api/trade/live-prices`, {
           method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ symbols: [...TOP_STOCKS, ...INDICES] })
+          body: JSON.stringify({ symbols: [...TOP_STOCKS, ...INDICES] }),
+          signal: abortCtrl.signal,
         });
         const realPrices = await response.json();
         setMarketPrices(prev => ({ ...prev, ...realPrices }));
-      } catch (error) { console.error("Market error"); }
+      } catch (error) {
+        if (error.name !== 'AbortError') console.error("Market error");
+      }
     };
     
     fetchLivePrices(); 
-    const intervalId = setInterval(fetchLivePrices, 5000); 
-    return () => clearInterval(intervalId);
+    const intervalId = setInterval(fetchLivePrices, 10000); // 10s — avoid hammering Yahoo
+    return () => { clearInterval(intervalId); abortCtrl.abort(); };
   }, []);
 
   // Global listener for Command Palette Trade Action

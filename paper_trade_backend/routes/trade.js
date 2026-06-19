@@ -213,12 +213,22 @@ router.post('/live-prices', async (req, res) => {
       else symbolMap[sym] = sym.includes('.NS') ? sym : `${sym}.NS`;
     });
 
+    // ✅ FIX: Per-symbol 8-second timeout so a slow/rate-limited symbol
+    //         never hangs the entire live-prices response
+    const withTimeout = (promise, ms) =>
+      Promise.race([
+        promise,
+        new Promise((_, r) => setTimeout(() => r(new Error('timeout')), ms)),
+      ]);
+
     const quotes = await Promise.allSettled(
-      Object.values(symbolMap).map(sym => yahooFinance.quote(sym))
+      Object.values(symbolMap).map(sym =>
+        withTimeout(yahooFinance.quote(sym, undefined, { validateResult: false }), 8000)
+      )
     );
 
     const livePrices = {};
-    const isMarketOpen = brain.isMarketOpen();
+    const isMarketOpenNow = brain.isMarketOpen();
 
     Object.keys(symbolMap).forEach((originalSym, index) => {
       const result = quotes[index];
@@ -234,7 +244,7 @@ router.post('/live-prices', async (req, res) => {
 
       // If market is closed, override current price with synthetic price
       // and recalculate change% from the real seed price so it reflects synthetic movement
-      if (!isMarketOpen) {
+      if (!isMarketOpenNow) {
         const history = brain.getSyntheticHistory(originalSym);
         if (history && history.length > 0) {
           const lastCandle = history[history.length - 1];
@@ -277,10 +287,25 @@ router.get('/chart/:symbol', async (req, res) => {
       interval: '15m',
     };
 
-    const result = await yahooFinance.chart(yfSymbol, queryOptions);
+    // ✅ FIX: Timeout wrapper — Yahoo Finance can hang indefinitely off-hours
+    const fetchWithTimeout = (timeoutMs) => {
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Yahoo Finance request timed out')), timeoutMs)
+      );
+      return Promise.race([
+        yahooFinance.chart(yfSymbol, queryOptions, { validateResult: false }),
+        timeoutPromise,
+      ]);
+    };
+
+    const result = await fetchWithTimeout(10000); // 10 second max
+
+    if (!result || !result.quotes || result.quotes.length === 0) {
+      return res.status(404).json({ message: 'No chart data available for this symbol' });
+    }
 
     const chartData = result.quotes
-      .filter(candle => candle.close !== null)
+      .filter(candle => candle.close !== null && candle.close !== undefined)
       .map(candle => ({
         time: Math.floor(new Date(candle.date).getTime() / 1000),
         value: Number(candle.close.toFixed(2)),
