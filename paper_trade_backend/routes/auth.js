@@ -17,10 +17,14 @@ const generateAccessToken = (userId) =>
 const generateRefreshToken = (userId) =>
   jwt.sign({ userId }, process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET + '_refresh', { expiresIn: '30d' });
 
+const isProd = process.env.NODE_ENV === 'production';
+
 const COOKIE_OPTIONS = {
   httpOnly: true,           // Not accessible via JS — prevents XSS token theft
-  sameSite: 'strict',       // Prevents CSRF attacks
-  secure: process.env.NODE_ENV === 'production', // HTTPS only in prod
+  sameSite: isProd ? 'none' : 'lax', // 'none' required for cross-origin (Vercel frontend + Railway backend)
+                                      // 'lax' is safe for local dev same-site flows
+                                      // 'strict' BREAKS Google OAuth — it drops the cookie on the OAuth redirect
+  secure: isProd,           // HTTPS only in prod (required when sameSite: 'none')
   maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
 };
 
