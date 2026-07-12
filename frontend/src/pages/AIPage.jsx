@@ -46,14 +46,14 @@ export default function AIPage() {
   };
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex h-screen bg-[#0a0a0a] text-white/90 font-inter overflow-hidden">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex h-screen bg-[#0A0906] text-[#F5F0E8] font-inter overflow-hidden">
       <Sidebar />
       <MobileBottomNav />
       <main className="flex-1 p-3 md:p-6 lg:p-10 pb-24 md:pb-6 relative flex flex-col h-full">
-        <div className="max-w-4xl mx-auto w-full flex-1 flex flex-col h-full bg-[#111111]/80 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl overflow-hidden">
+        <div className="max-w-4xl mx-auto w-full flex-1 flex flex-col h-full bg-[#131009]/90 backdrop-blur-2xl border border-[#2A2318] rounded-3xl shadow-2xl overflow-hidden" style={{boxShadow: '0 0 60px rgba(200,131,58,0.06)'}}>
           
           {/* Header */}
-          <div className="flex items-center gap-4 px-8 py-6 border-b border-white/8 bg-gradient-to-r from-purple-900/40 to-blue-900/40 shrink-0">
+          <div className="flex items-center gap-4 px-8 py-6 border-b border-[#2A2318] bg-gradient-to-r from-purple-900/40 to-blue-900/40 shrink-0">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-lg font-black text-white shadow-lg">AI</div>
             <div>
               <h2 className="font-bold text-white text-xl">Market Brain</h2>
@@ -64,13 +64,13 @@ export default function AIPage() {
           </div>
 
           {/* Chat Messages */}
-          <div ref={scrollRef} className="flex-1 overflow-y-auto p-8 space-y-6 custom-scrollbar bg-black/20">
+          <div ref={scrollRef} className="flex-1 overflow-y-auto p-8 space-y-6 custom-scrollbar bg-[#0A0906]/40">
             {messages.map((msg, i) => (
               <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[85%] rounded-3xl px-6 py-4 text-sm leading-relaxed ${
                   msg.role === 'user' 
-                    ? 'bg-blue-600 text-white rounded-br-none shadow-md' 
-                    : 'bg-[#1a1a1a] border border-white/10 text-white/90 rounded-bl-none shadow-md'
+                    ? 'bg-[#C8833A] text-[#0A0906] rounded-br-none shadow-md' 
+                    : 'bg-[#1C1710] border border-[#2A2318] text-[#F5F0E8]/90 rounded-bl-none shadow-md'
                 }`}>
                   {msg.content}
                 </div>
@@ -78,7 +78,7 @@ export default function AIPage() {
             ))}
             {isTyping && (
               <div className="flex justify-start">
-                <div className="bg-[#1a1a1a] border border-white/10 text-white/90 rounded-3xl rounded-bl-none px-6 py-4 flex gap-1.5">
+                <div className="bg-[#1C1710] border border-[#2A2318] text-[#F5F0E8]/90 rounded-3xl rounded-bl-none px-6 py-4 flex gap-1.5">
                   <span className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" />
                   <span className="w-2 h-2 bg-purple-500 rounded-full animate-bounce [animation-delay:-0.15s]" />
                   <span className="w-2 h-2 bg-purple-500 rounded-full animate-bounce [animation-delay:-0.3s]" />
@@ -88,14 +88,14 @@ export default function AIPage() {
           </div>
 
           {/* Input Area */}
-          <div className="p-6 border-t border-white/8 bg-[#171717]/80 shrink-0">
+          <div className="p-6 border-t border-[#2A2318] bg-[#1C1710]/80 shrink-0">
             <form onSubmit={handleSend} className="relative flex items-center">
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Ask about market trends..."
-                className="w-full bg-[#0a0a0a] border border-white/10 rounded-2xl py-4 pl-6 pr-14 text-sm text-white placeholder-white/30 outline-none focus:border-purple-500 transition-colors shadow-inner"
+                className="w-full bg-[#0A0906] border border-[#2A2318] rounded-2xl py-4 pl-6 pr-14 text-sm text-white placeholder-[#F5F0E8]/30 outline-none focus:border-purple-500 transition-colors shadow-inner"
               />
               <button 
                 type="submit" 
@@ -106,7 +106,7 @@ export default function AIPage() {
               </button>
             </form>
             <div className="mt-3 text-center">
-               <p className="text-[10px] text-white/30 font-medium">AI analysis is simulated and does not constitute financial advice.</p>
+               <p className="text-[10px] text-[#F5F0E8]/30 font-medium">AI analysis is simulated and does not constitute financial advice.</p>
             </div>
           </div>
           

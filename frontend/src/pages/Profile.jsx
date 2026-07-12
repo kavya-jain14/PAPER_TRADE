@@ -100,7 +100,7 @@ export default function Profile() {
   const avatarGrad = gradients[(initials.charCodeAt(0) - 65) % gradients.length];
 
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2, ease: 'easeOut' }} className="flex h-screen bg-[#0a0a0a] text-white/90 font-inter overflow-hidden">
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2, ease: 'easeOut' }} className="flex h-screen bg-[#0A0906] text-[#F5F0E8]/90 font-inter overflow-hidden">
       <Sidebar userName={userName} balance={balance} isMarketOpen={isMarketOpen} avatar={avatar} />
       <MobileBottomNav />
 
@@ -109,25 +109,25 @@ export default function Profile() {
 
           {/* 📱 Mobile top bar */}
           <div className="md:hidden flex items-center justify-between pt-2">
-            <h1 className="text-lg font-black tracking-tight"><span className="text-[#3de530]">PAPER</span> TRADE</h1>
+            <h1 className="text-lg font-black tracking-tight"><span className="text-[#C8833A]">PAPER</span> TRADE</h1>
           </div>
 
           {/* Header */}
           <div>
             <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight">My Profile</h2>
-            <p className="text-white/50 text-sm mt-1">Manage your account details and preferences.</p>
+            <p className="text-[#F5F0E8]/50 text-sm mt-1">Manage your account details and preferences.</p>
           </div>
 
           {/* Profile Card */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-[#121212] border border-white/8 rounded-3xl p-8 shadow-xl">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-[#131009] border border-[#2A2318] rounded-3xl p-8 shadow-xl">
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
               
               {/* Avatar */}
               <div className="relative group shrink-0">
                 {avatar ? (
-                  <img src={avatar} alt="avatar" className="w-24 h-24 rounded-2xl object-cover border-2 border-white/10" />
+                  <img src={avatar} alt="avatar" className="w-24 h-24 rounded-2xl object-cover border-2 border-[#2A2318]" />
                 ) : (
-                  <div className={`w-24 h-24 rounded-2xl bg-gradient-to-br ${avatarGrad} flex items-center justify-center text-4xl font-black text-white border-2 border-white/10`}>
+                  <div className={`w-24 h-24 rounded-2xl bg-gradient-to-br ${avatarGrad} flex items-center justify-center text-4xl font-black text-white border-2 border-[#2A2318]`}>
                     {initials}
                   </div>
                 )}
@@ -146,44 +146,44 @@ export default function Profile() {
                 {isEditing ? (
                   <div className="space-y-3">
                     <div>
-                      <label className="text-[10px] text-white/40 uppercase tracking-widest font-bold block mb-1">Display Name</label>
+                      <label className="text-[10px] text-[#F5F0E8]/40 uppercase tracking-widest font-bold block mb-1">Display Name</label>
                       <input
                         value={editName}
                         onChange={e => setEditName(e.target.value)}
                         maxLength={50}
-                        className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-[#3de530]/50 transition-colors"
+                        className="w-full bg-[#0A0906] border border-[#2A2318] rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-[#C8833A]/50 transition-colors"
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] text-white/40 uppercase tracking-widest font-bold block mb-1">Bio (max 200 chars)</label>
+                      <label className="text-[10px] text-[#F5F0E8]/40 uppercase tracking-widest font-bold block mb-1">Bio (max 200 chars)</label>
                       <textarea
                         value={editBio}
                         onChange={e => setEditBio(e.target.value)}
                         maxLength={200}
                         rows={3}
                         placeholder="Tell other traders about yourself..."
-                        className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-[#3de530]/50 transition-colors resize-none custom-scrollbar"
+                        className="w-full bg-[#0A0906] border border-[#2A2318] rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-[#C8833A]/50 transition-colors resize-none custom-scrollbar"
                       />
-                      <p className="text-[10px] text-white/30 text-right mt-0.5">{editBio.length}/200</p>
+                      <p className="text-[10px] text-[#F5F0E8]/30 text-right mt-0.5">{editBio.length}/200</p>
                     </div>
                     <div className="flex gap-3 pt-2">
                       <button onClick={handleSave} disabled={isSaving} className="flex-1 py-2.5 bg-[#3de530] text-[#003a00] text-sm font-black rounded-xl hover:opacity-90 disabled:opacity-40 transition-opacity">
                         {isSaving ? 'Saving...' : 'Save Changes'}
                       </button>
-                      <button onClick={() => { setIsEditing(false); setEditName(userName); setEditBio(bio); }} className="px-5 py-2.5 bg-white/5 border border-white/10 text-white/60 text-sm font-bold rounded-xl hover:bg-white/10 transition-colors">
+                      <button onClick={() => { setIsEditing(false); setEditName(userName); setEditBio(bio); }} className="px-5 py-2.5 bg-[#2A2318]/60 border border-[#2A2318] text-[#F5F0E8]/60 text-sm font-bold rounded-xl hover:bg-[#2A2318] transition-colors">
                         Cancel
                       </button>
                     </div>
                   </div>
                 ) : (
                   <>
-                    <h3 className="text-2xl font-black text-white">{userName}</h3>
-                    <p className="text-sm text-white/40 mt-0.5">{email}</p>
-                    {bio && <p className="text-sm text-white/60 mt-3 leading-relaxed">{bio}</p>}
+                    <h3 className="text-2xl font-black text-[#F5F0E8]">{userName}</h3>
+                    <p className="text-sm text-[#F5F0E8]/40 mt-0.5">{email}</p>
+                    {bio && <p className="text-sm text-[#F5F0E8]/60 mt-3 leading-relaxed">{bio}</p>}
                     {!bio && <p className="text-sm text-white/25 mt-3 italic">No bio yet. Click Edit Profile to add one.</p>}
                     <button
                       onClick={() => setIsEditing(true)}
-                      className="mt-4 flex items-center gap-2 text-[11px] font-bold text-white/50 hover:text-white bg-white/5 hover:bg-white/10 px-4 py-2 rounded-xl border border-white/8 transition-colors"
+                      className="mt-4 flex items-center gap-2 text-[11px] font-bold text-[#F5F0E8]/50 hover:text-white bg-[#2A2318]/60 hover:bg-[#2A2318] px-4 py-2 rounded-xl border border-[#2A2318] transition-colors"
                     >
                       <span className="material-symbols-outlined text-[14px]">edit</span> Edit Profile
                     </button>
@@ -201,10 +201,10 @@ export default function Profile() {
               { label: 'Platform', value: 'Paper Trade Elite', icon: 'trending_up', color: 'text-purple-400' },
             ].map((card, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
-                className="bg-[#121212] border border-white/8 rounded-2xl p-5">
+                className="bg-[#131009] border border-[#2A2318] rounded-2xl p-5">
                 <div className="flex items-center gap-2 mb-3">
                   <span className={`material-symbols-outlined text-[18px] ${card.color}`}>{card.icon}</span>
-                  <p className="text-[10px] text-white/40 uppercase tracking-widest font-bold">{card.label}</p>
+                  <p className="text-[10px] text-[#F5F0E8]/40 uppercase tracking-widest font-bold">{card.label}</p>
                 </div>
                 <p className="text-lg font-bold text-white font-mono">{card.value}</p>
               </motion.div>

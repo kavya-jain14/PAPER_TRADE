@@ -220,7 +220,10 @@ function Dashboard() {
           body: JSON.stringify({ symbols: [...TOP_STOCKS, ...INDICES] }),
           signal: abortCtrl.signal,
         });
+        if (!response.ok) return;
         const realPrices = await response.json();
+        // BUG FIX: guard against non-object responses before spreading
+        if (!realPrices || typeof realPrices !== 'object' || Array.isArray(realPrices)) return;
         setMarketPrices(prev => ({ ...prev, ...realPrices }));
       } catch (error) {
         if (error.name !== 'AbortError') console.error("Market error");
@@ -318,7 +321,7 @@ function Dashboard() {
   const greeting = currentHour < 12 ? 'Good Morning' : currentHour < 18 ? 'Good Afternoon' : 'Good Evening';
 
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2, ease: 'easeOut' }} className="flex h-screen bg-[#0a0a0a] text-white/90 font-inter overflow-hidden selection:bg-green-500/30">
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2, ease: 'easeOut' }} className="flex h-screen bg-[#0A0906] text-[#F5F0E8] font-inter overflow-hidden selection:bg-[#C8833A]/30">
 
       <Sidebar userName={userName} balance={balance} isMarketOpen={isMarketOpen} avatar={avatar} />
       <MobileBottomNav />
@@ -328,20 +331,20 @@ function Dashboard() {
         {/* 📱 Mobile top bar — visible only on phones */}
         <div className="md:hidden flex items-center justify-between mb-6 pt-2">
           <div>
-            <h1 className="text-lg font-black tracking-tight"><span className="text-[#3de530]">PAPER</span> TRADE</h1>
-            <p className="text-[10px] text-white/40 mt-0.5">Welcome back, {userName}</p>
+            <h1 className="text-lg font-black tracking-tight"><span className="text-[#C8833A]">PAPER</span> TRADE</h1>
+            <p className="text-[10px] text-[#F5F0E8]/40 mt-0.5">Welcome back, {userName}</p>
           </div>
           <div className="flex items-center gap-2">
             <div className={`w-2 h-2 rounded-full ${isMarketOpen ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
-            <span className="text-[10px] font-bold text-white/50 uppercase tracking-wider">{isMarketOpen ? 'Live' : 'Closed'}</span>
+            <span className="text-[10px] font-bold text-[#F5F0E8]/50 uppercase tracking-wider">{isMarketOpen ? 'Live' : 'Closed'}</span>
           </div>
         </div>
         <div className="max-w-7xl mx-auto space-y-6 md:space-y-8 relative z-10">
           
           <header className="flex flex-col xl:flex-row xl:items-end justify-between gap-4 md:gap-6">
             <div className="hidden md:block">
-              <h2 className="text-3xl font-black text-white tracking-tight">{greeting}, {userName}</h2>
-              <p className="text-white/60 text-sm mt-1">Available Margin: <span className="text-[#3de530] font-mono font-bold text-base">₹{balance.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></p>
+              <h2 className="text-3xl font-black text-[#F5F0E8] tracking-tight">{greeting}, {userName}</h2>
+              <p className="text-[#F5F0E8]/60 text-sm mt-1">Available Margin: <span className="text-[#C8833A] font-mono font-bold text-base">₹{balance.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></p>
             </div>
             
             <div className="flex gap-3 md:gap-4 overflow-x-auto pb-2 xl:pb-0 custom-scrollbar -mx-4 md:mx-0 px-4 md:px-0">
@@ -352,10 +355,10 @@ function Dashboard() {
                 const isGreen = cPercent >= 0;
                 
                 return (
-                  <div key={idx} onClick={() => setSelectedAsset(idx)} className="bg-[#121212] border border-white/5 rounded-2xl p-4 md:p-5 flex justify-between items-center min-w-[200px] md:min-w-[240px] cursor-pointer hover:border-white/20 transition-all shadow-md group">
+                  <div key={idx} onClick={() => setSelectedAsset(idx)} className="bg-[#131009] border border-[#2A2318] rounded-2xl p-4 md:p-5 flex justify-between items-center min-w-[200px] md:min-w-[240px] cursor-pointer hover:border-[#C8833A]/30 transition-all shadow-md group">
                     <div>
-                      <p className="text-[10px] text-white/50 uppercase tracking-widest font-bold">{idx}</p>
-                      <p className="text-lg font-bold font-mono text-white mt-1">{p > 0 ? p.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '...'}</p>
+                      <p className="text-[10px] text-[#F5F0E8]/50 uppercase tracking-widest font-bold">{idx}</p>
+                      <p className="text-lg font-bold font-mono text-[#F5F0E8] mt-1">{p > 0 ? p.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '...'}</p>
                       <div className="flex items-center gap-2 mt-0.5">
                         <p className={`text-[11px] font-bold ${isGreen ? 'text-green-500' : 'text-red-500'}`}>{isGreen ? '▲' : '▼'} {isGreen ? '+' : ''}{cPercent}%</p>
                         {liveData.prevClose > 0 && (
@@ -376,20 +379,20 @@ function Dashboard() {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-8">
-              <div className="bg-[#121212] border border-white/5 rounded-3xl overflow-hidden shadow-xl">
-                 <div className="p-6 border-b border-white/5 flex justify-between items-center bg-[#171717]/50">
-                   <h3 className="font-bold text-white text-lg flex items-center gap-2">
-                      <span className="material-symbols-outlined text-white/50 text-[20px]">visibility</span> My Watchlist
+              <div className="bg-[#131009] border border-[#2A2318] rounded-3xl overflow-hidden shadow-xl">
+                 <div className="p-6 border-b border-[#2A2318] flex justify-between items-center bg-[#1C1710]/50">
+                   <h3 className="font-bold text-[#F5F0E8] text-lg flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[#C8833A]/60 text-[20px]">visibility</span> My Watchlist
                    </h3>
                    <form onSubmit={addToWatchlist} className="flex gap-2">
-                     <input type="text" value={newStock} onChange={(e)=>setNewStock(e.target.value.toUpperCase())} placeholder="Add Symbol..." className="bg-[#0a0a0a] border border-white/5 rounded-xl px-4 py-2 text-xs text-white outline-none focus:border-green-500 w-36 uppercase font-mono transition-colors" />
-                     <button type="submit" className="bg-[#222222] hover:bg-white/10 text-white/50 hover:text-white rounded-xl px-3 py-2 transition-colors"><span className="material-symbols-outlined text-[18px]">add</span></button>
+                     <input type="text" value={newStock} onChange={(e)=>setNewStock(e.target.value.toUpperCase())} placeholder="Add Symbol..." className="bg-[#0A0906] border border-[#2A2318] rounded-xl px-4 py-2 text-xs text-[#F5F0E8] outline-none focus:border-[#C8833A] w-36 uppercase font-mono transition-colors" />
+                     <button type="submit" className="bg-[#1C1710] hover:bg-[#2A2318] text-[#F5F0E8]/50 hover:text-[#F5F0E8] rounded-xl px-3 py-2 transition-colors border border-[#2A2318]"><span className="material-symbols-outlined text-[18px]">add</span></button>
                    </form>
                  </div>
 
-                 <div className="divide-y divide-white/5">
+                 <div className="divide-y divide-[#2A2318]">
                      {watchlist.length === 0 ? (
-                        <div className="p-10 text-center text-white/40 text-sm font-medium">Watchlist is empty. Search and add assets to track.</div>
+                        <div className="p-10 text-center text-[#F5F0E8]/40 text-sm font-medium">Watchlist is empty. Search and add assets to track.</div>
                      ) : (
                         watchlist.map(sym => {
                           const liveData = marketPrices[sym] || {};
@@ -398,14 +401,14 @@ function Dashboard() {
                           const isUp = change >= 0;
                           
                           return (
-                            <div key={sym} onClick={() => setSelectedAsset(sym)} className="p-4 px-6 flex items-center justify-between hover:bg-white/[0.03] transition-colors cursor-pointer group">
+                            <div key={sym} onClick={() => setSelectedAsset(sym)} className="p-4 px-6 flex items-center justify-between hover:bg-[#C8833A]/[0.03] transition-colors cursor-pointer group">
                               <div className="flex items-center gap-5">
-                                <div className="w-12 h-12 rounded-xl bg-[#1c1c1c] border border-white/5 flex items-center justify-center font-bold text-sm text-white/80">
+                                <div className="w-12 h-12 rounded-xl bg-[#1C1710] border border-[#2A2318] flex items-center justify-center font-bold text-sm text-[#C8833A]">
                                   {sym.substring(0, 1)}
                                 </div>
                                 <div>
-                                  <p className="font-bold text-white/90 group-hover:text-white">{sym}</p>
-                                  <p className="text-[10px] text-white/40 uppercase tracking-widest font-semibold mt-0.5">NSE</p>
+                                  <p className="font-bold text-[#F5F0E8]/90 group-hover:text-[#F5F0E8]">{sym}</p>
+                                  <p className="text-[10px] text-[#F5F0E8]/40 uppercase tracking-widest font-semibold mt-0.5">NSE</p>
                                 </div>
                               </div>
                               
@@ -417,10 +420,10 @@ function Dashboard() {
 
                               <div className="text-right flex items-center gap-6">
                                 <div>
-                                  <p className="font-mono text-white font-bold text-base">₹{price.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+                                  <p className="font-mono text-[#F5F0E8] font-bold text-base">₹{price.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
                                   <p className={`text-[11px] font-bold ${isUp ? 'text-green-500' : 'text-red-500'}`}>{isUp ? '+' : ''}{change.toFixed(2)}%</p>
                                 </div>
-                                <button onClick={(e) => { e.stopPropagation(); setWatchlist(watchlist.filter(s => s !== sym)); }} className="text-white/20 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><span className="material-symbols-outlined text-[20px]">delete</span></button>
+                                <button onClick={(e) => { e.stopPropagation(); setWatchlist(watchlist.filter(s => s !== sym)); }} className="text-[#F5F0E8]/20 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><span className="material-symbols-outlined text-[20px]">delete</span></button>
                               </div>
                             </div>
                           )
@@ -429,12 +432,12 @@ function Dashboard() {
                  </div>
               </div>
 
-              <div className="bg-[#121212] border border-white/5 rounded-3xl overflow-hidden shadow-xl">
-                 <div className="flex p-2 bg-[#171717] border-b border-white/5">
-                    <button onClick={() => setActiveMoverTab('gainers')} className={`flex-1 py-2.5 text-xs font-bold uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-1 ${activeMoverTab === 'gainers' ? 'bg-[#222222] text-green-400 shadow-sm' : 'text-white/30 hover:text-white/70'}`}>
+              <div className="bg-[#131009] border border-[#2A2318] rounded-3xl overflow-hidden shadow-xl">
+                 <div className="flex p-2 bg-[#1C1710] border-b border-[#2A2318]">
+                    <button onClick={() => setActiveMoverTab('gainers')} className={`flex-1 py-2.5 text-xs font-bold uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-1 ${activeMoverTab === 'gainers' ? 'bg-[#2A2318] text-green-400 shadow-sm' : 'text-[#F5F0E8]/30 hover:text-[#F5F0E8]/70'}`}>
                       <span className="material-symbols-outlined text-[16px]">trending_up</span> Top Gainers
                     </button>
-                    <button onClick={() => setActiveMoverTab('losers')} className={`flex-1 py-2.5 text-xs font-bold uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-1 ${activeMoverTab === 'losers' ? 'bg-[#222222] text-red-400 shadow-sm' : 'text-white/30 hover:text-white/70'}`}>
+                    <button onClick={() => setActiveMoverTab('losers')} className={`flex-1 py-2.5 text-xs font-bold uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-1 ${activeMoverTab === 'losers' ? 'bg-[#2A2318] text-red-400 shadow-sm' : 'text-[#F5F0E8]/30 hover:text-[#F5F0E8]/70'}`}>
                       <span className="material-symbols-outlined text-[16px]">trending_down</span> Top Losers
                     </button>
                  </div>
@@ -444,15 +447,15 @@ function Dashboard() {
                      <motion.div key={activeMoverTab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.15 }} className="absolute inset-0 p-2">
                        {(activeMoverTab === 'gainers' ? gainers : losers).map((m, i) => {
                           return (
-                          <div key={i} onClick={() => setSelectedAsset(m.symbol)} className="flex justify-between items-center p-3.5 rounded-xl hover:bg-white/[0.03] cursor-pointer group">
+                          <div key={i} onClick={() => setSelectedAsset(m.symbol)} className="flex justify-between items-center p-3.5 rounded-xl hover:bg-[#C8833A]/[0.03] cursor-pointer group">
                             <div>
-                              <p className="font-bold text-white/90 text-sm tracking-tight group-hover:text-white">{m.symbol}</p>
-                              <p className="text-[11px] text-white/40 font-mono mt-0.5">₹{m.price.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+                              <p className="font-bold text-[#F5F0E8]/90 text-sm tracking-tight group-hover:text-[#F5F0E8]">{m.symbol}</p>
+                              <p className="text-[11px] text-[#F5F0E8]/40 font-mono mt-0.5">₹{m.price.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
                             </div>
                             <div className="opacity-30 group-hover:opacity-100 transition-opacity w-[70px] h-[30px] relative pointer-events-none">
                               <SmartChart symbol={m.symbol} currentPrice={m.price} isGreen={activeMoverTab === 'gainers'} mini={true} />
                             </div>
-                            <div className={`px-2.5 py-1 rounded bg-[#1c1c1c] border border-white/5`}>
+                            <div className={`px-2.5 py-1 rounded bg-[#1C1710] border border-[#2A2318]`}>
                               <p className={`text-[11px] font-bold font-mono ${activeMoverTab === 'gainers' ? 'text-green-500' : 'text-red-500'}`}>{activeMoverTab === 'gainers' ? '+' : ''}{m.change.toFixed(2)}%</p>
                             </div>
                           </div>
@@ -464,12 +467,12 @@ function Dashboard() {
             </div>
 
             <div className="space-y-8">
-              <div className="bg-[#121212] border border-white/5 rounded-3xl p-6 relative overflow-hidden shadow-xl">
+              <div className="bg-[#131009] border border-[#2A2318] rounded-3xl p-6 relative overflow-hidden shadow-xl">
                  <div className="mb-8">
-                   <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                     <span className="material-symbols-outlined text-white/50 text-[18px]">psychology</span> Live Sentiment
+                   <h3 className="text-lg font-bold text-[#F5F0E8] flex items-center gap-2">
+                     <span className="material-symbols-outlined text-[#C8833A]/60 text-[18px]">psychology</span> Live Sentiment
                    </h3>
-                   <p className="text-[10px] text-white/40 mt-1 uppercase tracking-widest font-semibold">Sub-Zone Analysis Engine</p>
+                   <p className="text-[10px] text-[#F5F0E8]/40 mt-1 uppercase tracking-widest font-semibold">Sub-Zone Analysis Engine</p>
                  </div>
                  
                  <div className="relative mt-8 mb-4">
@@ -478,42 +481,42 @@ function Dashboard() {
                       className="absolute top-[-28px] flex flex-col items-center z-20"
                       style={{ transform: 'translateX(-50%)' }}
                     >
-                       <span className={`text-[10px] font-black mb-0.5 px-2 py-0.5 rounded shadow-lg ${sentiment.zone === 'bearish' ? 'bg-red-500/20 text-red-500' : sentiment.zone === 'bullish' ? 'bg-green-500/20 text-green-500' : 'bg-yellow-500/20 text-yellow-500'}`}>
+                       <span className={`text-[10px] font-black mb-0.5 px-2 py-0.5 rounded shadow-lg ${sentiment.zone === 'bearish' ? 'bg-[#F5F0E8]/10 text-[#F5F0E8]' : sentiment.zone === 'bullish' ? 'bg-[#C8833A]/20 text-[#C8833A]' : 'bg-[#F5F0E8]/10 text-[#F5F0E8]'}`}>
                          {sentiment.globalScore}%
                        </span>
-                       <span className="text-white text-xs drop-shadow-[0_0_5px_white]">▼</span>
+                       <span className="text-[#F5F0E8] text-xs drop-shadow-[0_0_5px_rgba(245,240,232,0.8)]">▼</span>
                     </motion.div>
 
                     <div className="h-3 w-full rounded-full overflow-hidden flex shadow-inner">
-                       <div className="h-full w-1/3 bg-gradient-to-r from-red-600 to-red-400 border-r border-[#121212]"></div>
-                       <div className="h-full w-1/3 bg-gradient-to-r from-yellow-500 to-yellow-400 border-r border-[#121212]"></div>
-                       <div className="h-full w-1/3 bg-gradient-to-r from-green-400 to-green-600"></div>
+                       <div className="h-full w-1/3 bg-gradient-to-r from-[#F5F0E8]/40 to-[#F5F0E8]/20 border-r border-[#0A0906]"></div>
+                       <div className="h-full w-1/3 bg-gradient-to-r from-[#C8833A]/60 to-[#C8833A]/40 border-r border-[#0A0906]"></div>
+                       <div className="h-full w-1/3 bg-gradient-to-r from-[#C8833A] to-[#C8833A]"></div>
                     </div>
                  </div>
 
                  <div className="flex justify-between text-[10px] uppercase font-bold tracking-wider mt-4">
-                    <span className={`transition-opacity ${sentiment.zone === 'bearish' ? 'text-red-500 opacity-100' : 'text-white/30 opacity-40'}`}>Bearish</span>
-                    <span className={`text-center relative -left-2 transition-opacity ${sentiment.zone === 'neutral' ? 'text-yellow-500 opacity-100' : 'text-white/30 opacity-40'}`}>Neutral</span>
-                    <span className={`text-right transition-opacity ${sentiment.zone === 'bullish' ? 'text-green-500 opacity-100' : 'text-white/30 opacity-40'}`}>Bullish</span>
+                    <span className={`transition-opacity ${sentiment.zone === 'bearish' ? 'text-[#F5F0E8] opacity-100' : 'text-[#F5F0E8]/30 opacity-40'}`}>Bearish</span>
+                    <span className={`text-center relative -left-2 transition-opacity ${sentiment.zone === 'neutral' ? 'text-[#C8833A] opacity-100' : 'text-[#F5F0E8]/30 opacity-40'}`}>Neutral</span>
+                    <span className={`text-right transition-opacity ${sentiment.zone === 'bullish' ? 'text-[#C8833A] opacity-100' : 'text-[#F5F0E8]/30 opacity-40'}`}>Bullish</span>
                  </div>
               </div>
 
-              <div className="bg-[#121212] border border-white/5 rounded-3xl overflow-hidden shadow-xl">
-                 <div className="p-6 border-b border-white/5 flex items-center gap-2 bg-[#171717]/50">
-                   <span className="material-symbols-outlined text-white/50 text-[20px]">public</span>
-                   <h3 className="font-bold text-white text-lg">Market Updates</h3>
+              <div className="bg-[#131009] border border-[#2A2318] rounded-3xl overflow-hidden shadow-xl">
+                 <div className="p-6 border-b border-[#2A2318] flex items-center gap-2 bg-[#1C1710]/50">
+                   <span className="material-symbols-outlined text-[#C8833A]/60 text-[20px]">public</span>
+                   <h3 className="font-bold text-[#F5F0E8] text-lg">Market Updates</h3>
                  </div>
                  <div className="p-2">
                     {newsFeed.map((news, i) => (
-                       <a key={i} href={news.link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-5 p-5 hover:bg-white/[0.03] transition-colors group border-b border-white/5 last:border-0 rounded-xl">
-                         <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 border border-white/10 relative">
+                       <a key={i} href={news.link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-5 p-5 hover:bg-[#C8833A]/[0.03] transition-colors group border-b border-[#2A2318] last:border-0 rounded-xl">
+                         <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 border border-[#2A2318] relative">
                             <div className="absolute inset-0 bg-black/30 group-hover:bg-transparent transition-colors z-10"></div>
                             <img src={news.img} alt="news" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" onError={(e) => { e.target.style.display='none'; }} />
                          </div>
                          <div className="flex-1 min-w-0">
-                            {news.tag && <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md mb-1.5 inline-block ${news.tag === 'GAINER' ? 'bg-green-500/15 text-green-400 border border-green-500/20' : news.tag === 'LOSER' ? 'bg-red-500/15 text-red-400 border border-red-500/20' : 'bg-blue-500/15 text-blue-400 border border-blue-500/20'}`}>{news.tag}</span>}
-                            <p className="text-sm font-semibold text-white/90 group-hover:text-blue-400 transition-colors line-clamp-2 leading-snug">{news.title}</p>
-                            <p className="text-[10px] text-white/40 mt-1.5 uppercase tracking-widest font-semibold flex items-center gap-1">
+                            {news.tag && <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md mb-1.5 inline-block ${news.tag === 'GAINER' ? 'bg-green-500/15 text-green-400 border border-green-500/20' : news.tag === 'LOSER' ? 'bg-red-500/15 text-red-400 border border-red-500/20' : 'bg-[#C8833A]/15 text-[#C8833A] border border-[#C8833A]/20'}`}>{news.tag}</span>}
+                            <p className="text-sm font-semibold text-[#F5F0E8]/90 group-hover:text-[#C8833A] transition-colors line-clamp-2 leading-snug">{news.title}</p>
+                            <p className="text-[10px] text-[#F5F0E8]/40 mt-1.5 uppercase tracking-widest font-semibold flex items-center gap-1">
                               {news.time} <span className="material-symbols-outlined text-[10px] opacity-0 group-hover:opacity-100 transition-opacity">open_in_new</span>
                             </p>
                          </div>

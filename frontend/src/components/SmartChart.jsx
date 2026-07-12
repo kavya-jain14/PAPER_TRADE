@@ -60,30 +60,30 @@ export const CandlestickModal = ({ symbol, onClose, isGreen }) => {
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // Build chart
+    // Build chart — caramel-tinted dark theme
     const chart = createChart(containerRef.current, {
       width:  containerRef.current.clientWidth,
       height: containerRef.current.clientHeight,
       layout: {
-        background:  { type: 'solid', color: '#0a0a0a' },
-        textColor:   '#6b7280',
+        background:  { type: 'solid', color: '#0A0906' },
+        textColor:   'rgba(245,240,232,0.4)',
         fontFamily:  '"Geist", "Inter", sans-serif',
         fontSize:    11,
       },
       grid: {
-        vertLines: { color: 'rgba(255,255,255,0.04)' },
-        horzLines: { color: 'rgba(255,255,255,0.04)' },
+        vertLines: { color: 'rgba(42,35,24,0.8)' },
+        horzLines: { color: 'rgba(42,35,24,0.8)' },
       },
       timeScale: {
-        borderColor:  'rgba(255,255,255,0.06)',
+        borderColor:  '#2A2318',
         timeVisible:  true,
         secondsVisible: false,
       },
       crosshair: {
-        horzLine: { labelBackgroundColor: '#1a1a1a' },
-        vertLine: { labelBackgroundColor: '#1a1a1a' },
+        horzLine: { labelBackgroundColor: '#1C1710' },
+        vertLine: { labelBackgroundColor: '#1C1710' },
       },
-      rightPriceScale: { borderColor: 'rgba(255,255,255,0.06)' },
+      rightPriceScale: { borderColor: '#2A2318' },
     });
 
     const series = addCandlestickSafe(chart, {
@@ -173,14 +173,16 @@ export const CandlestickModal = ({ symbol, onClose, isGreen }) => {
           const time = normalizeTime(c.time);
           if (time >= lastTimeRef.current) {
             lastTimeRef.current = time;
-            seriesRef.current.update({
-              time,
-              open:  Number(c.open),
-              high:  Number(c.high),
-              low:   Number(c.low),
-              close: Number(c.close),
-            });
-            setCandleCount(n => n + 1);
+            try {
+              seriesRef.current.update({
+                time,
+                open:  Number(c.open),
+                high:  Number(c.high),
+                low:   Number(c.low),
+                close: Number(c.close),
+              });
+              setCandleCount(n => n + 1);
+            } catch (_) {}
           }
         }
       } catch (_) {}
@@ -189,13 +191,13 @@ export const CandlestickModal = ({ symbol, onClose, isGreen }) => {
     return () => {
       ro.disconnect();
       sse.close();
-      if (chartRef.current) chartRef.current.remove();
+      if (chartRef.current) { try { chartRef.current.remove(); } catch (_) {} }
       chartRef.current  = null;
       seriesRef.current = null;
     };
   }, [symbol]);
 
-  const regimeColor = !bias ? '#9ca3af'
+  const regimeColor = !bias ? 'rgba(245,240,232,0.4)'
     : bias.regime?.includes('BULLISH') ? '#22c55e'
     : bias.regime?.includes('BEARISH') ? '#ef4444'
     : '#eab308';
@@ -207,11 +209,11 @@ export const CandlestickModal = ({ symbol, onClose, isGreen }) => {
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-[#0d0d0d] shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#2A2318] bg-[#0A0906] shrink-0">
           <div className="flex items-center gap-4">
             <div>
-              <h2 className="text-xl font-black text-white tracking-tight">{symbol}</h2>
-              <p className="text-[10px] text-white/40 uppercase tracking-widest font-semibold mt-0.5">
+              <h2 className="text-xl font-black text-[#F5F0E8] tracking-tight">{symbol}</h2>
+              <p className="text-[10px] text-[#F5F0E8]/40 uppercase tracking-widest font-semibold mt-0.5">
                 Candlestick Chart • {isMarketOpen() ? 'Live Market' : 'AI Synthetic'} • 5m Candles
               </p>
             </div>
@@ -225,7 +227,7 @@ export const CandlestickModal = ({ symbol, onClose, isGreen }) => {
                 <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${isMarketOpen() ? 'bg-green-400' : 'bg-purple-400'}`} />
                 {isMarketOpen() ? 'Live' : 'AI Sim'}
               </div>
-              <div className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-[9px] font-black text-white/50 uppercase tracking-widest">
+              <div className="px-2.5 py-1 rounded-lg bg-[#1C1710] border border-[#2A2318] text-[9px] font-black text-[#F5F0E8]/50 uppercase tracking-widest">
                 {candleCount} candles
               </div>
             </div>
@@ -235,20 +237,20 @@ export const CandlestickModal = ({ symbol, onClose, isGreen }) => {
           {bias && (
             <div className="hidden md:flex items-center gap-5 mr-8">
               <div className="text-center">
-                <p className="text-[8px] text-white/30 uppercase tracking-widest font-bold">Regime</p>
+                <p className="text-[8px] text-[#F5F0E8]/30 uppercase tracking-widest font-bold">Regime</p>
                 <p className="text-[11px] font-black mt-0.5" style={{ color: regimeColor }}>
                   {bias.regime?.replace('_', ' ')}
                 </p>
               </div>
               <div className="text-center">
-                <p className="text-[8px] text-white/30 uppercase tracking-widest font-bold">RSI</p>
+                <p className="text-[8px] text-[#F5F0E8]/30 uppercase tracking-widest font-bold">RSI</p>
                 <p className={`text-[11px] font-black font-mono mt-0.5 ${
-                  bias.rsi < 30 ? 'text-green-400' : bias.rsi > 70 ? 'text-red-400' : 'text-white/70'
+                  bias.rsi < 30 ? 'text-green-400' : bias.rsi > 70 ? 'text-red-400' : 'text-[#F5F0E8]/70'
                 }`}>{bias.rsi?.toFixed(1)}</p>
               </div>
               {bias.bullishProbability != null && (
                 <div className="text-center">
-                  <p className="text-[8px] text-white/30 uppercase tracking-widest font-bold">Bull%</p>
+                  <p className="text-[8px] text-[#F5F0E8]/30 uppercase tracking-widest font-bold">Bull%</p>
                   <p className={`text-[11px] font-black font-mono mt-0.5 ${bias.bullishProbability > 50 ? 'text-green-400' : 'text-red-400'}`}>
                     {bias.bullishProbability}%
                   </p>
@@ -259,23 +261,23 @@ export const CandlestickModal = ({ symbol, onClose, isGreen }) => {
 
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white/50 hover:text-white transition-colors"
+            className="w-9 h-9 rounded-xl bg-[#1C1710] hover:bg-[#2A2318] border border-[#2A2318] flex items-center justify-center text-[#F5F0E8]/50 hover:text-[#F5F0E8] transition-colors"
           >
             <span className="material-symbols-outlined text-[18px]">close</span>
           </button>
         </div>
 
         {/* Chart area */}
-        <div className="flex-1 relative bg-[#0a0a0a]">
+        <div className="flex-1 relative bg-[#0A0906]">
           <div ref={containerRef} className="w-full h-full" />
 
           {loading && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[#0a0a0a]">
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[#0A0906]">
               <div className="relative w-10 h-10">
-                <div className="absolute inset-0 border-2 border-white/5 rounded-full" />
-                <div className="absolute inset-0 border-2 border-t-green-500 rounded-full animate-spin" />
+                <div className="absolute inset-0 border-2 border-[#2A2318] rounded-full" />
+                <div className="absolute inset-0 border-2 border-t-[#C8833A] rounded-full animate-spin" />
               </div>
-              <p className="text-[11px] text-white/30 uppercase tracking-widest font-bold">
+              <p className="text-[11px] text-[#F5F0E8]/30 uppercase tracking-widest font-bold">
                 Loading candlestick data...
               </p>
             </div>
@@ -283,13 +285,13 @@ export const CandlestickModal = ({ symbol, onClose, isGreen }) => {
         </div>
 
         {/* Footer note */}
-        <div className="px-6 py-2.5 border-t border-white/5 bg-[#0d0d0d] flex items-center justify-between shrink-0">
-          <p className="text-[10px] text-white/20 font-medium">
+        <div className="px-6 py-2.5 border-t border-[#2A2318] bg-[#0A0906] flex items-center justify-between shrink-0">
+          <p className="text-[10px] text-[#F5F0E8]/20 font-medium">
             {isMarketOpen()
               ? '🟢 Live NSE data via Yahoo Finance • Refreshes every 5 seconds'
               : '🟣 AI synthetic engine • Powered by MarketBrain pattern recognition • Educational use only'}
           </p>
-          <p className="text-[10px] text-white/20 font-mono">Click anywhere outside to close</p>
+          <p className="text-[10px] text-[#F5F0E8]/20 font-mono">Click anywhere outside to close</p>
         </div>
       </div>
     </div>
@@ -323,12 +325,12 @@ const SmartChart = ({ symbol, currentPrice, isGreen, mini = false }) => {
       height: h,
       layout: {
         background:  { type: 'solid', color: 'transparent' },
-        textColor:   '#6b7280',
+        textColor:   'rgba(245,240,232,0.4)',
         fontFamily:  '"Geist", "Inter", sans-serif',
       },
       grid: {
-        vertLines: { visible: !mini, color: 'rgba(255,255,255,0.03)' },
-        horzLines: { visible: !mini, color: 'rgba(255,255,255,0.03)' },
+        vertLines: { visible: !mini, color: 'rgba(42,35,24,0.6)' },
+        horzLines: { visible: !mini, color: 'rgba(42,35,24,0.6)' },
       },
       timeScale: {
         visible:       !mini,
@@ -433,7 +435,7 @@ const SmartChart = ({ symbol, currentPrice, isGreen, mini = false }) => {
               // STRICT greater-than guard — lightweight-charts throws on equal/backward time
               if (cTime > lastTimeRef.current) {
                 lastTimeRef.current = cTime;
-                seriesRef.current.update({ time: cTime, value: cVal });
+                try { seriesRef.current.update({ time: cTime, value: cVal }); } catch (_) {}
               }
             }
           } catch (_) {}
@@ -478,32 +480,26 @@ const SmartChart = ({ symbol, currentPrice, isGreen, mini = false }) => {
       controller.abort();           // Cancel any pending fetch
       ro.disconnect();
       if (sseRef.current) { sseRef.current.close(); sseRef.current = null; }
-      if (chartRef.current) { chartRef.current.remove(); chartRef.current = null; }
+      if (chartRef.current) { try { chartRef.current.remove(); } catch (_) {} chartRef.current = null; }
       seriesRef.current = null;
     };
   }, [symbol]);
 
   useEffect(() => {
+    // BUG FIX: guard seriesRef before calling update — prevents crash when chart
+    // unmounts while an interval is still live (the #1 blank-screen trigger)
     if (!seriesRef.current || !currentPrice) return;
-    // Only push live price ticks for real-mode full charts or mini charts.
-    // CRITICAL: lightweight-charts requires strictly increasing timestamps.
-    // Use a 5-second bucket to avoid duplicate-time crashes on rapid re-renders.
     if (mode === 'REAL' || mini) {
       try {
         const raw = Math.floor(Date.now() / 1000);
-        // Round down to the nearest 5-second bucket so rapid re-renders
-        // produce the same timestamp and trigger an update (not an insert)
         const t = Math.floor(raw / 5) * 5;
         if (t > lastTimeRef.current) {
           lastTimeRef.current = t;
           seriesRef.current.update({ time: t, value: Number(currentPrice) });
         } else if (t === lastTimeRef.current) {
-          // Same bucket — update the existing candle value without advancing time
           seriesRef.current.update({ time: lastTimeRef.current, value: Number(currentPrice) });
         }
-        // If t < lastTimeRef.current, silently skip — time cannot go backward
       } catch (err) {
-        // Don't propagate chart errors — just log in dev
         if (import.meta.env.DEV) console.warn('Chart update skipped:', err.message);
       }
     }
@@ -514,10 +510,10 @@ const SmartChart = ({ symbol, currentPrice, isGreen, mini = false }) => {
       <div ref={containerRef} className="w-full h-full" />
 
       {!mini && loading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-[#0a0a0a]/80 z-10">
+        <div className="absolute inset-0 flex items-center justify-center bg-[#0A0906]/80 z-10">
           <div className="flex flex-col items-center gap-3">
-            <div className="w-6 h-6 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
-            <p className="text-[10px] text-white/40 uppercase tracking-widest font-bold">
+            <div className="w-6 h-6 border-2 border-[#C8833A] border-t-transparent rounded-full animate-spin" />
+            <p className="text-[10px] text-[#F5F0E8]/40 uppercase tracking-widest font-bold">
               {isMarketOpen() ? 'Loading Market Data...' : 'AI Engine Analyzing Patterns...'}
             </p>
           </div>
@@ -525,7 +521,7 @@ const SmartChart = ({ symbol, currentPrice, isGreen, mini = false }) => {
       )}
 
       {!mini && error && !loading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-[#0a0a0a] z-10 p-4">
+        <div className="absolute inset-0 flex items-center justify-center bg-[#0A0906] z-10 p-4">
           <p className="text-red-500/70 text-[11px] font-mono text-center">
             Chart unavailable<br />{error}
           </p>
@@ -561,7 +557,7 @@ const SmartChart = ({ symbol, currentPrice, isGreen, mini = false }) => {
                   <div className="flex items-center gap-1">
                     <span className="text-[8px] text-purple-400/60 uppercase font-bold">RSI</span>
                     <span className={`text-[9px] font-mono font-black ml-1 ${
-                      bias.rsi < 30 ? 'text-green-400' : bias.rsi > 70 ? 'text-red-400' : 'text-white/70'
+                      bias.rsi < 30 ? 'text-green-400' : bias.rsi > 70 ? 'text-red-400' : 'text-[#F5F0E8]/70'
                     }`}>{bias.rsi?.toFixed(1)}</span>
                   </div>
                   {bias.bullishProbability != null && (

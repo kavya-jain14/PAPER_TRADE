@@ -104,7 +104,7 @@ function History() {
   const isOverallGreen = totalRealizedPnL >= 0;
 
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2, ease: 'easeOut' }} className="flex h-screen bg-[#0a0a0a] text-white/90 font-inter overflow-hidden selection:bg-green-500/30">
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2, ease: 'easeOut' }} className="flex h-screen bg-[#0A0906] text-[#F5F0E8]/90 font-inter overflow-hidden selection:bg-[#C8833A]/30">
 
       <Sidebar userName={userName} isMarketOpen={isMarketOpen} avatar={avatar} />
       <MobileBottomNav />
@@ -115,8 +115,8 @@ function History() {
           
           {/* 📱 Mobile top bar */}
           <div className="md:hidden flex items-center justify-between pt-2 mb-2">
-            <h1 className="text-lg font-black tracking-tight"><span className="text-[#3de530]">PAPER</span> TRADE</h1>
-            <button onClick={fetchUserDataAndHistory} className="flex items-center gap-1.5 text-[10px] font-bold text-white/50 bg-[#1c1b1b] px-3 py-2 rounded-xl border border-white/5">
+            <h1 className="text-lg font-black tracking-tight"><span className="text-[#C8833A]">PAPER</span> TRADE</h1>
+            <button onClick={fetchUserDataAndHistory} className="flex items-center gap-1.5 text-[10px] font-bold text-[#F5F0E8]/50 bg-[#1C1710] px-3 py-2 rounded-xl border border-[#2A2318]">
               <span className="material-symbols-outlined text-[14px]">refresh</span> Refresh
             </button>
           </div>
@@ -124,28 +124,28 @@ function History() {
           <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6 mb-4 md:mb-8">
             <div>
               <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight">Trade Ledger</h2>
-              <p className="text-white/60 text-sm mt-1">Review your past executions and overall terminal performance.</p>
+              <p className="text-[#F5F0E8]/60 text-sm mt-1">Review your past executions and overall terminal performance.</p>
             </div>
-            <button onClick={fetchUserDataAndHistory} className="hidden md:flex items-center gap-2 text-[11px] font-bold text-white/50 hover:text-white uppercase tracking-widest transition-colors bg-[#1c1b1b] px-4 py-2.5 rounded-xl border border-white/5 hover:border-white/20">
+            <button onClick={fetchUserDataAndHistory} className="hidden md:flex items-center gap-2 text-[11px] font-bold text-[#F5F0E8]/50 hover:text-white uppercase tracking-widest transition-colors bg-[#1C1710] px-4 py-2.5 rounded-xl border border-[#2A2318] hover:border-white/20">
                <span className="material-symbols-outlined text-[16px]">refresh</span> Refresh Ledger
             </button>
           </header>
 
           {/* 🟢 PERFORMANCE METRICS */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-[#121212] border border-white/5 rounded-3xl p-6 shadow-xl relative overflow-hidden">
+            <div className="bg-[#131009] border border-[#2A2318] rounded-3xl p-6 shadow-xl relative overflow-hidden">
                <div className="flex items-center gap-3 mb-4 opacity-70">
-                 <span className="material-symbols-outlined text-white">receipt_long</span>
+                 <span className="material-symbols-outlined text-[#F5F0E8]">receipt_long</span>
                  <h3 className="text-xs font-bold text-white uppercase tracking-widest">Total Executions</h3>
                </div>
-               <p className="text-4xl font-bold font-mono text-white">{totalTrades}</p>
+               <p className="text-4xl font-bold font-mono text-[#F5F0E8]">{totalTrades}</p>
             </div>
-            <div className="bg-[#121212] border border-white/5 rounded-3xl p-6 shadow-xl relative overflow-hidden">
+            <div className="bg-[#131009] border border-[#2A2318] rounded-3xl p-6 shadow-xl relative overflow-hidden">
                <div className="flex items-center gap-3 mb-4 opacity-70">
-                 <span className="material-symbols-outlined text-white">track_changes</span>
+                 <span className="material-symbols-outlined text-[#F5F0E8]">track_changes</span>
                  <h3 className="text-xs font-bold text-white uppercase tracking-widest">Win Rate (Closed)</h3>
                </div>
-               <p className="text-4xl font-bold font-mono text-white">{winRate}%</p>
+               <p className="text-4xl font-bold font-mono text-[#F5F0E8]">{winRate}%</p>
             </div>
             <div className={`bg-gradient-to-br border rounded-3xl p-6 shadow-xl ${isOverallGreen ? 'from-[#003a00]/40 to-[#121212] border-green-500/20' : 'from-[#3a0000]/40 to-[#121212] border-red-500/20'}`}>
                <div className="flex items-center gap-3 mb-4">
@@ -161,10 +161,10 @@ function History() {
           </div>
 
           {/* 📱 MOBILE: card view of trade history */}
-          <div className="md:hidden bg-[#121212] border border-white/5 rounded-3xl overflow-hidden shadow-xl">
-            <div className="p-4 border-b border-white/5 bg-[#171717]/50">
+          <div className="md:hidden bg-[#131009] border border-[#2A2318] rounded-3xl overflow-hidden shadow-xl">
+            <div className="p-4 border-b border-[#2A2318] bg-[#1C1710]/50">
               <h3 className="font-bold text-white text-base flex items-center gap-2">
-                <span className="material-symbols-outlined text-white/50 text-[18px]">history</span> Transaction History
+                <span className="material-symbols-outlined text-[#F5F0E8]/50 text-[18px]">history</span> Transaction History
               </h3>
             </div>
             {isLoading ? (
@@ -172,9 +172,9 @@ function History() {
                 <span className="w-8 h-8 border-2 border-green-500 border-t-transparent rounded-full animate-spin inline-block" />
               </div>
             ) : tradeHistory.length === 0 ? (
-              <div className="p-10 text-center text-white/40 text-sm">No trading history yet.</div>
+              <div className="p-10 text-center text-[#F5F0E8]/40 text-sm">No trading history yet.</div>
             ) : (
-              <div className="divide-y divide-white/5">
+              <div className="divide-y divide-[#2A2318]">
                 {tradeHistory.map((trade, i) => {
                   const isBuy = trade.transactionType?.toUpperCase() === 'BUY';
                   const pnl = trade.realizedPnL || 0;
@@ -187,14 +187,14 @@ function History() {
                           {trade.transactionType}
                         </span>
                         <div>
-                          <p className="font-bold text-white/90 text-sm">{trade.symbol}</p>
-                          <p className="text-[10px] text-white/40 mt-0.5">{trade.quantity} units · ₹{Number(trade.pricePerShare).toLocaleString('en-IN', {minimumFractionDigits: 0, maximumFractionDigits: 0})}</p>
+                          <p className="font-bold text-[#F5F0E8]/90 text-sm">{trade.symbol}</p>
+                          <p className="text-[10px] text-[#F5F0E8]/40 mt-0.5">{trade.quantity} units · ₹{Number(trade.pricePerShare).toLocaleString('en-IN', {minimumFractionDigits: 0, maximumFractionDigits: 0})}</p>
                         </div>
                       </div>
                       <div className="text-right">
                         <p className="font-mono text-white font-bold text-sm">₹{(trade.quantity * trade.pricePerShare).toLocaleString('en-IN', {minimumFractionDigits: 0, maximumFractionDigits: 0})}</p>
                         {!isBuy && (
-                          <p className={`text-[11px] font-bold font-mono mt-0.5 ${isProfit ? 'text-green-500' : isLoss ? 'text-red-500' : 'text-white/40'}`}>
+                          <p className={`text-[11px] font-bold font-mono mt-0.5 ${isProfit ? 'text-green-500' : isLoss ? 'text-red-500' : 'text-[#F5F0E8]/40'}`}>
                             {isProfit ? '+' : ''}₹{Math.abs(pnl).toLocaleString('en-IN', {minimumFractionDigits: 0, maximumFractionDigits: 0})}
                           </p>
                         )}
@@ -207,17 +207,17 @@ function History() {
           </div>
 
           {/* 🖥️ DESKTOP: full table */}
-          <div className="hidden md:block bg-[#121212] border border-white/5 rounded-3xl overflow-hidden shadow-xl">
-             <div className="p-6 border-b border-white/5 bg-[#171717]/50 flex justify-between items-center">
+          <div className="hidden md:block bg-[#131009] border border-[#2A2318] rounded-3xl overflow-hidden shadow-xl">
+             <div className="p-6 border-b border-[#2A2318] bg-[#1C1710]/50 flex justify-between items-center">
                <h3 className="font-bold text-white text-lg flex items-center gap-2">
-                 <span className="material-symbols-outlined text-white/50 text-[20px]">history</span> Transaction History
+                 <span className="material-symbols-outlined text-[#F5F0E8]/50 text-[20px]">history</span> Transaction History
                </h3>
              </div>
              
              <div className="overflow-x-auto">
                <table className="w-full text-left border-collapse whitespace-nowrap">
                  <thead>
-                   <tr className="text-white/40 text-[10px] font-bold uppercase tracking-widest border-b border-white/5 bg-[#0a0a0a]/50">
+                   <tr className="text-[#F5F0E8]/40 text-[10px] font-bold uppercase tracking-widest border-b border-[#2A2318] bg-[#0A0906]/50">
                      <th className="px-8 py-5">Date & Time</th>
                      <th className="px-8 py-5">Asset</th>
                      <th className="px-8 py-5 text-center">Type</th>
@@ -227,7 +227,7 @@ function History() {
                      <th className="px-8 py-5 text-right">Realized P&L</th>
                    </tr>
                  </thead>
-                 <tbody className="divide-y divide-white/5">
+                 <tbody className="divide-y divide-[#2A2318]">
                    {isLoading ? (
                      <tr>
                        <td colSpan="7" className="px-8 py-12 text-center">
@@ -236,7 +236,7 @@ function History() {
                      </tr>
                    ) : tradeHistory.length === 0 ? (
                      <tr>
-                       <td colSpan="7" className="px-8 py-16 text-center text-white/40 font-medium">
+                       <td colSpan="7" className="px-8 py-16 text-center text-[#F5F0E8]/40 font-medium">
                          No trading history found. Your ledger is clean.
                        </td>
                      </tr>
@@ -250,10 +250,10 @@ function History() {
                        return (
                          <motion.tr initial={{opacity:0}} animate={{opacity:1}} transition={{delay: i * 0.05}} key={i} className="hover:bg-white/[0.02] transition-colors group">
                            <td className="px-8 py-4">
-                              <p className="font-mono text-white/80 text-sm">
+                              <p className="font-mono text-[#F5F0E8]/80 text-sm">
                                 {new Date(trade.date || trade.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
                               </p>
-                              <p className="text-[10px] text-white/40 font-mono mt-0.5">
+                              <p className="text-[10px] text-[#F5F0E8]/40 font-mono mt-0.5">
                                 {new Date(trade.date || trade.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                               </p>
                            </td>
@@ -262,7 +262,7 @@ function History() {
                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs ${isBuy ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' : 'bg-purple-500/10 text-purple-400 border border-purple-500/20'}`}>
                                  {trade.symbol?.charAt(0)}
                                </div>
-                               <p className="font-bold text-white/90">{trade.symbol}</p>
+                               <p className="font-bold text-[#F5F0E8]/90">{trade.symbol}</p>
                              </div>
                            </td>
                            <td className="px-8 py-4 text-center">
@@ -274,16 +274,16 @@ function History() {
                               <p className="font-mono text-white font-bold">{trade.quantity}</p>
                            </td>
                            <td className="px-8 py-4 text-right">
-                              <p className="font-mono text-white/70">₹{Number(trade.pricePerShare).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+                              <p className="font-mono text-[#F5F0E8]/70">₹{Number(trade.pricePerShare).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
                            </td>
                            <td className="px-8 py-4 text-right">
                               <p className="font-mono text-white font-semibold">₹{(trade.quantity * trade.pricePerShare).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
                            </td>
                            <td className="px-8 py-4 text-right">
                               {isBuy ? (
-                                <span className="text-white/30 text-[10px] uppercase font-bold tracking-widest">-</span>
+                                <span className="text-[#F5F0E8]/30 text-[10px] uppercase font-bold tracking-widest">-</span>
                               ) : (
-                                <p className={`font-mono font-bold ${isProfit ? 'text-green-500' : isLoss ? 'text-red-500' : 'text-white/50'}`}>
+                                <p className={`font-mono font-bold ${isProfit ? 'text-green-500' : isLoss ? 'text-red-500' : 'text-[#F5F0E8]/50'}`}>
                                   {isProfit ? '+' : ''}₹{pnl.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                                 </p>
                               )}

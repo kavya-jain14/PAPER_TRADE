@@ -6,16 +6,32 @@
 /* 2. Tailwind v4 Engine */
 @import "tailwindcss";
 
-/* 3. Paper Trade Elite Theme */
+/* 3. Paper Trade — Caramel · Black · White Theme */
 @theme {
-  --color-surface-container-lowest: #0a0a0a;
-  --color-surface: #111111;
-  --color-on-surface: #f0eeec;
-  --color-on-surface-variant: #a8b8a0;
-  --color-background: #0a0a0a;
-  --color-primary: #3de530;
-  --color-primary-container: #00c805;
-  --color-on-primary: #003a00;
+  /* ── Caramel Accent ── */
+  --color-caramel:          #C8833A;
+  --color-caramel-light:    #E8A855;
+  --color-caramel-dark:     #8B5A20;
+  --color-caramel-muted:    rgba(200,131,58,0.15);
+
+  /* ── Warm Black Surfaces ── */
+  --color-background:       #0A0906;
+  --color-surface:          #131009;
+  --color-surface-elevated: #1C1710;
+  --color-surface-border:   #2A2318;
+
+  /* ── Warm White Text ── */
+  --color-on-surface:         #F5F0E8;
+  --color-on-surface-variant: rgba(245,240,232,0.6);
+  --color-on-surface-muted:   rgba(245,240,232,0.3);
+
+  /* ── Primary = Caramel ── */
+  --color-primary:           #C8833A;
+  --color-primary-container: #8B5A20;
+  --color-on-primary:        #0A0906;
+
+  /* ── Legacy aliases (kept for backward compat) ── */
+  --color-surface-container-lowest: #0A0906;
 
   /* Fonts */
   --font-sans:  "Geist", "Inter", ui-sans-serif, system-ui, sans-serif;
@@ -43,8 +59,8 @@ html {
 
 body {
   font-family: "Geist", "Inter", ui-sans-serif, system-ui, sans-serif;
-  background-color: #0a0a0a;
-  color: rgba(255,255,255,0.88);
+  background-color: #0A0906;
+  color: #F5F0E8;
 }
 
 /* Utility aliases */
@@ -60,19 +76,19 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 input[type="number"] { -moz-appearance: textfield; }
 
-/* 6. Glass panel utility */
+/* 6. Glass panel utility — caramel-tinted */
 .glass-panel {
-  background: rgba(18, 18, 18, 0.8);
+  background: rgba(19, 16, 9, 0.85);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid #2A2318;
 }
 
-/* 7. Trading background */
+/* 7. Trading background — caramel glow */
 .trading-bg {
-  background-color: #0a0a0a;
+  background-color: #0A0906;
   background-image:
-    radial-gradient(circle at 80% 10%, rgba(61, 229, 48, 0.04), transparent 50%),
-    radial-gradient(circle at 20% 90%, rgba(61, 229, 48, 0.03), transparent 50%);
+    radial-gradient(circle at 80% 10%, rgba(200,131,58,0.06), transparent 50%),
+    radial-gradient(circle at 20% 90%, rgba(200,131,58,0.04), transparent 50%);
 }
 
 /* 8. Chrome Autofill fix */
@@ -80,19 +96,19 @@ input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
 input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 1000px #0a0a0a inset !important;
-  -webkit-text-fill-color: #f0eeec !important;
-  caret-color: white !important;
+  -webkit-box-shadow: 0 0 0 1000px #0A0906 inset !important;
+  -webkit-text-fill-color: #F5F0E8 !important;
+  caret-color: #F5F0E8 !important;
   transition: background-color 5000s ease-in-out 0s !important;
 }
 
-/* 9. Custom Scrollbar */
+/* 9. Custom Scrollbar — caramel tint */
 .custom-scrollbar::-webkit-scrollbar       { width: 4px; height: 4px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.07); border-radius: 999px; }
-.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.14); }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(200,131,58,0.2); border-radius: 999px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(200,131,58,0.4); }
 
 /* 10. Candlestick chart overlay scrollbar */
 .modal-scrollbar::-webkit-scrollbar       { width: 3px; }
 .modal-scrollbar::-webkit-scrollbar-track { background: transparent; }
-.modal-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 999px; }
+.modal-scrollbar::-webkit-scrollbar-thumb { background: rgba(200,131,58,0.15); border-radius: 999px; }
