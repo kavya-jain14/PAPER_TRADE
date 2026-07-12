@@ -136,92 +136,71 @@ function History() {
               </div>
             </div>
 
-            {/* TABLE */}
-            <div className="bg-[#16181D]/30 rounded-[32px] overflow-hidden shadow-xl">
-               <div className="p-8 border-b border-[#E5E5E5]/5 flex justify-between items-center">
-                 <h3 className="text-xs uppercase tracking-[0.2em] font-bold text-[#E5E5E5]/40">Execution History</h3>
+            {/* EXECUTION FEED */}
+            <div className="space-y-6">
+               <div className="flex justify-between items-end mb-8">
+                 <h3 className="text-xs uppercase tracking-[0.2em] font-bold text-[#E5E5E5]/40 pl-4 border-l-2 border-[#D4A574]">Execution Feed</h3>
                </div>
                
-               <div className="overflow-x-auto">
-                 <table className="w-full text-left border-collapse whitespace-nowrap">
-                   <thead>
-                     <tr className="text-[#E5E5E5]/40 text-[10px] font-bold uppercase tracking-widest border-b border-[#E5E5E5]/5 bg-[#0B0D10]/50">
-                       <th className="px-8 py-5">Date & Time</th>
-                       <th className="px-8 py-5">Asset</th>
-                       <th className="px-8 py-5 text-center">Type</th>
-                       <th className="px-8 py-5 text-right">Qty.</th>
-                       <th className="px-8 py-5 text-right">Exec. Price</th>
-                       <th className="px-8 py-5 text-right">Total Value</th>
-                       <th className="px-8 py-5 text-right">Realized P&L</th>
-                     </tr>
-                   </thead>
-                   <tbody className="divide-y divide-[#E5E5E5]/5">
-                     {isLoading ? (
-                       <tr>
-                         <td colSpan="7" className="px-8 py-12 text-center">
-                           <span className="w-8 h-8 border-2 border-[#D4A574] border-t-transparent rounded-full animate-spin inline-block"></span>
-                         </td>
-                       </tr>
-                     ) : tradeHistory.length === 0 ? (
-                       <tr>
-                         <td colSpan="7" className="px-8 py-16 text-center text-[#E5E5E5]/40 font-medium">
-                           No trading history found. Your ledger is clean.
-                         </td>
-                       </tr>
-                     ) : (
-                       tradeHistory.map((trade, i) => {
-                         const isBuy = trade.transactionType?.toUpperCase() === 'BUY';
-                         const pnl = trade.realizedPnL || 0;
-                         const isProfit = pnl > 0;
-                         const isLoss = pnl < 0;
+               <div className="space-y-4">
+                 {isLoading ? (
+                   <div className="py-12 text-center">
+                     <span className="w-8 h-8 border-2 border-[#D4A574] border-t-transparent rounded-full animate-spin inline-block"></span>
+                   </div>
+                 ) : tradeHistory.length === 0 ? (
+                   <div className="bg-[#16181D]/30 rounded-[32px] p-16 text-center text-[#E5E5E5]/40 font-mono shadow-inner border border-[#E5E5E5]/5">
+                     No trading history found. Your ledger is clean.
+                   </div>
+                 ) : (
+                   tradeHistory.map((trade, i) => {
+                     const isBuy = trade.transactionType?.toUpperCase() === 'BUY';
+                     const pnl = trade.realizedPnL || 0;
+                     const isProfit = pnl > 0;
+                     const isLoss = pnl < 0;
 
-                         return (
-                           <motion.tr initial={{opacity:0}} animate={{opacity:1}} transition={{delay: i * 0.05}} key={i} className="hover:bg-white/[0.02] transition-colors group">
-                             <td className="px-8 py-6">
-                                <p className="font-mono text-[#E5E5E5]/80 text-sm">
-                                  {new Date(trade.date || trade.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                     return (
+                       <motion.div initial={{opacity:0, y: 10}} animate={{opacity:1, y:0}} transition={{delay: i * 0.05}} key={i} className={`group relative bg-[#16181D]/30 border border-[#E5E5E5]/5 rounded-[24px] p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-lg hover:-translate-y-1 transition-transform ${isBuy ? 'hover:shadow-[0_10px_30px_rgba(212,165,116,0.05)]' : isProfit ? 'hover:shadow-[0_10px_30px_rgba(74,222,128,0.05)]' : 'hover:shadow-[0_10px_30px_rgba(239,68,68,0.05)]'}`}>
+                         
+                         <div className="flex items-center gap-6">
+                           <div className={`w-14 h-14 rounded-2xl flex flex-col items-center justify-center font-bold text-xs bg-[#0B0D10] border border-[#E5E5E5]/5 shadow-inner transition-colors ${isBuy ? 'text-[#D4A574]' : isProfit ? 'text-[#4ADE80]' : 'text-[#EF4444]'}`}>
+                             <span className="material-symbols-outlined text-[20px]">{isBuy ? 'shopping_cart' : 'sell'}</span>
+                           </div>
+                           <div>
+                             <div className="flex items-center gap-3 mb-1">
+                               <p className="font-bold text-xl text-[#E5E5E5] group-hover:text-[#D4A574] transition-colors tracking-tight">{trade.symbol}</p>
+                               <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest ${isBuy ? 'text-[#0B0D10] bg-[#D4A574]' : 'text-[#0B0D10] bg-[#E5E5E5]'}`}>
+                                 {trade.transactionType}
+                               </span>
+                             </div>
+                             <div className="flex items-center gap-3 font-mono text-xs text-[#E5E5E5]/40">
+                               <p>{new Date(trade.date || trade.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                               <span className="w-1 h-1 rounded-full bg-[#E5E5E5]/20"></span>
+                               <p>{new Date(trade.date || trade.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</p>
+                             </div>
+                           </div>
+                         </div>
+
+                         <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center gap-2 border-t md:border-t-0 border-[#E5E5E5]/5 pt-4 md:pt-0">
+                           <div className="text-left md:text-right">
+                              <p className="text-[10px] uppercase tracking-widest font-bold text-[#E5E5E5]/30 mb-1">Execution</p>
+                              <p className="font-mono text-[#E5E5E5] font-semibold text-lg">{trade.quantity} <span className="text-sm text-[#E5E5E5]/50">@</span> ₹{Number(trade.pricePerShare).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+                           </div>
+                           <div className="text-right">
+                              <p className="text-[10px] uppercase tracking-widest font-bold text-[#E5E5E5]/30 mb-1">Total / P&L</p>
+                              {isBuy ? (
+                                <p className="font-mono text-[#E5E5E5]/50 font-bold">₹{(trade.quantity * trade.pricePerShare).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+                              ) : (
+                                <p className={`font-mono font-bold text-lg ${isProfit ? 'text-[#4ADE80]' : isLoss ? 'text-[#EF4444]' : 'text-[#E5E5E5]/50'}`}>
+                                  {isProfit ? '+' : ''}₹{pnl.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                                 </p>
-                                <p className="text-[10px] text-[#E5E5E5]/40 font-mono mt-0.5">
-                                  {new Date(trade.date || trade.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                                </p>
-                             </td>
-                             <td className="px-8 py-6">
-                               <div className="flex items-center gap-4">
-                                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs bg-[#0B0D10] text-[#E5E5E5]/80 shadow-inner group-hover:text-[#D4A574] transition-colors`}>
-                                   {trade.symbol?.charAt(0)}
-                                 </div>
-                                 <p className="font-bold text-[#E5E5E5] group-hover:text-[#D4A574] transition-colors">{trade.symbol}</p>
-                               </div>
-                             </td>
-                             <td className="px-8 py-6 text-center">
-                                <span className={`px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest ${isBuy ? 'text-blue-400 bg-blue-500/10' : 'text-purple-400 bg-purple-500/10'}`}>
-                                  {trade.transactionType}
-                                </span>
-                             </td>
-                             <td className="px-8 py-6 text-right">
-                                <p className="font-mono text-white font-bold">{trade.quantity}</p>
-                             </td>
-                             <td className="px-8 py-6 text-right">
-                                <p className="font-mono text-[#E5E5E5]/70">₹{Number(trade.pricePerShare).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
-                             </td>
-                             <td className="px-8 py-6 text-right">
-                                <p className="font-mono text-white font-semibold">₹{(trade.quantity * trade.pricePerShare).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
-                             </td>
-                             <td className="px-8 py-6 text-right">
-                                {isBuy ? (
-                                  <span className="text-[#E5E5E5]/30 text-[10px] uppercase font-bold tracking-widest">-</span>
-                                ) : (
-                                  <p className={`font-mono font-bold ${isProfit ? 'text-[#4ADE80]' : isLoss ? 'text-[#EF4444]' : 'text-[#E5E5E5]/50'}`}>
-                                    {isProfit ? '+' : ''}₹{pnl.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                                  </p>
-                                )}
-                             </td>
-                           </motion.tr>
-                         );
-                       })
-                     )}
-                   </tbody>
-                 </table>
+                              )}
+                           </div>
+                         </div>
+
+                       </motion.div>
+                     );
+                   })
+                 )}
                </div>
             </div>
 
