@@ -285,342 +285,156 @@ function Portfolio() {
   }).sort((a, b) => b.pnl - a.pnl);
 
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2, ease: 'easeOut' }} className="flex h-screen bg-[#000000] text-[#E5E5E5]/90 font-inter overflow-hidden selection:bg-[#FFFFFF]/30">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} className="flex h-screen bg-[#0B0D10] text-[#E5E5E5] font-sans overflow-hidden selection:bg-[#D4A574]/30">
 
       <Sidebar userName={userName} balance={balance} isMarketOpen={isMarketOpen} avatar={avatar} />
       <MobileBottomNav />
 
-      <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-10 pb-24 md:pb-0 relative custom-scrollbar">
-        <div className="max-w-7xl mx-auto space-y-6 md:space-y-8 relative z-10">
-          
-          {/* 📱 Mobile top bar */}
-          <div className="md:hidden flex items-center justify-between pt-2 mb-2">
-            <h1 className="text-lg font-black tracking-tight"><span className="text-[#FFFFFF]">PAPER</span> TRADE</h1>
-            <div className="flex items-center gap-2">
-              <div className={`w-2 h-2 rounded-full ${isMarketOpen ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
-              <span className="text-[10px] font-bold text-[#E5E5E5]/50 uppercase tracking-wider">{isMarketOpen ? 'Live' : 'Closed'}</span>
-            </div>
-          </div>
-
-          <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6 mb-4 md:mb-8">
-            <div>
-              <h2 className="text-3xl font-black text-white tracking-tight">Your Portfolio</h2>
-              <p className="text-[#E5E5E5]/60 text-sm mt-1">Track your holdings, analyze P&L, and manage positions.</p>
-            </div>
-            <div className="text-right flex flex-col items-end gap-2">
-               <div>
-                 <p className="text-[10px] font-bold text-[#E5E5E5]/50 uppercase tracking-widest mb-1">Available Margin</p>
-                 <p className="text-xl font-bold font-mono text-[#E5E5E5]">₹{balance.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
-               </div>
-               <button onClick={handleReset} className="flex items-center gap-1.5 text-[10px] font-bold text-red-500/70 hover:text-red-500 uppercase tracking-widest transition-colors bg-red-500/10 px-2 py-1 rounded-md border border-red-500/20">
-                 <span className="material-symbols-outlined text-[14px]">delete_forever</span> Reset Account
-               </button>
-            </div>
-          </header>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-[#0A0A0A] border border-[#222222] rounded-3xl p-6 shadow-xl">
-               <div className="flex items-center gap-3 mb-4 opacity-70">
-                 <span className="material-symbols-outlined text-[#E5E5E5]">account_balance_wallet</span>
-                 <h3 className="text-xs font-bold text-white uppercase tracking-widest">Invested Value</h3>
-               </div>
-               <p className="text-3xl font-bold font-mono text-[#E5E5E5]">₹{totalInvested.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
-            </div>
-            <div className="bg-[#0A0A0A] border border-[#222222] rounded-3xl p-6 shadow-xl relative overflow-hidden">
-               <div className="flex items-center gap-3 mb-4 opacity-70 relative z-10">
-                 <span className="material-symbols-outlined text-[#E5E5E5]">monitoring</span>
-                 <h3 className="text-xs font-bold text-white uppercase tracking-widest">Current Value</h3>
-               </div>
-               <p className="text-3xl font-bold font-mono text-white relative z-10">₹{currentTotalValue.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
-               <div className={`absolute -bottom-10 -right-10 w-40 h-40 rounded-full blur-[60px] opacity-20 pointer-events-none ${isOverallGreen ? 'bg-green-500' : 'bg-red-500'}`}></div>
-            </div>
-            <div className={`bg-gradient-to-br border rounded-3xl p-6 shadow-xl ${isOverallGreen ? 'from-[#003a00]/40 to-[#121212] border-green-500/20' : 'from-[#3a0000]/40 to-[#121212] border-red-500/20'}`}>
-               <div className="flex items-center gap-3 mb-4">
-                 <span className={`material-symbols-outlined ${isOverallGreen ? 'text-green-500' : 'text-red-500'}`}>
-                   {isOverallGreen ? 'trending_up' : 'trending_down'}
-                 </span>
-                 <h3 className={`text-xs font-bold uppercase tracking-widest ${isOverallGreen ? 'text-green-500' : 'text-red-500'}`}>Total P&L</h3>
-               </div>
-               <div className="flex items-baseline gap-3">
-                 <p className={`text-3xl font-bold font-mono ${isOverallGreen ? 'text-green-500' : 'text-red-500'}`}>
-                   {isOverallGreen ? '+' : ''}₹{totalPnL.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                 </p>
-                 <span className={`text-sm font-bold font-mono ${isOverallGreen ? 'text-green-500' : 'text-red-500'}`}>
-                   ({isOverallGreen ? '+' : ''}{pnlPercentage.toFixed(2)}%)
-                 </span>
-               </div>
-            </div>
-          </div>
-
-          {holdings.length > 0 && (
-            <div className="bg-[#0A0A0A] border border-[#222222] rounded-3xl p-6 shadow-xl">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-[#222222]/60 flex items-center justify-center">
-                    <span className="material-symbols-outlined text-[#E5E5E5]/50 text-[20px]">area_chart</span>
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-white text-base">Profit & Loss by Position</h3>
-                    <p className="text-[10px] text-[#E5E5E5]/40 uppercase tracking-widest font-semibold mt-0.5">Unrealized P&L per holding</p>
-                  </div>
-                </div>
-                <span className={`text-xs font-black px-3 py-1.5 rounded-xl ${isOverallGreen ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
-                  {isOverallGreen ? '▲' : '▼'} {Math.abs(pnlPercentage).toFixed(2)}% Overall
-                </span>
+      <main className="flex-1 flex flex-col min-w-0 relative h-full">
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10 pb-32">
+          <div className="max-w-[1600px] mx-auto space-y-12">
+            
+            {/* Header */}
+            <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+              <div>
+                <motion.h1 initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="text-4xl md:text-5xl lg:text-[56px] font-light tracking-tight text-[#E5E5E5] leading-none mb-4">
+                  Portfolio <span className="font-bold">Holdings</span>.
+                </motion.h1>
+                <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }} className="flex items-center gap-2">
+                  <div className={`w-2.5 h-2.5 rounded-full ${isMarketOpen ? 'bg-[#4ADE80] animate-pulse shadow-[0_0_10px_#4ADE80]' : 'bg-[#EF4444]'}`} />
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#E5E5E5]/40">{isMarketOpen ? 'Live Market' : 'AI Synthetic Mode'}</p>
+                </motion.div>
               </div>
+              <button onClick={handleReset} className="flex items-center gap-1.5 text-[10px] font-bold text-red-500/70 hover:text-red-500 uppercase tracking-widest transition-colors bg-red-500/10 px-3 py-1.5 rounded border border-red-500/20 hover-glow">
+                Reset Account
+              </button>
+            </header>
 
-              {pnlChartData.length > 0 ? (
-                <div className="w-full h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={pnlChartData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
-                      <defs>
-                        <linearGradient id="pnlGreen" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#22c55e" stopOpacity={0.35} />
-                          <stop offset="95%" stopColor="#22c55e" stopOpacity={0.02} />
-                        </linearGradient>
-                        <linearGradient id="pnlRed" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#ef4444" stopOpacity={0.35} />
-                          <stop offset="95%" stopColor="#ef4444" stopOpacity={0.02} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
-                      <XAxis
-                        dataKey="name"
-                        tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 10, fontWeight: 700 }}
-                        axisLine={false}
-                        tickLine={false}
-                        dy={8}
-                      />
-                      <YAxis
-                        tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 9, fontWeight: 600 }}
-                        axisLine={false}
-                        tickLine={false}
-                        tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
-                        width={48}
-                      />
-                      <Tooltip content={<PnLTooltip />} cursor={{ stroke: 'rgba(255,255,255,0.08)', strokeWidth: 1 }} />
-                      <ReferenceLine y={0} stroke="rgba(255,255,255,0.15)" strokeDasharray="4 4" />
-                      <Area
-                        type="monotone"
-                        dataKey="pnl"
-                        stroke={isOverallGreen ? '#22c55e' : '#ef4444'}
-                        strokeWidth={2.5}
-                        fill={isOverallGreen ? 'url(#pnlGreen)' : 'url(#pnlRed)'}
-                        dot={{
-                          fill: isOverallGreen ? '#22c55e' : '#ef4444',
-                          r: 4,
-                          strokeWidth: 2,
-                          stroke: '#0a0a0a',
-                        }}
-                        activeDot={{
-                          r: 6,
-                          fill: isOverallGreen ? '#22c55e' : '#ef4444',
-                          stroke: '#0a0a0a',
-                          strokeWidth: 2,
-                        }}
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
+            {/* Asymmetric Grid */}
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 md:gap-10">
+              
+              {/* Massive Holdings Section (Col Span 7) */}
+              <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3 }} className="xl:col-span-7 flex flex-col">
+                <div className="flex items-center justify-between mb-4 px-2">
+                  <h3 className="text-xs uppercase tracking-[0.2em] font-bold text-[#E5E5E5]/40">Active Positions</h3>
                 </div>
-              ) : (
-                <div className="h-64 flex items-center justify-center text-[#E5E5E5]/30 text-sm">
-                  No chart data available
-                </div>
-              )}
-
-              <div className="mt-6 pt-5 border-t border-[#222222]">
-                <p className="text-[10px] text-[#E5E5E5]/30 uppercase tracking-widest font-bold mb-3">Position Summary</p>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                  {pnlChartData.map((d, i) => {
-                    const isP = d.pnl >= 0;
-                    const pct = d.invested > 0 ? ((d.pnl / d.invested) * 100) : 0;
-                    return (
-                      <div key={i} className={`rounded-2xl p-3 border ${isP ? 'bg-green-500/5 border-green-500/15' : 'bg-red-500/5 border-red-500/15'}`}>
-                        <p className="text-[10px] font-bold text-[#E5E5E5]/50 uppercase tracking-widest truncate">{d.name}</p>
-                        <p className={`text-sm font-black font-mono mt-1 ${isP ? 'text-green-400' : 'text-red-400'}`}>
-                          {isP ? '+' : ''}₹{Math.abs(d.pnl).toLocaleString('en-IN', {minimumFractionDigits: 0, maximumFractionDigits: 0})}
-                        </p>
-                        <p className={`text-[10px] font-bold font-mono mt-0.5 ${isP ? 'text-green-500/60' : 'text-red-500/60'}`}>
-                          {isP ? '+' : ''}{pct.toFixed(2)}%
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* 📱 MOBILE: card view of holdings */}
-          <div className="md:hidden bg-[#0A0A0A] border border-[#222222] rounded-3xl overflow-hidden shadow-xl">
-            <div className="p-4 border-b border-[#222222] bg-[#141414]/50 flex justify-between items-center">
-              <h3 className="font-bold text-white text-base flex items-center gap-2">
-                <span className="material-symbols-outlined text-[#E5E5E5]/50 text-[18px]">inventory_2</span> Active Positions
-              </h3>
-              <span className="text-[10px] font-bold text-[#E5E5E5]/40 uppercase tracking-widest bg-[#222222]/60 px-3 py-1 rounded-lg">{holdings.length} Assets</span>
-            </div>
-            {isLoading ? (
-              <div className="p-10 flex justify-center">
-                <span className="w-8 h-8 border-2 border-green-500 border-t-transparent rounded-full animate-spin inline-block" />
-              </div>
-            ) : holdings.length === 0 ? (
-              <div className="p-10 text-center">
-                <span className="material-symbols-outlined text-[#E5E5E5]/20 text-4xl">inbox</span>
-                <p className="text-[#E5E5E5]/40 font-medium mt-3">Portfolio is empty.</p>
-                <p className="text-white/25 text-sm mt-1">Visit Markets to trade.</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-[#222222]">
-                {holdings.map((pos, i) => {
-                  const liveData = livePrices[pos.symbol] || {};
-                  const currentPrice = liveData.price || pos.avgPrice;
-                  const investedValue = pos.investedValue || (pos.avgPrice * pos.quantity);
-                  const currentValue = currentPrice * pos.quantity;
-                  const pnl = currentValue - investedValue;
-                  const pnlPercent = investedValue > 0 ? ((pnl / investedValue) * 100) : 0;
-                  const isProfit = pnl >= 0;
-                  return (
-                    <div key={i} onClick={() => setSelectedAsset(pos.symbol)} className="p-4 flex items-center justify-between hover:bg-white/[0.02] active:bg-[#222222]/60 transition-colors cursor-pointer">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-[#141414] border border-[#222222] flex items-center justify-center font-bold text-xs text-[#E5E5E5]/80">
-                          {pos.symbol.charAt(0)}
-                        </div>
-                        <div>
-                          <p className="font-bold text-[#E5E5E5]/90 text-sm">{pos.symbol}</p>
-                          <p className="text-[10px] text-[#E5E5E5]/40 mt-0.5">{pos.quantity} units · avg ₹{pos.avgPrice.toLocaleString('en-IN', {minimumFractionDigits: 0, maximumFractionDigits: 0})}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-mono text-white font-bold text-sm">₹{currentPrice.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
-                        <p className={`text-[11px] font-bold font-mono mt-0.5 ${isProfit ? 'text-green-500' : 'text-red-500'}`}>
-                          {isProfit ? '+' : ''}₹{Math.abs(pnl).toLocaleString('en-IN', {minimumFractionDigits: 0, maximumFractionDigits: 0})} ({isProfit ? '+' : ''}{pnlPercent.toFixed(1)}%)
-                        </p>
-                      </div>
+                
+                <div className="flex-1 bg-[#16181D]/30 rounded-[24px] p-2 flex flex-col gap-1">
+                  {isLoading ? (
+                    <div className="p-10 flex justify-center"><span className="w-8 h-8 border-2 border-[#D4A574] border-t-transparent rounded-full animate-spin" /></div>
+                  ) : holdings.length === 0 ? (
+                    <div className="p-10 text-center">
+                      <span className="material-symbols-outlined text-[#E5E5E5]/20 text-4xl">inbox</span>
+                      <p className="text-[#E5E5E5]/40 font-medium mt-3">Portfolio is empty.</p>
+                      <button onClick={() => navigate('/markets')} className="mt-4 text-xs font-bold text-[#D4A574] uppercase tracking-widest hover:text-[#E5E5E5] transition-colors">Trade Now</button>
                     </div>
-                  );
-                })}
-              </div>
-            )}
+                  ) : (
+                    holdings.map((pos, i) => {
+                      const liveData = livePrices[pos.symbol] || {};
+                      const currentPrice = liveData.price || pos.avgPrice;
+                      const investedValue = pos.investedValue || (pos.avgPrice * pos.quantity);
+                      const currentValue = currentPrice * pos.quantity;
+                      const pnl = currentValue - investedValue;
+                      const pnlPercent = investedValue > 0 ? ((pnl / investedValue) * 100) : 0;
+                      const isProfit = pnl >= 0;
+                      return (
+                        <div key={i} onClick={() => setSelectedAsset(pos.symbol)} className="flex items-center justify-between p-4 hover:bg-[#1F2229] rounded-[16px] transition-colors cursor-pointer group">
+                          <div className="flex items-center gap-6">
+                            <div className="w-12 h-12 rounded-[12px] bg-[#0B0D10] flex items-center justify-center font-bold text-lg text-[#E5E5E5]/80 group-hover:text-[#D4A574] transition-colors shadow-inner">
+                              {pos.symbol.charAt(0)}
+                            </div>
+                            <div>
+                              <p className="text-lg font-bold text-[#E5E5E5] group-hover:text-[#D4A574] transition-colors tracking-tight">{pos.symbol}</p>
+                              <p className="text-[10px] uppercase tracking-widest text-[#E5E5E5]/40 mt-1">{pos.quantity} units · avg ₹{pos.avgPrice.toLocaleString('en-IN')}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xl font-mono font-bold text-[#E5E5E5]">₹{currentPrice.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+                            <p className={`text-[12px] font-bold mt-1 ${isProfit ? 'text-[#4ADE80]' : 'text-[#EF4444]'}`}>
+                              {isProfit ? '+' : ''}₹{Math.abs(pnl).toLocaleString('en-IN', {minimumFractionDigits: 0, maximumFractionDigits: 0})} ({isProfit ? '+' : ''}{pnlPercent.toFixed(1)}%)
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </motion.div>
+
+              {/* Portfolio Insights (Col Span 5) */}
+              <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.4 }} className="xl:col-span-5 flex flex-col gap-6">
+                
+                {/* Massive PnL Card */}
+                <div className={`bg-gradient-to-br rounded-[32px] p-8 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5)] relative overflow-hidden group ${isOverallGreen ? 'from-[#002a10] to-[#0B0D10]' : 'from-[#2a0000] to-[#0B0D10]'}`}>
+                   <div className="absolute inset-0 bg-[#ffffff]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                   
+                   <h3 className={`text-xs uppercase tracking-[0.2em] font-black mb-6 ${isOverallGreen ? 'text-[#4ADE80]/80' : 'text-[#EF4444]/80'}`}>Total P&L</h3>
+                   
+                   <div className="relative z-10 mb-8">
+                     <div className="flex items-end gap-3">
+                       <p className={`text-4xl md:text-5xl font-mono font-black tracking-tight ${isOverallGreen ? 'text-[#4ADE80]' : 'text-[#EF4444]'}`}>
+                         {isOverallGreen ? '+' : ''}₹{Math.abs(totalPnL).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                       </p>
+                     </div>
+                     <p className={`text-lg font-bold mt-2 ${isOverallGreen ? 'text-[#4ADE80]/80' : 'text-[#EF4444]/80'}`}>
+                       {isOverallGreen ? '+' : ''}{pnlPercentage.toFixed(2)}% Overall Returns
+                     </p>
+                   </div>
+
+                   <div className="grid grid-cols-2 gap-6 pt-6 border-t border-[#E5E5E5]/5 relative z-10">
+                     <div>
+                       <p className="text-[10px] uppercase tracking-widest text-[#E5E5E5]/40 font-bold mb-1">Invested Value</p>
+                       <p className="text-xl font-mono font-bold text-[#E5E5E5]">₹{totalInvested.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+                     </div>
+                     <div>
+                       <p className="text-[10px] uppercase tracking-widest text-[#E5E5E5]/40 font-bold mb-1">Current Value</p>
+                       <p className="text-xl font-mono font-bold text-[#E5E5E5]">₹{currentTotalValue.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+                     </div>
+                   </div>
+                </div>
+
+                {/* Area Chart Card */}
+                {pnlChartData.length > 0 && (
+                  <div className="bg-[#16181D] rounded-[32px] p-8 flex-1 flex flex-col shadow-xl">
+                    <h3 className="text-xs uppercase tracking-[0.2em] font-bold text-[#E5E5E5]/40 mb-6">P&L by Asset</h3>
+                    <div className="flex-1 w-full min-h-[200px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={pnlChartData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
+                          <defs>
+                            <linearGradient id="pnlGreen" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#4ADE80" stopOpacity={0.4} />
+                              <stop offset="95%" stopColor="#4ADE80" stopOpacity={0.0} />
+                            </linearGradient>
+                            <linearGradient id="pnlRed" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#EF4444" stopOpacity={0.4} />
+                              <stop offset="95%" stopColor="#EF4444" stopOpacity={0.0} />
+                            </linearGradient>
+                          </defs>
+                          <XAxis dataKey="name" tick={{ fill: 'rgba(229,229,229,0.3)', fontSize: 9, fontWeight: 700 }} axisLine={false} tickLine={false} dy={10} />
+                          <YAxis tick={{ fill: 'rgba(229,229,229,0.3)', fontSize: 9, fontWeight: 600 }} axisLine={false} tickLine={false} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
+                          <Tooltip content={<PnLTooltip />} cursor={{ stroke: 'rgba(229,229,229,0.1)', strokeWidth: 1 }} />
+                          <Area type="monotone" dataKey="pnl" stroke={isOverallGreen ? '#4ADE80' : '#EF4444'} strokeWidth={3} fill={isOverallGreen ? 'url(#pnlGreen)' : 'url(#pnlRed)'} />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+
+            </div>
           </div>
-
-          {/* 🖥️ DESKTOP: table view — hidden on mobile */}
-          <div className="hidden md:block bg-[#0A0A0A] border border-[#222222] rounded-3xl overflow-hidden shadow-xl">
-             <div className="p-6 border-b border-[#222222] bg-[#141414]/50 flex justify-between items-center">
-               <h3 className="font-bold text-white text-lg flex items-center gap-2">
-                 <span className="material-symbols-outlined text-[#E5E5E5]/50 text-[20px]">inventory_2</span> Active Positions
-               </h3>
-               <span className="text-[10px] font-bold text-[#E5E5E5]/40 uppercase tracking-widest bg-[#222222]/60 px-3 py-1 rounded-lg">
-                 {holdings.length} Assets
-               </span>
-             </div>
-             
-             <div className="overflow-x-auto">
-               <table className="w-full text-left border-collapse whitespace-nowrap">
-                 <thead>
-                   <tr className="text-[#E5E5E5]/40 text-[10px] font-bold uppercase tracking-widest border-b border-[#222222] bg-[#000000]/50">
-                     <th className="px-8 py-5">Instrument</th>
-                     <th className="px-8 py-5 text-right">Qty.</th>
-                     <th className="px-8 py-5 text-right">Avg. Cost</th>
-                     <th className="px-8 py-5 text-right">LTP</th>
-                     <th className="px-8 py-5 text-right">Cur. Value</th>
-                     <th className="px-8 py-5 text-right">P&L</th>
-                     <th className="px-8 py-5 text-center">Action</th>
-                   </tr>
-                 </thead>
-                 <tbody className="divide-y divide-[#222222]">
-                   {isLoading ? (
-                     <tr>
-                       <td colSpan="7" className="px-8 py-12 text-center">
-                         <span className="w-8 h-8 border-2 border-green-500 border-t-transparent rounded-full animate-spin inline-block"></span>
-                       </td>
-                     </tr>
-                   ) : holdings.length === 0 ? (
-                     <tr>
-                       <td colSpan="7" className="px-8 py-16 text-center">
-                         <div className="flex flex-col items-center gap-4">
-                           <div className="w-16 h-16 rounded-full bg-[#222222]/60 flex items-center justify-center">
-                             <span className="material-symbols-outlined text-[#E5E5E5]/20 text-3xl">inbox</span>
-                           </div>
-                           <p className="text-[#E5E5E5]/40 font-medium">Your portfolio is empty.</p>
-                           <p className="text-white/25 text-sm">Visit Markets to make your first trade.</p>
-                         </div>
-                       </td>
-                     </tr>
-                   ) : (
-                     holdings.map((pos, i) => {
-                       const liveData = livePrices[pos.symbol] || {};
-                       const currentPrice = liveData.price || pos.avgPrice; 
-                       
-                       const investedValue = pos.investedValue || (pos.avgPrice * pos.quantity);
-                       const currentValue = currentPrice * pos.quantity;
-                       const pnl = currentValue - investedValue;
-                       const pnlPercent = investedValue > 0 ? ((pnl / investedValue) * 100) : 0;
-                       const isProfit = pnl >= 0;
-
-                       return (
-                         <tr key={i} className="hover:bg-white/[0.02] transition-colors group cursor-pointer" onClick={() => setSelectedAsset(pos.symbol)}>
-                           <td className="px-8 py-4">
-                             <div className="flex items-center gap-4">
-                               <div className="w-10 h-10 rounded-xl bg-[#141414] border border-[#222222] flex items-center justify-center font-bold text-xs text-[#E5E5E5]/80 group-hover:bg-[#222222] transition-colors">
-                                 {pos.symbol.charAt(0)}
-                               </div>
-                               <div>
-                                 <p className="font-bold text-[#E5E5E5]/90 group-hover:text-white transition-colors">{pos.symbol}</p>
-                                 <p className="text-[10px] text-[#E5E5E5]/40 uppercase tracking-widest font-semibold mt-0.5">NSE</p>
-                               </div>
-                             </div>
-                           </td>
-                           <td className="px-8 py-4 text-right">
-                              <p className="font-mono text-white font-bold">{pos.quantity}</p>
-                           </td>
-                           <td className="px-8 py-4 text-right">
-                              <p className="font-mono text-[#E5E5E5]/70">₹{pos.avgPrice.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
-                           </td>
-                           <td className="px-8 py-4 text-right">
-                              <p className="font-mono text-white font-semibold">₹{currentPrice.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
-                           </td>
-                           <td className="px-8 py-4 text-right">
-                              <p className="font-mono text-white font-bold">₹{currentValue.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
-                           </td>
-                           <td className="px-8 py-4 text-right">
-                              <div className="flex flex-col items-end">
-                                <p className={`font-mono font-bold ${isProfit ? 'text-green-500' : 'text-red-500'}`}>
-                                  {isProfit ? '+' : ''}₹{pnl.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                                </p>
-                                <p className={`text-[10px] font-bold font-mono mt-0.5 ${isProfit ? 'text-green-500' : 'text-red-500'}`}>
-                                  {isProfit ? '▲' : '▼'} {Math.abs(pnlPercent).toFixed(2)}%
-                                </p>
-                              </div>
-                           </td>
-                           <td className="px-8 py-4 text-center">
-                              <button 
-                                onClick={(e) => { e.stopPropagation(); setSelectedAsset(pos.symbol); }} 
-                                className="bg-[#141414] border border-[#222222] hover:border-white/20 text-[#E5E5E5]/80 hover:text-white px-4 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-colors"
-                              >
-                                Exit / Add
-                              </button>
-                           </td>
-                         </tr>
-                       );
-                     })
-                   )}
-                 </tbody>
-               </table>
-             </div>
-          </div>
-
         </div>
       </main>
 
       <AnimatePresence>
          {selectedAsset && (
-            <UniversalTradeModal 
-               symbol={selectedAsset} 
-               marketData={livePrices[selectedAsset] || {}} 
-               onClose={() => { setSelectedAsset(null); fetchUserDataAndPortfolio(); }} 
-               balance={balance} token={token} refreshData={fetchUserDataAndPortfolio}
-               ownedQty={holdings.find(h => h.symbol === selectedAsset)?.quantity || 0}
-            />
+         <UniversalTradeModal 
+            symbol={selectedAsset} 
+            marketData={livePrices[selectedAsset] || {}} 
+            onClose={() => setSelectedAsset(null)} 
+            balance={balance} token={token} refreshData={fetchUserDataAndPortfolio}
+            ownedQty={holdings.find(h => h.symbol === selectedAsset)?.quantity || 0}
+         />
          )}
       </AnimatePresence>
     </motion.div>

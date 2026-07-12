@@ -14,7 +14,6 @@ export default function AIPage() {
   const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef(null);
 
-  // Auto-scroll
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -46,70 +45,76 @@ export default function AIPage() {
   };
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex h-screen bg-[#000000] text-[#E5E5E5] font-inter overflow-hidden">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} className="flex h-screen bg-[#0B0D10] text-[#E5E5E5] font-sans overflow-hidden selection:bg-[#D4A574]/30">
       <Sidebar />
       <MobileBottomNav />
-      <main className="flex-1 p-3 md:p-6 lg:p-10 pb-24 md:pb-6 relative flex flex-col h-full">
-        <div className="max-w-4xl mx-auto w-full flex-1 flex flex-col h-full bg-[#0A0A0A]/90 backdrop-blur-2xl border border-[#222222] rounded-3xl shadow-2xl overflow-hidden" style={{boxShadow: '0 0 60px rgba(255,255,255,0.06)'}}>
-          
-          {/* Header */}
-          <div className="flex items-center gap-4 px-8 py-6 border-b border-[#222222] bg-gradient-to-r from-purple-900/40 to-blue-900/40 shrink-0">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-lg font-black text-white shadow-lg">AI</div>
-            <div>
-              <h2 className="font-bold text-white text-xl">Market Brain</h2>
-              <p className="text-[11px] text-purple-300 flex items-center gap-1.5 uppercase tracking-widest font-bold mt-1">
-                <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" /> Online
-              </p>
-            </div>
-          </div>
+      <main className="flex-1 flex flex-col min-w-0 relative h-full">
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10 pb-32">
+          <div className="max-w-[1200px] mx-auto space-y-8 h-full flex flex-col">
+            
+            <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 shrink-0">
+              <div>
+                <motion.h1 initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="text-4xl md:text-5xl lg:text-[56px] font-light tracking-tight text-[#E5E5E5] leading-none mb-4">
+                  Market <span className="font-bold">Brain</span>.
+                </motion.h1>
+                <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }} className="flex items-center gap-2">
+                  <div className={`w-2.5 h-2.5 rounded-full bg-[#4ADE80] animate-pulse shadow-[0_0_10px_#4ADE80]`} />
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#E5E5E5]/40">System Online</p>
+                </motion.div>
+              </div>
+            </header>
 
-          {/* Chat Messages */}
-          <div ref={scrollRef} className="flex-1 overflow-y-auto p-8 space-y-6 custom-scrollbar bg-[#000000]/40">
-            {messages.map((msg, i) => (
-              <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[85%] rounded-3xl px-6 py-4 text-sm leading-relaxed ${
-                  msg.role === 'user' 
-                    ? 'bg-[#FFFFFF] text-[#000000] rounded-br-none shadow-md' 
-                    : 'bg-[#141414] border border-[#222222] text-[#E5E5E5]/90 rounded-bl-none shadow-md'
-                }`}>
-                  {msg.content}
+            <div className="flex-1 flex flex-col bg-[#16181D]/50 rounded-[32px] overflow-hidden shadow-2xl border border-[#E5E5E5]/5 min-h-[500px]">
+              
+              <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 md:p-10 space-y-8 custom-scrollbar">
+                {messages.map((msg, i) => (
+                  <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[85%] md:max-w-[70%] p-6 rounded-[24px] text-lg leading-relaxed shadow-lg transition-transform hover:-translate-y-1 ${
+                      msg.role === 'user' 
+                        ? 'bg-[#D4A574] text-[#0B0D10] rounded-br-sm' 
+                        : 'bg-[#1F2229] border border-[#E5E5E5]/5 text-[#E5E5E5] rounded-bl-sm'
+                    }`}>
+                      {msg.role === 'ai' && <div className="text-[10px] uppercase tracking-[0.2em] font-black text-[#D4A574] mb-3 flex items-center gap-2"><span className="material-symbols-outlined text-[14px]">smart_toy</span> Brain</div>}
+                      {msg.content}
+                    </div>
+                  </div>
+                ))}
+                {isTyping && (
+                  <div className="flex justify-start">
+                    <div className="bg-[#1F2229] border border-[#E5E5E5]/5 text-[#E5E5E5] rounded-[24px] rounded-bl-sm px-6 py-5 flex gap-2">
+                      <span className="w-2.5 h-2.5 bg-[#D4A574] rounded-full animate-bounce" />
+                      <span className="w-2.5 h-2.5 bg-[#D4A574] rounded-full animate-bounce [animation-delay:-0.15s]" />
+                      <span className="w-2.5 h-2.5 bg-[#D4A574] rounded-full animate-bounce [animation-delay:-0.3s]" />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="p-6 md:p-8 bg-[#0B0D10]/30 shrink-0 border-t border-[#E5E5E5]/5 backdrop-blur-md">
+                <form onSubmit={handleSend} className="relative flex items-center">
+                  <input
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    placeholder="Ask about market trends..."
+                    className="w-full bg-[#16181D] border border-[#E5E5E5]/10 rounded-full py-5 pl-8 pr-16 text-lg text-white placeholder-[#E5E5E5]/30 outline-none focus:border-[#D4A574]/50 transition-colors shadow-inner"
+                  />
+                  <button 
+                    type="submit" 
+                    disabled={!input.trim() || isTyping}
+                    className="absolute right-3 w-12 h-12 flex items-center justify-center bg-[#D4A574] hover:bg-[#D4A574]/80 text-[#0B0D10] rounded-full transition-colors disabled:opacity-50 hover-glow"
+                  >
+                    <span className="material-symbols-outlined text-[24px]">send</span>
+                  </button>
+                </form>
+                <div className="mt-4 text-center">
+                   <p className="text-[10px] uppercase tracking-widest text-[#E5E5E5]/20 font-bold">AI analysis is simulated and does not constitute financial advice.</p>
                 </div>
               </div>
-            ))}
-            {isTyping && (
-              <div className="flex justify-start">
-                <div className="bg-[#141414] border border-[#222222] text-[#E5E5E5]/90 rounded-3xl rounded-bl-none px-6 py-4 flex gap-1.5">
-                  <span className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" />
-                  <span className="w-2 h-2 bg-purple-500 rounded-full animate-bounce [animation-delay:-0.15s]" />
-                  <span className="w-2 h-2 bg-purple-500 rounded-full animate-bounce [animation-delay:-0.3s]" />
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Input Area */}
-          <div className="p-6 border-t border-[#222222] bg-[#141414]/80 shrink-0">
-            <form onSubmit={handleSend} className="relative flex items-center">
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask about market trends..."
-                className="w-full bg-[#000000] border border-[#222222] rounded-2xl py-4 pl-6 pr-14 text-sm text-white placeholder-[#E5E5E5]/30 outline-none focus:border-purple-500 transition-colors shadow-inner"
-              />
-              <button 
-                type="submit" 
-                disabled={!input.trim() || isTyping}
-                className="absolute right-2 w-10 h-10 flex items-center justify-center bg-purple-600 hover:bg-purple-500 text-white rounded-xl transition-colors disabled:opacity-50 disabled:hover:bg-purple-600"
-              >
-                <span className="material-symbols-outlined text-[20px]">send</span>
-              </button>
-            </form>
-            <div className="mt-3 text-center">
-               <p className="text-[10px] text-[#E5E5E5]/30 font-medium">AI analysis is simulated and does not constitute financial advice.</p>
+              
             </div>
+            
           </div>
-          
         </div>
       </main>
     </motion.div>

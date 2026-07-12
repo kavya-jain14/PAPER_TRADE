@@ -16,7 +16,6 @@ function History() {
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
 
-  // 🚀 STRICT FIX: IST Timezone Checker
   useEffect(() => {
     const checkMarketStatus = () => {
       const istTime = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
@@ -46,9 +45,6 @@ function History() {
       
       if (histRes.ok) {
         const rawHistData = await histRes.json();
-        
-        // 🧠 QUANT-LEVEL P&L ACCOUNTING (Average Cost Basis)
-        // Backend returns newest first. Reverse to oldest first for accurate sequential math.
         const oldestFirst = [...rawHistData].reverse();
         const costBasis = {};
         
@@ -59,9 +55,8 @@ function History() {
           if (t.transactionType?.toUpperCase() === 'BUY') {
             costBasis[sym].qty += t.quantity;
             costBasis[sym].invested += t.quantity * t.pricePerShare;
-            return { ...t, realizedPnL: null }; // Unrealized until sold
+            return { ...t, realizedPnL: null }; 
           } else {
-            // It's a SELL. Calculate average cost of held units.
             const avgCost = costBasis[sym].qty > 0 
                ? costBasis[sym].invested / costBasis[sym].qty 
                : t.pricePerShare;
@@ -69,14 +64,12 @@ function History() {
             const pnl = (t.pricePerShare - avgCost) * t.quantity;
             
             costBasis[sym].qty -= t.quantity;
-            // Recalculate remaining invested value
             costBasis[sym].invested = costBasis[sym].qty * avgCost; 
             
             return { ...t, realizedPnL: pnl };
           }
         });
 
-        // Reverse back to newest first for UI display
         setTradeHistory(enriched.reverse()); 
       }
     } catch (error) { 
@@ -92,10 +85,7 @@ function History() {
     fetchUserDataAndHistory();
   }, [token, navigate]);
 
-  // 🧠 CALCULATE PERFORMANCE METRICS
   const totalTrades = tradeHistory.length;
-  
-  // 🚀 FIX: Using Correct Fields
   const sellTrades = tradeHistory.filter(t => t.transactionType?.toUpperCase() === 'SELL');
   const profitableSells = sellTrades.filter(t => (t.realizedPnL || 0) > 0).length;
   const winRate = sellTrades.length > 0 ? ((profitableSells / sellTrades.length) * 100).toFixed(1) : 0;
@@ -104,199 +94,138 @@ function History() {
   const isOverallGreen = totalRealizedPnL >= 0;
 
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2, ease: 'easeOut' }} className="flex h-screen bg-[#000000] text-[#E5E5E5]/90 font-inter overflow-hidden selection:bg-[#FFFFFF]/30">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} className="flex h-screen bg-[#0B0D10] text-[#E5E5E5] font-sans overflow-hidden selection:bg-[#D4A574]/30">
 
       <Sidebar userName={userName} isMarketOpen={isMarketOpen} avatar={avatar} />
       <MobileBottomNav />
 
-      {/* 🔴 MAIN CONTENT */}
-      <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-10 pb-24 md:pb-0 relative custom-scrollbar">
-        <div className="max-w-7xl mx-auto space-y-6 md:space-y-8 relative z-10">
-          
-          {/* 📱 Mobile top bar */}
-          <div className="md:hidden flex items-center justify-between pt-2 mb-2">
-            <h1 className="text-lg font-black tracking-tight"><span className="text-[#FFFFFF]">PAPER</span> TRADE</h1>
-            <button onClick={fetchUserDataAndHistory} className="flex items-center gap-1.5 text-[10px] font-bold text-[#E5E5E5]/50 bg-[#141414] px-3 py-2 rounded-xl border border-[#222222]">
-              <span className="material-symbols-outlined text-[14px]">refresh</span> Refresh
-            </button>
-          </div>
-
-          <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6 mb-4 md:mb-8">
-            <div>
-              <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight">Trade Ledger</h2>
-              <p className="text-[#E5E5E5]/60 text-sm mt-1">Review your past executions and overall terminal performance.</p>
-            </div>
-            <button onClick={fetchUserDataAndHistory} className="hidden md:flex items-center gap-2 text-[11px] font-bold text-[#E5E5E5]/50 hover:text-white uppercase tracking-widest transition-colors bg-[#141414] px-4 py-2.5 rounded-xl border border-[#222222] hover:border-white/20">
-               <span className="material-symbols-outlined text-[16px]">refresh</span> Refresh Ledger
-            </button>
-          </header>
-
-          {/* 🟢 PERFORMANCE METRICS */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-[#0A0A0A] border border-[#222222] rounded-3xl p-6 shadow-xl relative overflow-hidden">
-               <div className="flex items-center gap-3 mb-4 opacity-70">
-                 <span className="material-symbols-outlined text-[#E5E5E5]">receipt_long</span>
-                 <h3 className="text-xs font-bold text-white uppercase tracking-widest">Total Executions</h3>
-               </div>
-               <p className="text-4xl font-bold font-mono text-[#E5E5E5]">{totalTrades}</p>
-            </div>
-            <div className="bg-[#0A0A0A] border border-[#222222] rounded-3xl p-6 shadow-xl relative overflow-hidden">
-               <div className="flex items-center gap-3 mb-4 opacity-70">
-                 <span className="material-symbols-outlined text-[#E5E5E5]">track_changes</span>
-                 <h3 className="text-xs font-bold text-white uppercase tracking-widest">Win Rate (Closed)</h3>
-               </div>
-               <p className="text-4xl font-bold font-mono text-[#E5E5E5]">{winRate}%</p>
-            </div>
-            <div className={`bg-gradient-to-br border rounded-3xl p-6 shadow-xl ${isOverallGreen ? 'from-[#003a00]/40 to-[#121212] border-green-500/20' : 'from-[#3a0000]/40 to-[#121212] border-red-500/20'}`}>
-               <div className="flex items-center gap-3 mb-4">
-                 <span className={`material-symbols-outlined ${isOverallGreen ? 'text-green-500' : 'text-red-500'}`}>
-                   {isOverallGreen ? 'price_check' : 'money_off'}
-                 </span>
-                 <h3 className={`text-xs font-bold uppercase tracking-widest ${isOverallGreen ? 'text-green-500' : 'text-red-500'}`}>Realized P&L</h3>
-               </div>
-               <p className={`text-4xl font-bold font-mono ${isOverallGreen ? 'text-green-500' : 'text-red-500'}`}>
-                 {isOverallGreen ? '+' : ''}₹{totalRealizedPnL.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-               </p>
-            </div>
-          </div>
-
-          {/* 📱 MOBILE: card view of trade history */}
-          <div className="md:hidden bg-[#0A0A0A] border border-[#222222] rounded-3xl overflow-hidden shadow-xl">
-            <div className="p-4 border-b border-[#222222] bg-[#141414]/50">
-              <h3 className="font-bold text-white text-base flex items-center gap-2">
-                <span className="material-symbols-outlined text-[#E5E5E5]/50 text-[18px]">history</span> Transaction History
-              </h3>
-            </div>
-            {isLoading ? (
-              <div className="p-10 flex justify-center">
-                <span className="w-8 h-8 border-2 border-green-500 border-t-transparent rounded-full animate-spin inline-block" />
+      <main className="flex-1 flex flex-col min-w-0 relative h-full">
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10 pb-32">
+          <div className="max-w-[1600px] mx-auto space-y-12">
+            
+            <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+              <div>
+                <motion.h1 initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="text-4xl md:text-5xl lg:text-[56px] font-light tracking-tight text-[#E5E5E5] leading-none mb-4">
+                  Trade <span className="font-bold">Ledger</span>.
+                </motion.h1>
+                <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }} className="flex items-center gap-2">
+                  <div className={`w-2.5 h-2.5 rounded-full ${isMarketOpen ? 'bg-[#4ADE80] animate-pulse shadow-[0_0_10px_#4ADE80]' : 'bg-[#EF4444]'}`} />
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#E5E5E5]/40">{isMarketOpen ? 'Live Market' : 'AI Synthetic Mode'}</p>
+                </motion.div>
               </div>
-            ) : tradeHistory.length === 0 ? (
-              <div className="p-10 text-center text-[#E5E5E5]/40 text-sm">No trading history yet.</div>
-            ) : (
-              <div className="divide-y divide-[#222222]">
-                {tradeHistory.map((trade, i) => {
-                  const isBuy = trade.transactionType?.toUpperCase() === 'BUY';
-                  const pnl = trade.realizedPnL || 0;
-                  const isProfit = pnl > 0;
-                  const isLoss = pnl < 0;
-                  return (
-                    <div key={i} className="p-4 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <span className={`px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest border ${isBuy ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 'bg-purple-500/10 text-purple-400 border-purple-500/20'}`}>
-                          {trade.transactionType}
-                        </span>
-                        <div>
-                          <p className="font-bold text-[#E5E5E5]/90 text-sm">{trade.symbol}</p>
-                          <p className="text-[10px] text-[#E5E5E5]/40 mt-0.5">{trade.quantity} units · ₹{Number(trade.pricePerShare).toLocaleString('en-IN', {minimumFractionDigits: 0, maximumFractionDigits: 0})}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-mono text-white font-bold text-sm">₹{(trade.quantity * trade.pricePerShare).toLocaleString('en-IN', {minimumFractionDigits: 0, maximumFractionDigits: 0})}</p>
-                        {!isBuy && (
-                          <p className={`text-[11px] font-bold font-mono mt-0.5 ${isProfit ? 'text-green-500' : isLoss ? 'text-red-500' : 'text-[#E5E5E5]/40'}`}>
-                            {isProfit ? '+' : ''}₹{Math.abs(pnl).toLocaleString('en-IN', {minimumFractionDigits: 0, maximumFractionDigits: 0})}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
+              <button onClick={fetchUserDataAndHistory} className="flex items-center gap-2 text-[10px] font-bold text-[#E5E5E5]/50 hover:text-[#E5E5E5] uppercase tracking-widest transition-colors bg-[#16181D] px-4 py-2.5 rounded-full hover-glow">
+                 <span className="material-symbols-outlined text-[16px]">refresh</span> Refresh Ledger
+              </button>
+            </header>
+
+            {/* PERFORMANCE METRICS */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-10">
+              <div className="bg-[#16181D]/50 rounded-[32px] p-8 shadow-xl relative overflow-hidden group">
+                 <h3 className="text-xs font-bold text-[#E5E5E5]/40 uppercase tracking-widest mb-6">Total Executions</h3>
+                 <p className="text-4xl md:text-5xl font-bold font-mono text-[#E5E5E5] group-hover:text-[#D4A574] transition-colors">{totalTrades}</p>
               </div>
-            )}
-          </div>
+              <div className="bg-[#16181D]/50 rounded-[32px] p-8 shadow-xl relative overflow-hidden group">
+                 <h3 className="text-xs font-bold text-[#E5E5E5]/40 uppercase tracking-widest mb-6">Win Rate (Closed)</h3>
+                 <p className="text-4xl md:text-5xl font-bold font-mono text-[#E5E5E5] group-hover:text-[#D4A574] transition-colors">{winRate}%</p>
+              </div>
+              <div className={`bg-gradient-to-br rounded-[32px] p-8 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5)] relative overflow-hidden ${isOverallGreen ? 'from-[#002a10] to-[#0B0D10]' : 'from-[#2a0000] to-[#0B0D10]'}`}>
+                 <h3 className={`text-xs font-bold uppercase tracking-widest mb-6 ${isOverallGreen ? 'text-[#4ADE80]/80' : 'text-[#EF4444]/80'}`}>Realized P&L</h3>
+                 <p className={`text-4xl md:text-5xl font-bold font-mono ${isOverallGreen ? 'text-[#4ADE80]' : 'text-[#EF4444]'}`}>
+                   {isOverallGreen ? '+' : ''}₹{totalRealizedPnL.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                 </p>
+              </div>
+            </div>
 
-          {/* 🖥️ DESKTOP: full table */}
-          <div className="hidden md:block bg-[#0A0A0A] border border-[#222222] rounded-3xl overflow-hidden shadow-xl">
-             <div className="p-6 border-b border-[#222222] bg-[#141414]/50 flex justify-between items-center">
-               <h3 className="font-bold text-white text-lg flex items-center gap-2">
-                 <span className="material-symbols-outlined text-[#E5E5E5]/50 text-[20px]">history</span> Transaction History
-               </h3>
-             </div>
-             
-             <div className="overflow-x-auto">
-               <table className="w-full text-left border-collapse whitespace-nowrap">
-                 <thead>
-                   <tr className="text-[#E5E5E5]/40 text-[10px] font-bold uppercase tracking-widest border-b border-[#222222] bg-[#000000]/50">
-                     <th className="px-8 py-5">Date & Time</th>
-                     <th className="px-8 py-5">Asset</th>
-                     <th className="px-8 py-5 text-center">Type</th>
-                     <th className="px-8 py-5 text-right">Qty.</th>
-                     <th className="px-8 py-5 text-right">Exec. Price</th>
-                     <th className="px-8 py-5 text-right">Total Value</th>
-                     <th className="px-8 py-5 text-right">Realized P&L</th>
-                   </tr>
-                 </thead>
-                 <tbody className="divide-y divide-[#222222]">
-                   {isLoading ? (
-                     <tr>
-                       <td colSpan="7" className="px-8 py-12 text-center">
-                         <span className="w-8 h-8 border-2 border-green-500 border-t-transparent rounded-full animate-spin inline-block"></span>
-                       </td>
+            {/* TABLE */}
+            <div className="bg-[#16181D]/30 rounded-[32px] overflow-hidden shadow-xl">
+               <div className="p-8 border-b border-[#E5E5E5]/5 flex justify-between items-center">
+                 <h3 className="text-xs uppercase tracking-[0.2em] font-bold text-[#E5E5E5]/40">Execution History</h3>
+               </div>
+               
+               <div className="overflow-x-auto">
+                 <table className="w-full text-left border-collapse whitespace-nowrap">
+                   <thead>
+                     <tr className="text-[#E5E5E5]/40 text-[10px] font-bold uppercase tracking-widest border-b border-[#E5E5E5]/5 bg-[#0B0D10]/50">
+                       <th className="px-8 py-5">Date & Time</th>
+                       <th className="px-8 py-5">Asset</th>
+                       <th className="px-8 py-5 text-center">Type</th>
+                       <th className="px-8 py-5 text-right">Qty.</th>
+                       <th className="px-8 py-5 text-right">Exec. Price</th>
+                       <th className="px-8 py-5 text-right">Total Value</th>
+                       <th className="px-8 py-5 text-right">Realized P&L</th>
                      </tr>
-                   ) : tradeHistory.length === 0 ? (
-                     <tr>
-                       <td colSpan="7" className="px-8 py-16 text-center text-[#E5E5E5]/40 font-medium">
-                         No trading history found. Your ledger is clean.
-                       </td>
-                     </tr>
-                   ) : (
-                     tradeHistory.map((trade, i) => {
-                       const isBuy = trade.transactionType?.toUpperCase() === 'BUY';
-                       const pnl = trade.realizedPnL || 0;
-                       const isProfit = pnl > 0;
-                       const isLoss = pnl < 0;
+                   </thead>
+                   <tbody className="divide-y divide-[#E5E5E5]/5">
+                     {isLoading ? (
+                       <tr>
+                         <td colSpan="7" className="px-8 py-12 text-center">
+                           <span className="w-8 h-8 border-2 border-[#D4A574] border-t-transparent rounded-full animate-spin inline-block"></span>
+                         </td>
+                       </tr>
+                     ) : tradeHistory.length === 0 ? (
+                       <tr>
+                         <td colSpan="7" className="px-8 py-16 text-center text-[#E5E5E5]/40 font-medium">
+                           No trading history found. Your ledger is clean.
+                         </td>
+                       </tr>
+                     ) : (
+                       tradeHistory.map((trade, i) => {
+                         const isBuy = trade.transactionType?.toUpperCase() === 'BUY';
+                         const pnl = trade.realizedPnL || 0;
+                         const isProfit = pnl > 0;
+                         const isLoss = pnl < 0;
 
-                       return (
-                         <motion.tr initial={{opacity:0}} animate={{opacity:1}} transition={{delay: i * 0.05}} key={i} className="hover:bg-white/[0.02] transition-colors group">
-                           <td className="px-8 py-4">
-                              <p className="font-mono text-[#E5E5E5]/80 text-sm">
-                                {new Date(trade.date || trade.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
-                              </p>
-                              <p className="text-[10px] text-[#E5E5E5]/40 font-mono mt-0.5">
-                                {new Date(trade.date || trade.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                              </p>
-                           </td>
-                           <td className="px-8 py-4">
-                             <div className="flex items-center gap-3">
-                               <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs ${isBuy ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' : 'bg-purple-500/10 text-purple-400 border border-purple-500/20'}`}>
-                                 {trade.symbol?.charAt(0)}
-                               </div>
-                               <p className="font-bold text-[#E5E5E5]/90">{trade.symbol}</p>
-                             </div>
-                           </td>
-                           <td className="px-8 py-4 text-center">
-                              <span className={`px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest border ${isBuy ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 'bg-purple-500/10 text-purple-400 border-purple-500/20'}`}>
-                                {trade.transactionType}
-                              </span>
-                           </td>
-                           <td className="px-8 py-4 text-right">
-                              <p className="font-mono text-white font-bold">{trade.quantity}</p>
-                           </td>
-                           <td className="px-8 py-4 text-right">
-                              <p className="font-mono text-[#E5E5E5]/70">₹{Number(trade.pricePerShare).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
-                           </td>
-                           <td className="px-8 py-4 text-right">
-                              <p className="font-mono text-white font-semibold">₹{(trade.quantity * trade.pricePerShare).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
-                           </td>
-                           <td className="px-8 py-4 text-right">
-                              {isBuy ? (
-                                <span className="text-[#E5E5E5]/30 text-[10px] uppercase font-bold tracking-widest">-</span>
-                              ) : (
-                                <p className={`font-mono font-bold ${isProfit ? 'text-green-500' : isLoss ? 'text-red-500' : 'text-[#E5E5E5]/50'}`}>
-                                  {isProfit ? '+' : ''}₹{pnl.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                         return (
+                           <motion.tr initial={{opacity:0}} animate={{opacity:1}} transition={{delay: i * 0.05}} key={i} className="hover:bg-white/[0.02] transition-colors group">
+                             <td className="px-8 py-6">
+                                <p className="font-mono text-[#E5E5E5]/80 text-sm">
+                                  {new Date(trade.date || trade.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
                                 </p>
-                              )}
-                           </td>
-                         </motion.tr>
-                       );
-                     })
-                   )}
-                 </tbody>
-               </table>
-             </div>
-          </div>
+                                <p className="text-[10px] text-[#E5E5E5]/40 font-mono mt-0.5">
+                                  {new Date(trade.date || trade.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                </p>
+                             </td>
+                             <td className="px-8 py-6">
+                               <div className="flex items-center gap-4">
+                                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs bg-[#0B0D10] text-[#E5E5E5]/80 shadow-inner group-hover:text-[#D4A574] transition-colors`}>
+                                   {trade.symbol?.charAt(0)}
+                                 </div>
+                                 <p className="font-bold text-[#E5E5E5] group-hover:text-[#D4A574] transition-colors">{trade.symbol}</p>
+                               </div>
+                             </td>
+                             <td className="px-8 py-6 text-center">
+                                <span className={`px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest ${isBuy ? 'text-blue-400 bg-blue-500/10' : 'text-purple-400 bg-purple-500/10'}`}>
+                                  {trade.transactionType}
+                                </span>
+                             </td>
+                             <td className="px-8 py-6 text-right">
+                                <p className="font-mono text-white font-bold">{trade.quantity}</p>
+                             </td>
+                             <td className="px-8 py-6 text-right">
+                                <p className="font-mono text-[#E5E5E5]/70">₹{Number(trade.pricePerShare).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+                             </td>
+                             <td className="px-8 py-6 text-right">
+                                <p className="font-mono text-white font-semibold">₹{(trade.quantity * trade.pricePerShare).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+                             </td>
+                             <td className="px-8 py-6 text-right">
+                                {isBuy ? (
+                                  <span className="text-[#E5E5E5]/30 text-[10px] uppercase font-bold tracking-widest">-</span>
+                                ) : (
+                                  <p className={`font-mono font-bold ${isProfit ? 'text-[#4ADE80]' : isLoss ? 'text-[#EF4444]' : 'text-[#E5E5E5]/50'}`}>
+                                    {isProfit ? '+' : ''}₹{pnl.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                  </p>
+                                )}
+                             </td>
+                           </motion.tr>
+                         );
+                       })
+                     )}
+                   </tbody>
+                 </table>
+               </div>
+            </div>
 
+          </div>
         </div>
       </main>
     </motion.div>

@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
-import Sidebar from '../components/Sidebar';
+import Sidebar, { MobileBottomNav } from '../components/Sidebar';
 
 // ── SVG: Scales of Justice for Terms
 const LadyJusticeSVG = ({ progress = 0 }) => (
   <svg viewBox="0 0 200 280" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
     <defs>
       <radialGradient id="aura" cx="50%" cy="50%" r="50%">
-        <stop offset="0%" stopColor="#a78bfa" stopOpacity={0.3 * progress} />
-        <stop offset="100%" stopColor="#a78bfa" stopOpacity="0" />
+        <stop offset="0%" stopColor="#D4A574" stopOpacity={0.3 * progress} />
+        <stop offset="100%" stopColor="#D4A574" stopOpacity="0" />
       </radialGradient>
       <filter id="glow">
         <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
@@ -16,20 +16,20 @@ const LadyJusticeSVG = ({ progress = 0 }) => (
       </filter>
     </defs>
     <ellipse cx="100" cy="140" rx="90" ry="90" fill="url(#aura)" />
-    <rect x="98" y="40" width="4" height="180" rx="2" fill="#7c3aed" opacity={progress} filter="url(#glow)" />
-    <rect x="40" y="80" width="120" height="4" rx="2" fill="#a78bfa" opacity={progress} filter="url(#glow)" />
-    <line x1="55" y1="84" x2="55" y2={110 + (1 - progress) * 20} stroke="#a78bfa" strokeWidth="1.5" opacity={progress} />
-    <ellipse cx="55" cy={112 + (1 - progress) * 20} rx="18" ry="5" fill="none" stroke="#a78bfa" strokeWidth="1.5" opacity={progress} />
-    <line x1="145" y1="84" x2="145" y2={115 - (1 - progress) * 15} stroke="#a78bfa" strokeWidth="1.5" opacity={progress} />
-    <ellipse cx="145" cy={117 - (1 - progress) * 15} rx="18" ry="5" fill="none" stroke="#a78bfa" strokeWidth="1.5" opacity={progress} />
-    <path d="M55 84 Q47 92 55 100" stroke="#7c3aed" strokeWidth="1" opacity={progress * 0.5} />
-    <path d="M145 84 Q153 92 145 100" stroke="#7c3aed" strokeWidth="1" opacity={progress * 0.5} />
-    <line x1="100" y1="220" x2="100" y2="260" stroke="#a78bfa" strokeWidth="2.5" strokeLinecap="round" opacity={progress} />
-    <path d="M90 222 L110 222 L100 200 Z" fill="#7c3aed" opacity={progress} />
-    <rect x="85" y="218" width="30" height="4" rx="2" fill="#a78bfa" opacity={progress} />
-    <path d="M82 44 L88 56 L100 48 L112 56 L118 44 L114 60 L86 60 Z" fill="#a78bfa" opacity={progress} filter="url(#glow)" />
+    <rect x="98" y="40" width="4" height="180" rx="2" fill="#D4A574" opacity={progress} filter="url(#glow)" />
+    <rect x="40" y="80" width="120" height="4" rx="2" fill="#D4A574" opacity={progress} filter="url(#glow)" />
+    <line x1="55" y1="84" x2="55" y2={110 + (1 - progress) * 20} stroke="#D4A574" strokeWidth="1.5" opacity={progress} />
+    <ellipse cx="55" cy={112 + (1 - progress) * 20} rx="18" ry="5" fill="none" stroke="#D4A574" strokeWidth="1.5" opacity={progress} />
+    <line x1="145" y1="84" x2="145" y2={115 - (1 - progress) * 15} stroke="#D4A574" strokeWidth="1.5" opacity={progress} />
+    <ellipse cx="145" cy={117 - (1 - progress) * 15} rx="18" ry="5" fill="none" stroke="#D4A574" strokeWidth="1.5" opacity={progress} />
+    <path d="M55 84 Q47 92 55 100" stroke="#D4A574" strokeWidth="1" opacity={progress * 0.5} />
+    <path d="M145 84 Q153 92 145 100" stroke="#D4A574" strokeWidth="1" opacity={progress * 0.5} />
+    <line x1="100" y1="220" x2="100" y2="260" stroke="#D4A574" strokeWidth="2.5" strokeLinecap="round" opacity={progress} />
+    <path d="M90 222 L110 222 L100 200 Z" fill="#D4A574" opacity={progress} />
+    <rect x="85" y="218" width="30" height="4" rx="2" fill="#D4A574" opacity={progress} />
+    <path d="M82 44 L88 56 L100 48 L112 56 L118 44 L114 60 L86 60 Z" fill="#D4A574" opacity={progress} filter="url(#glow)" />
     {[...Array(5)].map((_, i) => (
-      <circle key={i} cx={30 + i * 35} cy={30 + Math.sin(i * 1.2) * 10} r={1.5} fill="#c4b5fd" opacity={progress * (0.5 + 0.5 * Math.sin(i))} />
+      <circle key={i} cx={30 + i * 35} cy={30 + Math.sin(i * 1.2) * 10} r={1.5} fill="#D4A574" opacity={progress * (0.5 + 0.5 * Math.sin(i))} />
     ))}
   </svg>
 );
@@ -39,8 +39,8 @@ const PrivacyShieldSVG = ({ progress = 0 }) => (
   <svg viewBox="0 0 200 240" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
     <defs>
       <radialGradient id="shieldAura" cx="50%" cy="50%" r="50%">
-        <stop offset="0%" stopColor="#22d3ee" stopOpacity={0.3 * progress} />
-        <stop offset="100%" stopColor="#22d3ee" stopOpacity="0" />
+        <stop offset="0%" stopColor="#E5E5E5" stopOpacity={0.15 * progress} />
+        <stop offset="100%" stopColor="#E5E5E5" stopOpacity="0" />
       </radialGradient>
       <filter id="cyanGlow">
         <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
@@ -48,18 +48,18 @@ const PrivacyShieldSVG = ({ progress = 0 }) => (
       </filter>
     </defs>
     <ellipse cx="100" cy="120" rx="85" ry="85" fill="url(#shieldAura)" />
-    <path d="M100 20 L170 50 L170 110 Q170 170 100 210 Q30 170 30 110 L30 50 Z" fill="none" stroke="#06b6d4" strokeWidth="2.5" strokeLinejoin="round" opacity={progress} filter="url(#cyanGlow)" />
-    <path d="M100 35 L158 60 L158 110 Q158 160 100 195 Q42 160 42 110 L42 60 Z" fill="#06b6d4" fillOpacity={0.07 * progress} stroke="#06b6d4" strokeWidth="1" opacity={progress} />
-    <path d="M60 115 Q100 80 140 115 Q100 150 60 115 Z" fill="none" stroke="#22d3ee" strokeWidth="2" opacity={progress} filter="url(#cyanGlow)" />
-    <circle cx="100" cy="115" r="18" fill="none" stroke="#06b6d4" strokeWidth="2" opacity={progress} />
-    <circle cx="100" cy="115" r="8" fill="#22d3ee" opacity={progress * 0.8} filter="url(#cyanGlow)" />
-    <circle cx="95" cy="110" r="2.5" fill="white" opacity={progress * 0.8} />
-    <rect x="85" y="165" width="30" height="22" rx="4" fill="none" stroke="#06b6d4" strokeWidth="1.8" opacity={progress} />
-    <path d="M88 165 Q88 155 100 155 Q112 155 112 165" fill="none" stroke="#06b6d4" strokeWidth="1.8" strokeLinecap="round" opacity={progress} />
-    <circle cx="100" cy="176" r="3" fill="#22d3ee" opacity={progress} />
-    <line x1="100" y1="179" x2="100" y2="184" stroke="#22d3ee" strokeWidth="1.5" opacity={progress} />
+    <path d="M100 20 L170 50 L170 110 Q170 170 100 210 Q30 170 30 110 L30 50 Z" fill="none" stroke="#E5E5E5" strokeWidth="2.5" strokeLinejoin="round" opacity={progress} filter="url(#cyanGlow)" />
+    <path d="M100 35 L158 60 L158 110 Q158 160 100 195 Q42 160 42 110 L42 60 Z" fill="#E5E5E5" fillOpacity={0.07 * progress} stroke="#E5E5E5" strokeWidth="1" opacity={progress} />
+    <path d="M60 115 Q100 80 140 115 Q100 150 60 115 Z" fill="none" stroke="#E5E5E5" strokeWidth="2" opacity={progress} filter="url(#cyanGlow)" />
+    <circle cx="100" cy="115" r="18" fill="none" stroke="#E5E5E5" strokeWidth="2" opacity={progress} />
+    <circle cx="100" cy="115" r="8" fill="#E5E5E5" opacity={progress * 0.8} filter="url(#cyanGlow)" />
+    <circle cx="95" cy="110" r="2.5" fill="black" opacity={progress * 0.8} />
+    <rect x="85" y="165" width="30" height="22" rx="4" fill="none" stroke="#E5E5E5" strokeWidth="1.8" opacity={progress} />
+    <path d="M88 165 Q88 155 100 155 Q112 155 112 165" fill="none" stroke="#E5E5E5" strokeWidth="1.8" strokeLinecap="round" opacity={progress} />
+    <circle cx="100" cy="176" r="3" fill="#E5E5E5" opacity={progress} />
+    <line x1="100" y1="179" x2="100" y2="184" stroke="#E5E5E5" strokeWidth="1.5" opacity={progress} />
     {[0, 1, 2].map(i => (
-      <line key={i} x1={50 + i * 35} y1="200" x2={65 + i * 35} y2="215" stroke="#06b6d4" strokeWidth="1" opacity={progress * 0.4} strokeLinecap="round" />
+      <line key={i} x1={50 + i * 35} y1="200" x2={65 + i * 35} y2="215" stroke="#E5E5E5" strokeWidth="1" opacity={progress * 0.4} strokeLinecap="round" />
     ))}
   </svg>
 );
@@ -233,11 +233,11 @@ export default function Legal() {
   const sections = activeTab === 'privacy' ? PRIVACY_SECTIONS : TERMS_SECTIONS;
 
   const accentClasses = {
-    num:    activeTab === 'privacy' ? 'text-cyan-400' : 'text-purple-400',
-    border: activeTab === 'privacy' ? 'border-cyan-500/15 hover:border-cyan-500/30' : 'border-purple-500/15 hover:border-purple-500/30',
-    dot:    activeTab === 'privacy' ? 'bg-cyan-400' : 'bg-purple-400',
-    glow:   activeTab === 'privacy' ? 'bg-[radial-gradient(ellipse_at_center,rgba(6,182,212,0.07)_0%,transparent_70%)]' : 'bg-[radial-gradient(ellipse_at_center,rgba(124,58,237,0.07)_0%,transparent_70%)]',
-    divider: activeTab === 'privacy' ? 'via-cyan-500/30' : 'via-purple-500/30',
+    num:    activeTab === 'privacy' ? 'text-[#E5E5E5]' : 'text-[#D4A574]',
+    border: activeTab === 'privacy' ? 'border-[#E5E5E5]/15 hover:border-[#E5E5E5]/30' : 'border-[#D4A574]/15 hover:border-[#D4A574]/30',
+    dot:    activeTab === 'privacy' ? 'bg-[#E5E5E5]' : 'bg-[#D4A574]',
+    glow:   activeTab === 'privacy' ? 'bg-[radial-gradient(ellipse_at_center,rgba(229,229,229,0.07)_0%,transparent_70%)]' : 'bg-[radial-gradient(ellipse_at_center,rgba(212,165,116,0.07)_0%,transparent_70%)]',
+    divider: activeTab === 'privacy' ? 'via-[#E5E5E5]/30' : 'via-[#D4A574]/30',
   };
 
   return (
@@ -245,11 +245,12 @@ export default function Legal() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="flex h-screen bg-[#080808] text-white/90 overflow-hidden"
+      className="flex h-screen bg-[#0B0D10] text-[#E5E5E5] overflow-hidden"
     >
       <Sidebar userName={userName} balance={balance} isMarketOpen={isMarketOpen} avatar={avatar} />
+      <MobileBottomNav />
 
-      <main className="flex-1 overflow-y-auto custom-scrollbar">
+      <main className="flex-1 overflow-y-auto custom-scrollbar relative">
 
         {/* ── HERO SECTION ── */}
         <div className={`relative min-h-[460px] flex flex-col items-center justify-center px-6 pt-16 pb-10 overflow-hidden`}>
@@ -274,7 +275,7 @@ export default function Legal() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, delay: 0.15 }}
-            className="text-5xl font-black text-white text-center tracking-tight"
+            className="text-5xl lg:text-[56px] font-light text-[#E5E5E5] text-center tracking-tight"
           >
             {activeTab === 'privacy' ? 'Privacy Policy' : 'Terms of Use'}
           </motion.h1>
@@ -284,26 +285,26 @@ export default function Legal() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45, delay: 0.28 }}
-            className="flex items-center gap-3 mt-3 flex-wrap justify-center"
+            className="flex items-center gap-3 mt-4 flex-wrap justify-center font-mono"
           >
-            <span className="text-white/35 text-xs font-semibold">Last Updated: {LAST_UPDATED}</span>
-            <span className="w-1 h-1 rounded-full bg-white/20" />
-            <span className="text-white/35 text-xs font-semibold">Version {VERSION}</span>
+            <span className="text-[#E5E5E5]/40 text-xs font-semibold">Last Updated: {LAST_UPDATED}</span>
+            <span className="w-1 h-1 rounded-full bg-[#E5E5E5]/20" />
+            <span className="text-[#E5E5E5]/40 text-xs font-semibold">Version {VERSION}</span>
           </motion.div>
 
           {/* Tab Toggle */}
-          <div className="flex gap-3 mt-8">
+          <div className="flex gap-3 mt-10">
             {[
-              { key: 'privacy', label: '🔐 Privacy Policy', active: 'bg-cyan-500 text-black shadow-lg shadow-cyan-500/25' },
-              { key: 'terms',   label: '⚖️ Terms of Use',   active: 'bg-purple-500 text-white shadow-lg shadow-purple-500/25' },
+              { key: 'privacy', label: '🔐 Privacy Policy', active: 'bg-[#E5E5E5] text-[#0B0D10] shadow-[0_0_20px_rgba(229,229,229,0.3)]' },
+              { key: 'terms',   label: '⚖️ Terms of Use',   active: 'bg-[#D4A574] text-[#0B0D10] shadow-[0_0_20px_rgba(212,165,116,0.3)]' },
             ].map(tab => (
               <button
                 key={tab.key}
                 onClick={() => { setActiveTab(tab.key); setIconVal(0); }}
-                className={`px-6 py-2.5 rounded-2xl font-bold text-sm transition-all duration-300 ${
+                className={`px-8 py-3 rounded-full font-bold text-xs uppercase tracking-widest transition-all duration-300 ${
                   activeTab === tab.key
                     ? tab.active
-                    : 'bg-white/5 border border-white/10 text-white/40 hover:text-white hover:bg-white/10'
+                    : 'bg-[#16181D]/50 border border-[#E5E5E5]/5 text-[#E5E5E5]/40 hover:text-[#E5E5E5] hover:bg-[#16181D]'
                 }`}
               >
                 {tab.label}
@@ -313,15 +314,15 @@ export default function Legal() {
         </div>
 
         {/* ── DIVIDER ── */}
-        <div className="mx-auto max-w-4xl px-6 mb-10">
+        <div className="mx-auto max-w-4xl px-6 mb-12">
           <div className={`h-px bg-gradient-to-r from-transparent ${accentClasses.divider} to-transparent`} />
         </div>
 
         {/* ── INTRO BLURB ── */}
-        <div className="max-w-4xl mx-auto px-6 mb-8">
+        <div className="max-w-4xl mx-auto px-6 mb-10">
           <AnimatedSection>
-            <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-6">
-              <p className="text-white/50 text-sm leading-relaxed">
+            <div className="bg-[#16181D]/30 border border-[#E5E5E5]/5 rounded-[32px] p-8 shadow-xl">
+              <p className="text-[#E5E5E5]/50 text-sm leading-relaxed">
                 {activeTab === 'privacy'
                   ? 'Paper Trade is committed to protecting your privacy. This Privacy Policy explains what information we collect, why we collect it, how we use it, and the choices you have. By using the Platform, you agree to the collection and use of information in accordance with this policy. We do not collect, store, or process any real financial data.'
                   : 'Please read these Terms of Use carefully before using Paper Trade. These Terms govern your access to and use of the Platform. Paper Trade is a simulated trading environment for educational purposes only — no real money, securities, or financial transactions are involved at any time. Your use of the Platform constitutes acceptance of these Terms.'}
@@ -331,23 +332,23 @@ export default function Legal() {
         </div>
 
         {/* ── CONTENT SECTIONS ── */}
-        <div className="max-w-4xl mx-auto px-6 pb-20 space-y-4">
+        <div className="max-w-4xl mx-auto px-6 pb-24 space-y-6">
           {sections.map((sec, i) => (
             <AnimatedSection key={`${activeTab}-${i}`} delay={i * 0.05}>
-              <div className={`group relative bg-[#111111] border ${accentClasses.border} rounded-3xl p-7 transition-colors duration-300 hover:bg-[#141414]`}>
+              <div className={`group relative bg-[#16181D]/30 border ${accentClasses.border} rounded-[32px] p-8 shadow-xl transition-colors duration-300 hover:bg-[#16181D]/60`}>
                 {/* Background number */}
-                <span className={`absolute top-5 right-7 text-7xl font-black ${accentClasses.num} opacity-[0.05] select-none pointer-events-none leading-none`}>
+                <span className={`absolute top-5 right-8 text-7xl font-black ${accentClasses.num} opacity-[0.03] select-none pointer-events-none leading-none`}>
                   {sec.num}
                 </span>
 
-                <div className="flex items-start gap-4">
+                <div className="flex items-start gap-5">
                   <div className={`mt-2.5 w-2 h-2 rounded-full ${accentClasses.dot} shrink-0`} />
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 mb-2.5">
+                    <div className="flex items-center gap-4 mb-3">
                       <span className={`text-[10px] font-black uppercase tracking-widest ${accentClasses.num} opacity-60`}>{sec.num}</span>
-                      <h3 className="text-base font-black text-white tracking-tight">{sec.title}</h3>
+                      <h3 className="text-xl font-bold text-[#E5E5E5] tracking-tight">{sec.title}</h3>
                     </div>
-                    <p className="text-white/50 text-sm leading-relaxed">{sec.content}</p>
+                    <p className="text-[#E5E5E5]/60 text-sm leading-relaxed">{sec.content}</p>
                   </div>
                 </div>
               </div>
@@ -356,22 +357,22 @@ export default function Legal() {
 
           {/* ── CONTACT & FOOTER NOTE ── */}
           <AnimatedSection delay={sections.length * 0.05}>
-            <div className="mt-6 bg-white/[0.02] border border-white/5 rounded-3xl p-7 text-center">
-              <div className={`w-10 h-10 rounded-xl ${activeTab === 'privacy' ? 'bg-cyan-500/10 border border-cyan-500/20' : 'bg-purple-500/10 border border-purple-500/20'} flex items-center justify-center mx-auto mb-4`}>
-                <span className="material-symbols-outlined text-white/50 text-[20px]">mail</span>
+            <div className="mt-8 bg-[#16181D]/30 border border-[#E5E5E5]/5 rounded-[32px] p-8 text-center shadow-xl">
+              <div className={`w-12 h-12 rounded-2xl ${activeTab === 'privacy' ? 'bg-[#E5E5E5]/10 border border-[#E5E5E5]/20 text-[#E5E5E5]' : 'bg-[#D4A574]/10 border border-[#D4A574]/20 text-[#D4A574]'} flex items-center justify-center mx-auto mb-5`}>
+                <span className="material-symbols-outlined text-[20px]">mail</span>
               </div>
-              <p className="text-white/40 text-sm mb-1">Questions about this policy?</p>
+              <p className="text-[#E5E5E5]/40 text-sm mb-2">Questions about this policy?</p>
               <a
                 href="mailto:kavyajain1407@gmail.com"
-                className={`font-bold text-sm transition-colors ${activeTab === 'privacy' ? 'text-cyan-400 hover:text-cyan-300' : 'text-purple-400 hover:text-purple-300'}`}
+                className={`font-bold text-sm transition-colors ${activeTab === 'privacy' ? 'text-[#E5E5E5] hover:text-[#E5E5E5]/80' : 'text-[#D4A574] hover:text-[#D4A574]/80'}`}
               >
                 kavyajain1407@gmail.com
               </a>
-              <div className="mt-6 pt-5 border-t border-white/5">
-                <p className="text-white/20 text-[10px] uppercase tracking-widest font-semibold">
+              <div className="mt-8 pt-6 border-t border-[#E5E5E5]/5">
+                <p className="text-[#E5E5E5]/20 text-[10px] uppercase tracking-widest font-semibold">
                   Paper Trade &copy; {new Date().getFullYear()} &nbsp;&bull;&nbsp; All rights reserved &nbsp;&bull;&nbsp; Version {VERSION}
                 </p>
-                <p className="text-white/15 text-[9px] mt-1">
+                <p className="text-[#E5E5E5]/15 text-[9px] mt-2">
                   This platform is not affiliated with NSE, BSE, SEBI, or any registered financial institution.
                 </p>
               </div>

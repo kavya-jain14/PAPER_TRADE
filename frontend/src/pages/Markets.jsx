@@ -192,9 +192,9 @@ function Markets() {
   const [userName, setUserName] = useState('');
   const [balance, setBalance] = useState(0);
   const [avatar, setAvatar] = useState('');
-  const [holdings, setHoldings] = useState([]);  // portfolio holdings for ownedQty
+  const [holdings, setHoldings] = useState([]); 
   const [marketPrices, setMarketPrices] = useState({});
-  const [priceHistory, setPriceHistory] = useState({}); // Sparkline History
+  const [priceHistory, setPriceHistory] = useState({}); 
   const [selectedAsset, setSelectedAsset] = useState(null);
   const [isMarketOpen, setIsMarketOpen] = useState(false); 
   
@@ -242,7 +242,6 @@ function Markets() {
     } catch (error) { console.error(error); }
   };
 
-  // BUG FIX: AbortController prevents overlapping requests from corrupting state
   useEffect(() => {
     let abortCtrl = new AbortController();
 
@@ -256,22 +255,20 @@ function Markets() {
           body: JSON.stringify({ symbols: [...TOP_STOCKS, ...INDICES] }),
           signal: abortCtrl.signal,
         });
-        if (!response.ok) return; // Don't crash on bad status
+        if (!response.ok) return; 
         const realPrices = await response.json();
 
-        // BUG FIX: Guard against non-object responses before spreading
         if (!realPrices || typeof realPrices !== 'object' || Array.isArray(realPrices)) return;
 
         setMarketPrices(prev => ({ ...prev, ...realPrices }));
         
-        // 🚀 SPARKLINE HISTORY ENGINE
         setPriceHistory(prev => {
           const updated = { ...prev };
           Object.keys(realPrices).forEach(sym => {
             const p = realPrices[sym]?.price;
             if (!p) return;
             const existing = updated[sym] || [];
-            updated[sym] = [...existing.slice(-19), p]; // Keep last 20 ticks
+            updated[sym] = [...existing.slice(-19), p]; 
           });
           return updated;
         });
@@ -285,169 +282,133 @@ function Markets() {
     return () => { clearInterval(intervalId); abortCtrl.abort(); };
   }, []);
 
-  // Global listener for Command Palette Trade Action
   useEffect(() => {
     const handleOpenModal = (e) => setSelectedAsset(e.detail);
     window.addEventListener('open-trade-modal', handleOpenModal);
     return () => window.removeEventListener('open-trade-modal', handleOpenModal);
   }, []);
 
+  const stocksWithData = TOP_STOCKS.map(sym => {
+    const data = marketPrices[sym] || {};
+    return { symbol: sym, price: data.price || 0, change: data.change || 0, prevClose: data.prevClose || 0 };
+  });
+
+  const topMovers = [...stocksWithData].sort((a,b) => Math.abs(b.change) - Math.abs(a.change)).slice(0, 6);
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      transition={{ duration: 0.2, ease: 'easeOut' }}
-      className="flex h-screen bg-[#000000] text-[#E5E5E5] font-inter overflow-hidden selection:bg-[#FFFFFF]/30"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
+      className="flex h-screen bg-[#0B0D10] text-[#E5E5E5] font-sans overflow-hidden selection:bg-[#D4A574]/30"
     >
       <Sidebar userName={userName} balance={balance} isMarketOpen={isMarketOpen} avatar={avatar} />
       <MobileBottomNav />
 
-      {/* 🔴 MAIN MARKETS CONTENT */}
-      <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-10 pb-24 md:pb-0 relative custom-scrollbar">
-        <div className="max-w-7xl mx-auto space-y-6 md:space-y-8 relative z-10">
-          
-          {/* 📱 Mobile top bar */}
-          <div className="md:hidden flex items-center justify-between pt-2 mb-2">
-            <div>
-              <h1 className="text-lg font-black tracking-tight">
-                <span className="text-[#FFFFFF]">PAPER</span> TRADE
-              </h1>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className={`w-2 h-2 rounded-full ${isMarketOpen ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
-              <span className="text-[10px] font-bold text-[#E5E5E5]/50 uppercase tracking-wider">{isMarketOpen ? 'Live' : 'Closed'}</span>
-            </div>
-          </div>
-
-          <header className="mb-4 md:mb-8">
-            <h2 className="text-2xl md:text-3xl font-black text-[#E5E5E5] tracking-tight">Market Explorer</h2>
-            <p className="text-[#E5E5E5]/50 text-sm mt-1">Discover, analyze, and trade listed equities.</p>
-          </header>
-
-          {/* INDICES OVERVIEW */}
-          <div className="flex gap-3 md:gap-6 overflow-x-auto pb-4 custom-scrollbar -mx-4 md:mx-0 px-4 md:px-0">
-            {INDICES.map((idx) => {
-              const liveData = marketPrices[idx] || {};
-              const p = liveData.price || 0;
-              const cPercent = liveData.change || 0;
-              const isGreen = cPercent >= 0;
-              
-              return (
-                <div
-                  key={idx}
-                  onClick={() => setSelectedAsset(idx)}
-                  className="bg-[#0A0A0A] border border-[#222222] rounded-2xl md:rounded-3xl p-4 md:p-6 flex flex-col min-w-[200px] md:min-w-[280px] cursor-pointer hover:border-[#FFFFFF]/30 transition-all shadow-xl group"
-                  style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.4)' }}
-                >
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <p className="text-[10px] text-[#E5E5E5]/50 uppercase tracking-widest font-bold">{idx}</p>
-                      <p className="text-2xl font-bold font-mono text-[#E5E5E5] mt-1">
-                        {p > 0 ? p.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '...'}
-                      </p>
-                    </div>
-                    <div className={`px-2.5 py-1 rounded-lg bg-[#141414] border border-[#222222]`}>
-                      <p className={`text-[11px] font-bold font-mono ${isGreen ? 'text-green-500' : 'text-red-500'}`}>
-                        {isGreen ? '▲' : '▼'} {isGreen ? '+' : ''}{cPercent}%
-                      </p>
-                    </div>
-                  </div>
-                  {/* EMBEDDED REAL MINI CHART */}
-                  <div className="w-full h-[60px] opacity-70 group-hover:opacity-100 transition-opacity relative pointer-events-none mt-2">
-                    <SmartChart symbol={idx} currentPrice={p} isGreen={isGreen} mini={true} />
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-
-          {/* ALL STOCKS TABLE */}
-          <div className="bg-[#0A0A0A] border border-[#222222] rounded-3xl overflow-hidden shadow-xl">
-            <div className="p-6 border-b border-[#222222] bg-[#141414]/50 flex justify-between items-center">
-              <h3 className="font-bold text-[#E5E5E5] text-lg flex items-center gap-2">
-                <span className="material-symbols-outlined text-[#FFFFFF]/60 text-[20px]">list_alt</span>
-                All Instruments
-              </h3>
-              <span className="text-[10px] font-bold text-[#E5E5E5]/40 uppercase tracking-widest bg-[#222222]/60 px-3 py-1 rounded-lg">
-                {TOP_STOCKS.length} Assets
-              </span>
-            </div>
+      <main className="flex-1 flex flex-col min-w-0 relative h-full">
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10 pb-32">
+          <div className="max-w-[1600px] mx-auto space-y-12">
             
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse whitespace-nowrap">
-                <thead>
-                  <tr className="text-[#E5E5E5]/40 text-[10px] font-bold uppercase tracking-widest border-b border-[#222222] bg-[#000000]/50">
-                    <th className="px-4 md:px-8 py-5">Instrument</th>
-                    <th className="px-4 md:px-8 py-5 text-center hidden md:table-cell">Trend (1D)</th>
-                    <th className="px-4 md:px-8 py-5 text-right">LTP</th>
-                    <th className="px-4 md:px-8 py-5 text-right">Change</th>
-                    <th className="px-4 md:px-8 py-5 text-center hidden sm:table-cell">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#222222]">
-                  {TOP_STOCKS.map((sym, i) => {
-                    const liveData = marketPrices[sym] || {};
-                    const price = liveData.price || 0;
-                    const change = liveData.change || 0;
-                    const isUp = change >= 0;
+            {/* Massive Header */}
+            <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+              <div>
+                <motion.h1 initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="text-4xl md:text-5xl lg:text-[56px] font-light tracking-tight text-[#E5E5E5] leading-none mb-4">
+                  Market <span className="font-bold">Overview</span>.
+                </motion.h1>
+                <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }} className="flex items-center gap-2">
+                  <div className={`w-2.5 h-2.5 rounded-full ${isMarketOpen ? 'bg-[#4ADE80] animate-pulse shadow-[0_0_10px_#4ADE80]' : 'bg-[#EF4444]'}`} />
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#E5E5E5]/40">{isMarketOpen ? 'Live Market' : 'AI Synthetic Mode'}</p>
+                </motion.div>
+              </div>
+            </header>
 
+            {/* Asymmetric Grid */}
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 md:gap-10">
+              
+              {/* Massive Movers Section (Col Span 8) */}
+              <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3 }} className="xl:col-span-8 flex flex-col">
+                <div className="flex items-center justify-between mb-4 px-2">
+                  <h3 className="text-xs uppercase tracking-[0.2em] font-bold text-[#E5E5E5]/40">Top Market Movers</h3>
+                </div>
+                
+                <div className="flex-1 bg-[#16181D]/30 rounded-[24px] p-2 flex flex-col gap-1">
+                  {topMovers.map((stock) => {
+                    const isUp = stock.change >= 0;
                     return (
-                      <tr key={i} className="hover:bg-[#FFFFFF]/[0.03] transition-colors group cursor-pointer" onClick={() => setSelectedAsset(sym)}>
-                        <td className="px-4 md:px-8 py-4">
-                          <div className="flex items-center gap-3 md:gap-4">
-                            <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-[#141414] border border-[#222222] flex items-center justify-center font-bold text-xs text-[#FFFFFF] group-hover:bg-[#222222] transition-colors">
-                              {sym.substring(0, 1)}
-                            </div>
-                            <div>
-                              <p className="font-bold text-[#E5E5E5]/90 group-hover:text-[#E5E5E5] transition-colors text-sm">{sym}</p>
-                              <p className="text-[10px] text-[#E5E5E5]/40 uppercase tracking-widest font-semibold mt-0.5 hidden sm:block">Equity • NSE</p>
-                            </div>
+                      <div key={stock.symbol} onClick={() => setSelectedAsset(stock.symbol)} className="flex items-center justify-between p-4 hover:bg-[#1F2229] rounded-[16px] transition-colors cursor-pointer group">
+                        <div className="flex items-center gap-6">
+                          <div className={`w-12 h-12 rounded-[12px] flex items-center justify-center font-bold text-lg ${isUp ? 'bg-[#4ADE80]/10 text-[#4ADE80]' : 'bg-[#EF4444]/10 text-[#EF4444]'}`}>
+                            {stock.symbol.substring(0, 1)}
                           </div>
-                        </td>
-                        <td className="px-4 md:px-8 py-4 text-center hidden md:table-cell opacity-50 group-hover:opacity-100 transition-opacity align-middle">
-                          <div className="inline-block w-[140px] h-[40px] relative pointer-events-none mt-1">
-                            <SmartChart symbol={sym} currentPrice={price} isGreen={isUp} mini={true} />
+                          <div>
+                            <p className="text-lg font-bold text-[#E5E5E5] group-hover:text-[#D4A574] transition-colors tracking-tight">{stock.symbol}</p>
+                            <p className="text-[10px] uppercase tracking-widest text-[#E5E5E5]/40 mt-1">NSE Equity</p>
                           </div>
-                        </td>
-                        <td className="px-4 md:px-8 py-4 text-right">
-                          <p className="font-mono text-[#E5E5E5] font-bold text-sm md:text-base">₹{price.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
-                        </td>
-                        <td className="px-4 md:px-8 py-4 text-right">
-                          <div className="inline-block px-2 md:px-3 py-1 rounded bg-[#141414] border border-[#222222]">
-                            <p className={`text-[11px] font-bold font-mono ${isUp ? 'text-green-500' : 'text-red-500'}`}>
-                              {isUp ? '+' : ''}{change.toFixed(2)}%
-                            </p>
-                          </div>
-                        </td>
-                        <td className="px-4 md:px-8 py-4 text-center hidden sm:table-cell">
-                          <button 
-                            onClick={(e) => { e.stopPropagation(); setSelectedAsset(sym); }} 
-                            className="bg-[#FFFFFF]/10 hover:bg-[#FFFFFF]/20 text-[#FFFFFF] border border-[#FFFFFF]/20 px-3 md:px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors"
-                          >
-                            Trade
-                          </button>
-                        </td>
-                      </tr>
-                    );
+                        </div>
+                        
+                        <div className="hidden md:block">
+                           <Sparkline data={priceHistory[stock.symbol] || []} color={isUp ? '#4ADE80' : '#EF4444'} width={120} height={40} />
+                        </div>
+
+                        <div className="text-right">
+                          <p className="text-xl font-mono font-bold text-[#E5E5E5]">₹{stock.price.toLocaleString('en-IN', {minimumFractionDigits: 2})}</p>
+                          <p className={`text-[12px] font-bold mt-1 ${isUp ? 'text-[#4ADE80]' : 'text-[#EF4444]'}`}>{isUp ? '+' : ''}{stock.change.toFixed(2)}%</p>
+                        </div>
+                      </div>
+                    )
                   })}
-                </tbody>
-              </table>
+                </div>
+              </motion.div>
+
+              {/* Indices (Col Span 4) */}
+              <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.4 }} className="xl:col-span-4 flex flex-col gap-6">
+                
+                <div className="bg-[#D4A574] rounded-[32px] p-8 shadow-[0_20px_40px_-15px_rgba(212,165,116,0.3)] text-[#0B0D10] relative overflow-hidden group">
+                   <div className="absolute inset-0 bg-gradient-to-tr from-transparent to-[#ffffff]/20 opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                   <h3 className="text-xs uppercase tracking-[0.2em] font-black text-[#0B0D10]/60 mb-6">Market Barometer</h3>
+                   
+                   <div className="space-y-6 relative z-10">
+                     {INDICES.map(idx => {
+                        const data = marketPrices[idx] || {};
+                        const isUp = (data.change || 0) >= 0;
+                        return (
+                          <div key={idx} onClick={() => setSelectedAsset(idx)} className="cursor-pointer hover:-translate-y-[2px] transition-transform">
+                             <p className="font-black text-lg mb-1">{idx}</p>
+                             <div className="flex items-end justify-between">
+                               <p className="font-mono font-bold text-2xl">₹{(data.price || 0).toLocaleString('en-IN')}</p>
+                               <p className={`text-sm font-bold px-2 py-1 rounded bg-[#0B0D10]/10 ${isUp ? 'text-[#004d00]' : 'text-red-900'}`}>{isUp ? '+' : ''}{(data.change || 0).toFixed(2)}%</p>
+                             </div>
+                          </div>
+                        )
+                     })}
+                   </div>
+                </div>
+
+                <div className="bg-[#16181D] rounded-[32px] p-8 flex-1">
+                   <h3 className="text-xs uppercase tracking-[0.2em] font-bold text-[#E5E5E5]/40 mb-6">Quick Trade</h3>
+                   <p className="text-[#E5E5E5]/60 text-sm mb-6">Select any asset to open the Pro Terminal or use the button below to browse all equities.</p>
+                   <button className="w-full bg-[#E5E5E5]/5 hover:bg-[#E5E5E5]/10 border border-[#E5E5E5]/10 text-[#E5E5E5] py-4 rounded-full font-bold uppercase tracking-widest text-xs transition-colors hover-glow">
+                     Browse All Stocks
+                   </button>
+                </div>
+              </motion.div>
+
             </div>
           </div>
         </div>
       </main>
 
       <AnimatePresence>
-        {selectedAsset && (
-          <UniversalTradeModal 
+         {selectedAsset && (
+         <UniversalTradeModal 
             symbol={selectedAsset} 
             marketData={marketPrices[selectedAsset] || {}} 
             onClose={() => setSelectedAsset(null)} 
             balance={balance} token={token} refreshData={fetchUserData}
             ownedQty={holdings.find(h => h.symbol === selectedAsset)?.quantity || 0}
-          />
-        )}
+         />
+         )}
       </AnimatePresence>
     </motion.div>
   );
