@@ -65,12 +65,12 @@ const UniversalTradeModal = ({ symbol, marketData, onClose, balance, token, refr
           <div className="w-full md:w-[60%] p-6 md:p-8 border-b md:border-b-0 md:border-r border-border flex flex-col">
             <div className="flex justify-between items-start mb-6">
               <div>
-                <h3 className="text-h2 font-medium tracking-tight text-text-primary">{symbol}</h3>
-                <p className="text-label text-text-tertiary mt-1">{INDICES.includes(symbol) ? 'MARKET INDEX' : 'EQUITY • NSE'}</p>
+                <h3 className="type-h2">{symbol}</h3>
+                <p className="type-label mt-2">{INDICES.includes(symbol) ? 'Market Index' : 'Equity · NSE'}</p>
               </div>
               <div className="text-right">
-                <p className="text-h3 font-mono font-medium text-text-primary">₹{currentPrice.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}</p>
-                <p className={`text-caption font-medium mt-1 ${isGreen ? 'text-positive' : 'text-negative'}`}>{isGreen ? '▲' : '▼'} {isGreen ? '+' : ''}{changePercent}% (1D)</p>
+                <p className="type-data-lg">₹{currentPrice.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}</p>
+                <p className={`type-caption mt-1 ${isGreen ? 'type-positive' : 'type-negative'}`}>{isGreen ? '▲' : '▼'} {isGreen ? '+' : ''}{changePercent}% today</p>
               </div>
             </div>
             <div className="flex-1 min-h-[250px] w-full border border-border rounded-md overflow-hidden relative group mb-6">
@@ -78,20 +78,20 @@ const UniversalTradeModal = ({ symbol, marketData, onClose, balance, token, refr
               <button
                 onClick={() => setShowCandlestick(true)}
                 title="Expand as Candlestick Chart"
-                className="absolute bottom-3 right-3 z-30 flex items-center gap-1.5 bg-surface-raised border border-border hover:border-border-strong text-text-secondary hover:text-text-primary px-3 py-1.5 rounded-md text-label transition-colors opacity-0 group-hover:opacity-100 shadow-1"
+                className="absolute bottom-3 right-3 z-30 flex items-center gap-1.5 bg-surface-raised border border-border hover:border-border-strong type-caption-muted hover:text-text-primary px-3 py-1.5 rounded-md transition-colors opacity-0 group-hover:opacity-100 shadow-1"
               >
-                <span className="material-symbols-outlined text-[14px]">candlestick_chart</span>
+                <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>candlestick_chart</span>
                 Candlestick
               </button>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex justify-between items-center py-2 border-t border-border">
-                <span className="text-label text-text-tertiary">Day Low</span>
-                <span className="text-body font-mono font-medium text-text-primary">₹{dayLow.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+            <div className="grid grid-cols-2 gap-6">
+              <div>
+                <p className="type-label mb-1">Day Low</p>
+                <p className="type-data-md">₹{dayLow.toLocaleString('en-IN', {minimumFractionDigits: 2})}</p>
               </div>
-              <div className="flex justify-between items-center py-2 border-t border-border">
-                <span className="text-label text-text-tertiary">Day High</span>
-                <span className="text-body font-mono font-medium text-text-primary">₹{dayHigh.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+              <div className="text-right">
+                <p className="type-label mb-1">Day High</p>
+                <p className="type-data-md">₹{dayHigh.toLocaleString('en-IN', {minimumFractionDigits: 2})}</p>
               </div>
             </div>
           </div>
@@ -109,41 +109,41 @@ const UniversalTradeModal = ({ symbol, marketData, onClose, balance, token, refr
             </div>
 
             <form onSubmit={handleExecute} className="flex-1 flex flex-col">
-              <div className="space-y-6 flex-1">
-                <div className="flex justify-between items-center pb-2 border-b border-border">
-                  <span className="text-label text-text-tertiary">{activeTab === 'BUY' ? 'Max Affordable' : 'Units Owned'}</span>
-                  <span className={`text-body font-mono font-medium ${activeTab === 'BUY' ? 'text-positive' : 'text-text-primary'}`}>{activeTab === 'BUY' ? maxBuyQty.toLocaleString() : ownedQty.toLocaleString()} units</span>
+              <div className="space-y-5 flex-1">
+                <div className="flex justify-between items-baseline pb-4 border-b border-border">
+                  <span className="type-label">{activeTab === 'BUY' ? 'Max Affordable' : 'Units Owned'}</span>
+                  <span className={`type-data-md ${activeTab === 'BUY' ? 'type-positive' : ''}`}>{activeTab === 'BUY' ? maxBuyQty.toLocaleString() : ownedQty.toLocaleString()} units</span>
                 </div>
                 
                 <div>
-                  <div className="flex justify-between items-center mb-3">
-                    <label className="text-label text-text-tertiary">Quantity (Units)</label>
-                    <Badge variant="neutral" className="cursor-pointer hover:bg-border transition-colors" onClick={handleMax}>MAX</Badge>
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="type-label">Quantity</label>
+                    <button type="button" onClick={handleMax} className="type-label-body hover:text-text-primary transition-colors">Use max</button>
                   </div>
-                  <Input autoFocus type="number" value={qty} onChange={(e) => setQty(e.target.value)} placeholder="0" required min="1" step="1" className="font-mono text-lg text-right" />
+                  <Input autoFocus type="number" value={qty} onChange={(e) => setQty(e.target.value)} placeholder="0" required min="1" step="1" className="font-mono text-right" style={{ fontSize: 'var(--text-h3)', height: '56px' }} />
                 </div>
                 
-                <div className="flex justify-between items-center py-4 border-y border-border">
-                  <span className="text-label text-text-tertiary">Limit Price</span>
-                  <span className="text-body font-mono font-medium text-text-primary">₹{currentPrice.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+                <div className="flex justify-between items-baseline py-4 border-y border-border">
+                  <span className="type-label">Market Price</span>
+                  <span className="type-data-md">₹{currentPrice.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
                 </div>
               </div>
 
-              <div className="mt-8 pt-4">
-                <div className="flex justify-between items-center mb-3">
-                  <span className="text-label text-text-tertiary">Est. Margin</span>
-                  <span className="text-h3 font-mono font-medium text-text-primary">₹{(estCost || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+              <div className="mt-6 pt-5 border-t border-border">
+                <div className="flex justify-between items-baseline mb-2">
+                  <span className="type-label">Est. Total</span>
+                  <span className="type-data-lg">₹{(estCost || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                 </div>
                 {numQty > 0 && (
-                  <div className="flex justify-between items-center mb-6">
-                    <span className="text-label text-text-tertiary">Balance After</span>
-                    <span className={`text-body font-mono font-medium ${balanceAfter >= 0 ? 'text-text-primary' : 'text-negative'}`}>
+                  <div className="flex justify-between items-baseline mb-5">
+                    <span className="type-label">Balance After</span>
+                    <span className={`type-data-sm ${balanceAfter >= 0 ? '' : 'type-negative'}`}>
                       ₹{Math.max(0, balanceAfter).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                     </span>
                   </div>
                 )}
-                <Button type="submit" variant={activeTab === 'BUY' ? 'primary' : 'danger'} className="w-full h-12 uppercase tracking-widest text-label font-bold">
-                  Place Order
+                <Button type="submit" variant={activeTab === 'BUY' ? 'primary' : 'danger'} size="lg" className="w-full">
+                  {activeTab === 'BUY' ? 'Buy' : 'Sell'} {symbol}
                 </Button>
               </div>
             </form>
@@ -324,26 +324,24 @@ function Dashboard() {
           <div className="max-w-[1200px] mx-auto space-y-10">
             
             {/* Header: Typography focused */}
-            <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-border pb-8">
-              <div>
-                <motion.h1 initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="text-h2 font-medium tracking-tight mb-2">
-                  {greeting}, {userName}.
-                </motion.h1>
-                <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }} className="flex flex-wrap items-center gap-8 mt-4">
-                  <div className="flex flex-col gap-1">
-                    <span className="text-label text-text-tertiary">AVAILABLE MARGIN</span>
-                    <span className="text-subtitle font-mono font-medium">₹{balance.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+            <header className="border-b border-border pb-8">
+              <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+                <h1 className="type-h2 mb-6">{greeting}, {userName}.</h1>
+                <div className="flex flex-wrap items-center gap-8">
+                  <div>
+                    <p className="type-label mb-2">Available Margin</p>
+                    <p className="type-data-xl">₹{balance.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
                   </div>
                   <div className="hidden md:block w-px h-8 bg-border" />
-                  <div className="flex flex-col gap-1">
-                    <span className="text-label text-text-tertiary">MARKET STATUS</span>
-                    <div className="flex items-center gap-2 h-7">
-                      <div className={`w-2 h-2 rounded-full ${isMarketOpen ? 'bg-positive animate-pulse' : 'bg-negative'}`} />
-                      <span className="text-body font-medium">{isMarketOpen ? 'Live Market' : 'Offline'}</span>
+                  <div>
+                    <p className="type-label mb-2">Market Status</p>
+                    <div className="flex items-center gap-2">
+                      <span className={`w-1.5 h-1.5 rounded-full ${isMarketOpen ? 'bg-positive' : 'bg-text-tertiary'}`} />
+                      <span className="type-body">{isMarketOpen ? 'Live' : 'Closed'}</span>
                     </div>
                   </div>
-                </motion.div>
-              </div>
+                </div>
+              </motion.div>
             </header>
 
             {/* Main Layout Grid */}
@@ -352,94 +350,100 @@ function Dashboard() {
               {/* Primary Content (Chart & Insights) */}
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="xl:col-span-8 flex flex-col gap-10">
                 
-                {/* Live Chart Block */}
+                {/* Live Chart */}
                 <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-baseline gap-4">
-                      <h2 className="text-subtitle font-medium">{mainChartAsset}</h2>
-                      <span className="text-body font-mono text-text-secondary">₹{mainChartData.price > 0 ? mainChartData.price.toLocaleString('en-IN', {minimumFractionDigits: 2}) : '...'}</span>
-                      <span className={`text-body font-medium ${mainChartIsGreen ? 'text-positive' : 'text-negative'}`}>{mainChartIsGreen ? '+' : ''}{mainChartData.change || 0}%</span>
+                  <div className="flex items-end justify-between mb-4">
+                    <div>
+                      <h2 className="type-subtitle mb-1">{mainChartAsset}</h2>
+                      <div className="flex items-baseline gap-3">
+                        <span className="type-data-md">₹{mainChartData.price > 0 ? mainChartData.price.toLocaleString('en-IN', {minimumFractionDigits: 2}) : '—'}</span>
+                        <span className={`type-caption ${mainChartIsGreen ? 'type-positive' : 'type-negative'}`}>{mainChartIsGreen ? '+' : ''}{mainChartData.change || 0}% today</span>
+                      </div>
                     </div>
                     <Button size="sm" variant="secondary" onClick={() => setSelectedAsset(mainChartAsset)}>Trade</Button>
                   </div>
-                  <Card className="h-[450px] p-0 overflow-hidden">
+                  <Card className="h-[420px] p-0 overflow-hidden">
                     <SmartChart symbol={mainChartAsset} currentPrice={mainChartData.price} isGreen={mainChartIsGreen} />
                   </Card>
                 </div>
 
-                {/* Insights Block - Unboxed */}
-                <div className="border-t border-border pt-8">
-                  <h3 className="text-label text-text-tertiary mb-4">MARKET INSIGHTS</h3>
-                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                     <div className="flex-1">
-                       <h4 className="text-subtitle font-medium mb-2">{gainers[0]?.symbol || 'MARKETS'} showing strong momentum</h4>
-                       <p className="text-text-secondary text-body max-w-lg">
-                         AI sentiment engine detects institutional accumulation. Consider watching key breakout levels in the next 15 minutes.
-                       </p>
-                     </div>
-                     <Button onClick={() => setSelectedAsset(gainers[0]?.symbol || 'NIFTY 50')}>
-                       Trade {gainers[0]?.symbol || 'Now'}
-                     </Button>
+                {/* Market Insight */}
+                {gainers[0] && (
+                  <div className="pt-6 border-t border-border">
+                    <p className="type-label mb-3">Market Signal</p>
+                    <div className="flex items-start justify-between gap-6">
+                      <div className="flex-1">
+                        <p className="type-subtitle mb-2">
+                          <span className="type-positive">{gainers[0].symbol}</span> {gainers[0].change > 0 ? `+${gainers[0].change.toFixed(2)}%` : `${gainers[0].change.toFixed(2)}%`} today
+                        </p>
+                        <p className="type-body-secondary max-w-md">
+                          Institutional accumulation detected. Watch key breakout levels in the next session.
+                        </p>
+                      </div>
+                      <Button size="sm" onClick={() => setSelectedAsset(gainers[0].symbol)}>Trade</Button>
+                    </div>
                   </div>
-                </div>
+                )}
 
               </motion.div>
 
               {/* Secondary Content (Watchlist & Portfolio) */}
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="xl:col-span-4 flex flex-col gap-10">
                 
-                {/* Watchlist - Unboxed List */}
+                {/* Watchlist */}
                 <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-label text-text-tertiary">WATCHLIST</h3>
-                    <button className="text-text-tertiary hover:text-text-primary transition-colors">
-                      <span className="material-symbols-outlined text-[18px]">add</span>
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="type-label">Watchlist</p>
+                    <button className="type-caption-muted hover:text-text-primary transition-colors" aria-label="Add to watchlist">
+                      <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-md)' }}>add</span>
                     </button>
                   </div>
                   
-                  <div className="flex flex-col divide-y divide-border border-t border-border">
+                  <div className="flex flex-col border-t border-border">
                     {watchlist.slice(0, 6).map((sym) => {
                       const data = marketPrices[sym] || {};
                       const isUp = (data.change || 0) >= 0;
                       return (
-                        <div key={sym} onClick={() => setSelectedAsset(sym)} className="flex items-center justify-between py-4 group cursor-pointer">
-                          <div className="flex flex-col">
-                            <span className="font-medium text-body group-hover:text-accent transition-colors">{sym}</span>
-                            <span className="text-caption text-text-tertiary">NSE</span>
+                        <button key={sym} onClick={() => setSelectedAsset(sym)}
+                          className="flex items-center justify-between py-3.5 border-b border-border group hover:bg-surface-raised -mx-1 px-1 rounded transition-colors text-left"
+                        >
+                          <div>
+                            <p className="type-body group-hover:text-accent transition-colors">{sym}</p>
+                            <p className="type-caption-muted">NSE</p>
                           </div>
                           <div className="text-right">
-                            <p className="font-mono font-medium text-body">₹{(data.price || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</p>
-                            <p className={`text-caption font-medium mt-0.5 ${isUp ? 'text-positive' : 'text-negative'}`}>{isUp ? '+' : ''}{(data.change || 0).toFixed(2)}%</p>
+                            <p className="type-data-sm" style={{ color: 'var(--color-text-primary)' }}>₹{(data.price || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</p>
+                            <p className={`type-caption ${isUp ? 'type-positive' : 'type-negative'}`}>{isUp ? '+' : ''}{(data.change || 0).toFixed(2)}%</p>
                           </div>
-                        </div>
+                        </button>
                       )
                     })}
                   </div>
                 </div>
 
-                {/* Open Positions - Unboxed List */}
+                {/* Open Positions */}
                 <div>
-                  <h3 className="text-label text-text-tertiary mb-4">OPEN POSITIONS</h3>
-                  <div className="flex flex-col divide-y divide-border border-t border-border">
+                  <p className="type-label mb-3">Open Positions</p>
+                  <div className="flex flex-col border-t border-border">
                     {holdings.length === 0 ? (
-                      <div className="py-4 text-text-tertiary text-caption">No open positions.</div>
+                      <p className="type-caption-muted py-4">No open positions.</p>
                     ) : (
                       holdings.slice(0,4).map((h, i) => (
-                        <div key={i} className="flex justify-between items-center py-4">
-                           <div className="flex flex-col">
-                             <span className="font-medium text-body">{h.symbol}</span>
-                             <span className="text-caption text-text-tertiary">{h.quantity} units</span>
+                        <div key={i} className="flex justify-between items-center py-3.5 border-b border-border">
+                           <div>
+                             <p className="type-body">{h.symbol}</p>
+                             <p className="type-caption-muted">{h.quantity} units</p>
                            </div>
                            <div className="text-right">
-                             <span className="font-mono text-body text-text-secondary">Avg ₹{h.avgPrice.toLocaleString('en-IN')}</span>
+                             <p className="type-data-sm">Avg ₹{h.avgPrice.toLocaleString('en-IN')}</p>
                            </div>
                         </div>
                       ))
                     )}
                   </div>
                   {holdings.length > 0 && (
-                    <Button variant="ghost" className="w-full mt-2" onClick={() => navigate('/portfolio')}>
-                      View Full Portfolio
+                    <Button variant="ghost" size="sm" className="mt-3" onClick={() => navigate('/portfolio')}>
+                      View Portfolio
                     </Button>
                   )}
                 </div>
