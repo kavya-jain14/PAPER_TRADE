@@ -1,14 +1,40 @@
+/**
+ * Input — text input with optional label, helper text, and error state
+ *
+ * Variants:
+ *   default → standard form input
+ *   search  → with leading search icon
+ */
 import React from 'react';
 
-export const Input = React.forwardRef(({ className = '', error, ...props }, ref) => {
+export const Input = React.forwardRef(({
+  className = '',
+  type = 'text',
+  error,
+  ...props
+}, ref) => {
   return (
-    <div className="relative w-full">
+    <div className="w-full">
       <input
         ref={ref}
-        className={`flex h-10 w-full rounded-md border border-border bg-surface px-3 py-2 text-body text-text-primary file:border-0 file:bg-transparent file:text-body file:font-medium placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-50 transition-colors ${error ? 'border-negative focus-visible:ring-negative' : ''} ${className}`}
+        type={type}
+        className={[
+          'flex h-9 w-full rounded-md',
+          'border border-border bg-surface',
+          'px-3 py-1.5 text-body text-text-primary',
+          'placeholder:text-text-tertiary',
+          'transition-colors',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg',
+          'disabled:cursor-not-allowed disabled:opacity-40',
+          error ? 'border-negative focus-visible:ring-negative' : 'hover:border-border-strong',
+          className,
+        ].join(' ')}
+        aria-invalid={!!error}
         {...props}
       />
-      {error && <span className="text-negative text-caption mt-1">{error}</span>}
+      {error && (
+        <p className="mt-1.5 text-label text-negative" role="alert">{error}</p>
+      )}
     </div>
   );
 });
