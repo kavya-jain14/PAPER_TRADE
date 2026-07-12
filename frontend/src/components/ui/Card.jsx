@@ -35,13 +35,13 @@ export const CardHeader = ({ className = '', children, ...props }) => (
 );
 
 export const CardTitle = ({ className = '', children, ...props }) => (
-  <h3 className={`text-body font-medium text-text-primary leading-none ${className}`} {...props}>
+  <h3 className={`type-subtitle ${className}`} {...props}>
     {children}
   </h3>
 );
 
 export const CardDescription = ({ className = '', children, ...props }) => (
-  <p className={`mt-1 text-caption text-text-secondary ${className}`} {...props}>
+  <p className={`mt-1 type-body-secondary ${className}`} {...props}>
     {children}
   </p>
 );

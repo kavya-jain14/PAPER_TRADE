@@ -13,7 +13,8 @@ import {
   ReferenceLine,
 } from 'recharts';
 import SmartChart from '../components/SmartChart';
-import Sidebar, { MobileBottomNav } from '../components/Sidebar';
+import { AppShell } from '../components/AppShell';
+import TradeModal from '../components/TradeModal';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
@@ -77,111 +78,6 @@ const PnLTooltip = ({ active, payload, label }) => {
     );
   }
   return null;
-};
-
-// 📊 UNIVERSAL PRO-TRADE MODAL
-const UniversalTradeModal = ({ symbol, marketData, onClose, balance, token, refreshData, ownedQty = 0 }) => {
-  const [qty, setQty] = useState('');
-  const [activeTab, setActiveTab] = useState('BUY');
-
-  const currentPrice = marketData?.price || 0;
-  const changePercent = marketData?.change || 0;
-  const dayHigh = marketData?.high || currentPrice;
-  const dayLow = marketData?.low || currentPrice;
-  const isGreen = changePercent >= 0;
-
-  const maxBuyQty = currentPrice > 0 ? Math.floor(balance / currentPrice) : 0;
-  const handleMax = () => setQty(String(activeTab === 'BUY' ? maxBuyQty : ownedQty));
-
-  const handleExecute = async (e) => {
-    e.preventDefault();
-    const numQty = Number(qty);
-    if (!numQty || numQty <= 0 || !Number.isInteger(numQty)) return toast.error('Enter a valid whole number quantity.');
-    const cost = numQty * currentPrice;
-    if (activeTab === 'BUY' && cost > balance) return toast.error('Insufficient Funds!');
-    if (activeTab === 'SELL' && numQty > ownedQty) return toast.error(`You only own ${ownedQty} units!`);
-    
-    const endpoint = activeTab === 'BUY' ? '/api/trade/buy' : '/api/trade/sell';
-    const tid = toast.loading(`Routing ${activeTab} Order...`);
-    try {
-      const res = await fetch(`${API_URL}${endpoint}`, {
-        method: "POST", headers: { "Content-Type": "application/json", "auth-token": token },
-        body: JSON.stringify({ symbol, quantity: numQty, currentPrice })
-      });
-      const d = await res.json();
-      if (res.ok) { toast.success('Order Filled Successfully!', { id: tid }); refreshData(); onClose(); }
-      else { toast.error(d.message || 'Order failed', { id: tid }); }
-    } catch (err) { toast.error('Network Error', { id: tid }); }
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center backdrop-blur-md z-50 p-4 font-inter">
-      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-[#0A0A0A]/80 backdrop-blur-2xl rounded-3xl border border-[#222222] shadow-2xl w-full max-w-[900px] overflow-hidden flex flex-col md:flex-row max-h-[90vh]">
-        <div className="bg-black/40 w-full md:w-[65%] p-6 border-b md:border-b-0 md:border-r border-[#222222] flex flex-col">
-          <div className="flex justify-between items-start mb-6">
-            <div>
-              <h3 className="text-3xl font-black text-white tracking-tight">{symbol}</h3>
-              <p className="text-[10px] text-[#E5E5E5]/50 uppercase tracking-widest font-bold mt-1">{INDICES.includes(symbol) ? 'MARKET INDEX' : 'EQUITY • NSE'}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-2xl font-mono text-white font-bold">₹{currentPrice.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}</p>
-              <p className={`text-xs font-bold mt-1 ${isGreen ? 'text-green-500' : 'text-red-500'}`}>{isGreen ? '▲' : '▼'} {isGreen ? '+' : ''}{changePercent}% (1D)</p>
-            </div>
-          </div>
-          <div className="flex-1 min-h-[300px] w-full border border-[#222222] rounded-2xl overflow-hidden relative bg-[#000000] group">
-            <SmartChart symbol={symbol} currentPrice={currentPrice} isGreen={isGreen} />
-          </div>
-          <div className="grid grid-cols-2 gap-4 mt-6">
-            <div className="bg-[#141414] p-4 rounded-2xl border border-[#222222] flex justify-between items-center">
-              <span className="text-[10px] uppercase text-[#E5E5E5]/50 font-bold tracking-widest">Day Low</span>
-              <span className="text-sm font-mono text-[#E5E5E5]/90">₹{dayLow.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-            </div>
-            <div className="bg-[#141414] p-4 rounded-2xl border border-[#222222] flex justify-between items-center">
-              <span className="text-[10px] uppercase text-[#E5E5E5]/50 font-bold tracking-widest">Day High</span>
-              <span className="text-sm font-mono text-[#E5E5E5]/90">₹{dayHigh.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-            </div>
-          </div>
-        </div>
-        <div className="w-full md:w-[35%] p-6 flex flex-col bg-transparent">
-          <div className="flex justify-end mb-6">
-            <button onClick={onClose} className="text-[#E5E5E5]/40 hover:text-white bg-[#141414] p-1.5 rounded-xl transition-colors"><span className="material-symbols-outlined text-[20px]">close</span></button>
-          </div>
-          <div className="flex bg-[#141414] p-1.5 rounded-2xl mb-8 border border-[#222222]">
-            <button onClick={() => setActiveTab('BUY')} className={`flex-1 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'BUY' ? 'bg-green-500 text-[#003a00] shadow-md' : 'text-[#E5E5E5]/50 hover:text-white'}`}>Buy</button>
-            <button onClick={() => setActiveTab('SELL')} className={`flex-1 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'SELL' ? 'bg-red-500 text-white shadow-md' : 'text-[#E5E5E5]/50 hover:text-white'}`}>Sell</button>
-          </div>
-          <form onSubmit={handleExecute} className="flex-1 flex flex-col">
-            <div className="space-y-4 flex-1">
-              <div className="flex justify-between items-center bg-[#000000] rounded-xl px-4 py-2.5 border border-[#222222]">
-                <span className="text-[10px] text-[#E5E5E5]/40 uppercase tracking-widest font-bold">{activeTab === 'BUY' ? 'Max Affordable' : 'Units Owned'}</span>
-                <span className={`text-sm font-black font-mono ${activeTab === 'BUY' ? 'text-green-400' : 'text-blue-400'}`}>{activeTab === 'BUY' ? maxBuyQty.toLocaleString() : ownedQty.toLocaleString()} units</span>
-              </div>
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="text-[#E5E5E5]/50 text-[10px] uppercase tracking-widest font-bold">Quantity (Units)</label>
-                  <button type="button" onClick={handleMax} className={`text-[10px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider transition-colors ${activeTab === 'BUY' ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20 border border-green-500/20' : 'bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border border-blue-500/20'}`}>MAX</button>
-                </div>
-                <input autoFocus type="number" value={qty} onChange={(e) => setQty(e.target.value)} className={`w-full bg-[#000000] border rounded-2xl p-4 text-white outline-none font-mono text-xl transition-colors ${activeTab === 'BUY' ? 'border-[#222222] focus:border-green-500' : 'border-[#222222] focus:border-red-500'}`} placeholder="0" required min="1" step="1" />
-              </div>
-              <div className="p-4 bg-[#141414] rounded-2xl border border-[#222222]">
-                <span className="block text-[10px] uppercase text-[#E5E5E5]/50 font-bold tracking-widest mb-1">Limit Price</span>
-                <span className="text-lg font-mono text-[#E5E5E5]/90">₹{currentPrice.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits:2})}</span>
-              </div>
-            </div>
-            <div className="mt-8">
-              <div className="flex justify-between items-center mb-6 px-1">
-                <span className="text-[10px] font-bold text-[#E5E5E5]/50 uppercase tracking-widest">Est. Total</span>
-                <span className="text-xl font-black font-mono text-[#E5E5E5]">₹{(Number(qty) * currentPrice || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits:2 })}</span>
-              </div>
-              <button type="submit" className={`w-full py-4 font-black rounded-2xl uppercase tracking-[0.2em] transition-all hover:scale-[1.02] active:scale-[0.98] text-sm shadow-lg ${activeTab === 'BUY' ? 'bg-green-500 text-[#003a00] shadow-green-500/20' : 'bg-red-500 text-white shadow-red-500/20'}`}>
-                Execute {activeTab === 'BUY' ? 'Buy' : 'Sell'} Order
-              </button>
-            </div>
-          </form>
-        </div>
-      </motion.div>
-    </div>
-  );
 };
 
 function Portfolio() {
@@ -285,12 +181,8 @@ function Portfolio() {
   }).sort((a, b) => b.pnl - a.pnl);
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} className="flex h-screen bg-[#0B0D10] text-[#E5E5E5] font-sans overflow-hidden selection:bg-[#D4A574]/30">
-
-      <Sidebar userName={userName} balance={balance} isMarketOpen={isMarketOpen} avatar={avatar} />
-      <MobileBottomNav />
-
-      <main className="flex-1 flex flex-col min-w-0 relative h-full">
+    <AppShell userName={userName} isMarketOpen={isMarketOpen} avatar={avatar}>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} className="flex-1 flex flex-col min-w-0 relative h-full">
         <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10 pb-32">
           <div className="max-w-[1600px] mx-auto space-y-12">
             
@@ -424,20 +316,20 @@ function Portfolio() {
             </div>
           </div>
         </div>
-      </main>
+      </motion.div>
 
       <AnimatePresence>
          {selectedAsset && (
-         <UniversalTradeModal 
+         <TradeModal 
             symbol={selectedAsset} 
             marketData={livePrices[selectedAsset] || {}} 
             onClose={() => setSelectedAsset(null)} 
-            balance={balance} token={token} refreshData={fetchUserDataAndPortfolio}
+            balance={balance} token={token} onSuccess={fetchUserDataAndPortfolio}
             ownedQty={holdings.find(h => h.symbol === selectedAsset)?.quantity || 0}
          />
          )}
       </AnimatePresence>
-    </motion.div>
+    </AppShell>
   );
 }
 

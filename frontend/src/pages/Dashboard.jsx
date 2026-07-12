@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
-import SmartChart, { CandlestickModal } from '../components/SmartChart';
-import Sidebar, { MobileBottomNav } from '../components/Sidebar';
+import SmartChart from '../components/SmartChart';
+import { AppShell } from '../components/AppShell';
+import TradeModal from '../components/TradeModal';
 import { Button, Input, Badge, Card, CardHeader, CardTitle, CardContent } from '../components/ui';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
@@ -11,149 +12,6 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 const TOP_STOCKS = ['RELIANCE', 'TCS', 'HDFCBANK', 'ICICIBANK', 'INFY', 'ITC', 'SBIN', 'BHARTIARTL', 'LT', 'AXISBANK'];
 const INDICES    = ['NIFTY 50', 'SENSEX', 'NIFTY BANK'];
 const ALL_SYMBOLS = [...TOP_STOCKS, ...INDICES];
-
-const UniversalTradeModal = ({ symbol, marketData, onClose, balance, token, refreshData, ownedQty = 0 }) => {
-  const [qty, setQty]                 = useState('');
-  const [activeTab, setActiveTab]     = useState('BUY');
-  const [showCandlestick, setShowCandlestick] = useState(false);
-
-  const currentPrice  = marketData?.price || 0;
-  const changePercent = marketData?.change || 0;
-  const dayHigh       = marketData?.high || currentPrice;
-  const dayLow        = marketData?.low  || currentPrice;
-  const isGreen       = changePercent >= 0;
-
-  const numQty       = Number(qty) || 0;
-  const estCost      = numQty * currentPrice;
-  const balanceAfter = activeTab === 'BUY'
-    ? balance - estCost
-    : balance + estCost;
-
-  const maxBuyQty = currentPrice > 0 ? Math.floor(balance / currentPrice) : 0;
-  const handleMax = () => setQty(String(activeTab === 'BUY' ? maxBuyQty : ownedQty));
-
-  const handleExecute = async (e) => {
-    e.preventDefault();
-    const numQty = Number(qty);
-    if (!numQty || numQty <= 0 || !Number.isInteger(numQty)) return toast.error('Enter a valid whole number quantity.');
-    const cost = numQty * currentPrice;
-    if (activeTab === 'BUY' && cost > balance) return toast.error('Insufficient Funds!');
-    if (activeTab === 'SELL' && numQty > ownedQty) return toast.error(`You only own ${ownedQty} units!`);
-    
-    const endpoint = activeTab === 'BUY' ? '/api/trade/buy' : '/api/trade/sell';
-    const tid = toast.loading(`Routing ${activeTab} Order...`);
-    try {
-      const res = await fetch(`${API_URL}${endpoint}`, {
-        method: "POST", headers: { "Content-Type": "application/json", "auth-token": token },
-        body: JSON.stringify({ symbol, quantity: numQty, currentPrice })
-      });
-      const d = await res.json();
-      if (res.ok) { toast.success('Order Filled!', { id: tid }); refreshData(); onClose(); }
-      else { toast.error(d.message || 'Order failed', { id: tid }); }
-    } catch (err) { toast.error('Network Error', { id: tid }); }
-  };
-
-  return (
-    <>
-      {showCandlestick && (
-        <CandlestickModal symbol={symbol} isGreen={isGreen} onClose={() => setShowCandlestick(false)} />
-      )}
-      <div className="fixed inset-0 bg-bg/80 flex items-center justify-center backdrop-blur-sm z-50 p-4">
-        <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} 
-          className="bg-surface border border-border rounded-lg shadow-3 w-full max-w-[900px] overflow-hidden flex flex-col md:flex-row max-h-[90vh]">
-          
-          <div className="w-full md:w-[60%] p-6 md:p-8 border-b md:border-b-0 md:border-r border-border flex flex-col">
-            <div className="flex justify-between items-start mb-6">
-              <div>
-                <h3 className="type-h2">{symbol}</h3>
-                <p className="type-label mt-2">{INDICES.includes(symbol) ? 'Market Index' : 'Equity · NSE'}</p>
-              </div>
-              <div className="text-right">
-                <p className="type-data-lg">₹{currentPrice.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}</p>
-                <p className={`type-caption mt-1 ${isGreen ? 'type-positive' : 'type-negative'}`}>{isGreen ? '▲' : '▼'} {isGreen ? '+' : ''}{changePercent}% today</p>
-              </div>
-            </div>
-            <div className="flex-1 min-h-[250px] w-full border border-border rounded-md overflow-hidden relative group mb-6">
-              <SmartChart symbol={symbol} currentPrice={currentPrice} isGreen={isGreen} />
-              <button
-                onClick={() => setShowCandlestick(true)}
-                title="Expand as Candlestick Chart"
-                className="absolute bottom-3 right-3 z-30 flex items-center gap-1.5 bg-surface-raised border border-border hover:border-border-strong type-caption-muted hover:text-text-primary px-3 py-1.5 rounded-md transition-colors opacity-0 group-hover:opacity-100 shadow-1"
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>candlestick_chart</span>
-                Candlestick
-              </button>
-            </div>
-            <div className="grid grid-cols-2 gap-6">
-              <div>
-                <p className="type-label mb-1">Day Low</p>
-                <p className="type-data-md">₹{dayLow.toLocaleString('en-IN', {minimumFractionDigits: 2})}</p>
-              </div>
-              <div className="text-right">
-                <p className="type-label mb-1">Day High</p>
-                <p className="type-data-md">₹{dayHigh.toLocaleString('en-IN', {minimumFractionDigits: 2})}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="w-full md:w-[40%] p-6 md:p-8 flex flex-col bg-surface">
-            <div className="flex justify-end mb-6">
-              <button onClick={onClose} className="text-text-tertiary hover:text-text-primary transition-colors">
-                <span className="material-symbols-outlined text-[20px]">close</span>
-              </button>
-            </div>
-            
-            <div className="flex p-1 bg-surface-raised rounded-md mb-8 border border-border">
-              <button onClick={() => setActiveTab('BUY')} className={`flex-1 py-2 rounded-[4px] text-label transition-colors ${activeTab === 'BUY' ? 'bg-bg text-text-primary shadow-1' : 'text-text-tertiary hover:text-text-primary'}`}>Buy</button>
-              <button onClick={() => setActiveTab('SELL')} className={`flex-1 py-2 rounded-[4px] text-label transition-colors ${activeTab === 'SELL' ? 'bg-bg text-text-primary shadow-1' : 'text-text-tertiary hover:text-text-primary'}`}>Sell</button>
-            </div>
-
-            <form onSubmit={handleExecute} className="flex-1 flex flex-col">
-              <div className="space-y-5 flex-1">
-                <div className="flex justify-between items-baseline pb-4 border-b border-border">
-                  <span className="type-label">{activeTab === 'BUY' ? 'Max Affordable' : 'Units Owned'}</span>
-                  <span className={`type-data-md ${activeTab === 'BUY' ? 'type-positive' : ''}`}>{activeTab === 'BUY' ? maxBuyQty.toLocaleString() : ownedQty.toLocaleString()} units</span>
-                </div>
-                
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <label className="type-label">Quantity</label>
-                    <button type="button" onClick={handleMax} className="type-label-body hover:text-text-primary transition-colors">Use max</button>
-                  </div>
-                  <Input autoFocus type="number" value={qty} onChange={(e) => setQty(e.target.value)} placeholder="0" required min="1" step="1" className="font-mono text-right" style={{ fontSize: 'var(--text-h3)', height: '56px' }} />
-                </div>
-                
-                <div className="flex justify-between items-baseline py-4 border-y border-border">
-                  <span className="type-label">Market Price</span>
-                  <span className="type-data-md">₹{currentPrice.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
-                </div>
-              </div>
-
-              <div className="mt-6 pt-5 border-t border-border">
-                <div className="flex justify-between items-baseline mb-2">
-                  <span className="type-label">Est. Total</span>
-                  <span className="type-data-lg">₹{(estCost || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                </div>
-                {numQty > 0 && (
-                  <div className="flex justify-between items-baseline mb-5">
-                    <span className="type-label">Balance After</span>
-                    <span className={`type-data-sm ${balanceAfter >= 0 ? '' : 'type-negative'}`}>
-                      ₹{Math.max(0, balanceAfter).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                )}
-                <Button type="submit" variant={activeTab === 'BUY' ? 'primary' : 'danger'} size="lg" className="w-full">
-                  {activeTab === 'BUY' ? 'Buy' : 'Sell'} {symbol}
-                </Button>
-              </div>
-            </form>
-          </div>
-        </motion.div>
-      </div>
-    </>
-  );
-};
-
 
 function Dashboard() {
   const [userName, setUserName] = useState('');
@@ -284,12 +142,8 @@ function Dashboard() {
   const mainChartIsGreen = (mainChartData.change || 0) >= 0;
 
   return (
-    <div className="flex h-screen bg-bg text-text-primary font-sans overflow-hidden">
-
-      <Sidebar userName={userName} isMarketOpen={isMarketOpen} avatar={avatar} />
-      <MobileBottomNav />
-
-      <main className="flex-1 flex flex-col min-w-0 relative h-full">
+    <AppShell userName={userName} isMarketOpen={isMarketOpen} avatar={avatar}>
+      <div className="flex-1 flex flex-col min-w-0 relative h-full">
         {/* Minimal Ticker */}
         <div className="w-full border-b border-border bg-surface overflow-hidden whitespace-nowrap py-2 shrink-0 flex items-center z-20">
           <div className="flex gap-12 animate-ticker shrink-0 w-max font-mono text-label">
@@ -452,22 +306,22 @@ function Dashboard() {
             </div>
           </div>
         </div>
-      </main>
+      </div>
 
       <AnimatePresence>
         {selectedAsset && (
-          <UniversalTradeModal 
+          <TradeModal 
             symbol={selectedAsset} 
             marketData={marketPrices[selectedAsset]} 
             onClose={() => setSelectedAsset(null)} 
             balance={balance} 
             token={token} 
-            refreshData={fetchUserData}
+            onSuccess={fetchUserData}
             ownedQty={holdings.find(h => h.symbol === selectedAsset)?.quantity || 0}
           />
         )}
       </AnimatePresence>
-    </div>
+    </AppShell>
   );
 }
 
