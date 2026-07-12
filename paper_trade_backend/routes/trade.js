@@ -202,6 +202,7 @@ router.get('/history', fetchuser, async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 router.post('/live-prices', async (req, res) => {
   try {
+    console.log("🔥 /live-prices HIT. Body:", req.body);
     const { symbols } = req.body;
     if (!symbols || !Array.isArray(symbols)) return res.json({});
 
@@ -213,8 +214,34 @@ router.post('/live-prices', async (req, res) => {
       else symbolMap[sym] = sym.includes('.NS') ? sym : `${sym}.NS`;
     });
 
-    // ✅ FIX: Per-symbol 8-second timeout so a slow/rate-limited symbol
-    //         never hangs the entire live-prices response
+    console.log("🔥 Symbol map created:", Object.keys(symbolMap).length);
+
+    const livePrices = {};
+    const isMarketOpenNow = brain.isMarketOpen();
+    console.log("🔥 isMarketOpenNow:", isMarketOpenNow);
+
+    if (!isMarketOpenNow) {
+      // Market is closed — skip Yahoo Finance entirely to prevent hangs/rate-limits
+      Object.keys(symbolMap).forEach((originalSym) => {
+        let p = 0, c = 0, h = 0, l = 0;
+        const history = brain.getSyntheticHistory(originalSym);
+        if (history && history.length > 0) {
+          const lastCandle = history[history.length - 1];
+          const seedPrice  = brain.getSeedPrice(originalSym);
+          p = lastCandle.close;
+          h = lastCandle.high;
+          l = lastCandle.low;
+          if (seedPrice && seedPrice > 0) {
+            c = parseFloat((((p - seedPrice) / seedPrice) * 100).toFixed(2));
+          }
+        }
+        livePrices[originalSym] = { price: p, change: c, high: h, low: l };
+      });
+      console.log("🔥 Returning SYNTHETIC prices.");
+      return res.json(livePrices);
+    }
+
+    // Market is open — fetch from Yahoo Finance
     const withTimeout = (promise, ms) =>
       Promise.race([
         promise,
@@ -227,9 +254,6 @@ router.post('/live-prices', async (req, res) => {
       )
     );
 
-    const livePrices = {};
-    const isMarketOpenNow = brain.isMarketOpen();
-
     Object.keys(symbolMap).forEach((originalSym, index) => {
       const result = quotes[index];
       let p = 0, c = 0, h = 0, l = 0;
@@ -241,24 +265,6 @@ router.post('/live-prices', async (req, res) => {
         h = q.regularMarketDayHigh || 0;
         l = q.regularMarketDayLow || 0;
       }
-
-      // If market is closed, override current price with synthetic price
-      // and recalculate change% from the real seed price so it reflects synthetic movement
-      if (!isMarketOpenNow) {
-        const history = brain.getSyntheticHistory(originalSym);
-        if (history && history.length > 0) {
-          const lastCandle = history[history.length - 1];
-          const seedPrice  = brain.getSeedPrice(originalSym);
-          p = lastCandle.close;
-          h = Math.max(h, lastCandle.high);
-          l = l === 0 ? lastCandle.low : Math.min(l, lastCandle.low);
-          // Recalculate % change from seed (real close) price
-          if (seedPrice && seedPrice > 0) {
-            c = parseFloat((((p - seedPrice) / seedPrice) * 100).toFixed(2));
-          }
-        }
-      }
-
       livePrices[originalSym] = { price: p, change: c, high: h, low: l };
     });
 

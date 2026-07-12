@@ -69,7 +69,7 @@ const SvgChartWidget = ({ pattern }) => {
   }).join(' ');
 
   return (
-    <div className="w-full h-full bg-[#0A0906] rounded-2xl border border-[#2A2318] relative p-4 flex flex-col items-center justify-center overflow-hidden shadow-inner gap-3">
+    <div className="w-full h-full bg-[#000000] rounded-2xl border border-[#222222] relative p-4 flex flex-col items-center justify-center overflow-hidden shadow-inner gap-3">
       <svg width="100%" height="85%" viewBox="0 0 600 256" preserveAspectRatio="none" className="overflow-visible">
         {[...Array(5)].map((_, i) => (
             <line key={`grid-${i}`} x1="0" y1={i * 64} x2="600" y2={i * 64} stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
@@ -83,7 +83,7 @@ const SvgChartWidget = ({ pattern }) => {
           const yO = 256 - ((d.open  - yMin) / yRange) * 256;
           const yC = 256 - ((d.close - yMin) / yRange) * 256;
           const isBullish   = d.close >= d.open;
-          const color       = isBullish ? '#3de530' : '#ff3b30';
+          const color       = isBullish ? '#FFFFFF' : '#ff3b30';
           const isPattern   = d.type === 'pattern';
           return (
             <g key={i} style={{ filter: isPattern ? `drop-shadow(0 0 6px ${color})` : 'none' }}>
@@ -109,23 +109,23 @@ const SvgChartWidget = ({ pattern }) => {
       </svg>
 
       {/* Chart Mode Toggle */}
-      <div className="flex items-center gap-2 bg-[#2A2318]/60 rounded-xl p-1 border border-[#2A2318]">
+      <div className="flex items-center gap-2 bg-[#222222]/60 rounded-xl p-1 border border-[#222222]">
         <button
           onClick={() => setChartMode('candle')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all ${chartMode === 'candle' ? 'bg-[#3de530]/15 text-[#C8833A] border border-[#3de530]/30' : 'text-[#F5F0E8]/40 hover:text-white'}`}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all ${chartMode === 'candle' ? 'bg-[#FFFFFF]/15 text-[#FFFFFF] border border-[#FFFFFF]/30' : 'text-[#E5E5E5]/40 hover:text-white'}`}
         >
           🕯️ Candle
         </button>
         <button
           onClick={() => setChartMode('line')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all ${chartMode === 'line' ? 'bg-blue-500/15 text-blue-400 border border-blue-400/30' : 'text-[#F5F0E8]/40 hover:text-white'}`}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all ${chartMode === 'line' ? 'bg-blue-500/15 text-blue-400 border border-blue-400/30' : 'text-[#E5E5E5]/40 hover:text-white'}`}
         >
           📈 Line
         </button>
       </div>
 
       {isDrawing ? (
-         <div className="absolute top-4 right-4 px-3 py-1.5 bg-[#3de530]/10 border border-[#3de530]/20 rounded-lg text-[10px] font-black tracking-widest text-[#C8833A] z-20 backdrop-blur-md shadow-lg flex items-center gap-2 animate-pulse">
+         <div className="absolute top-4 right-4 px-3 py-1.5 bg-[#FFFFFF]/10 border border-[#FFFFFF]/20 rounded-lg text-[10px] font-black tracking-widest text-[#FFFFFF] z-20 backdrop-blur-md shadow-lg flex items-center gap-2 animate-pulse">
             <span className="material-symbols-outlined text-[14px]">draw</span> DRAWING...
          </div>
       ) : (
@@ -171,7 +171,7 @@ function Academy() {
 
 
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2, ease: 'easeOut' }} className="flex h-screen bg-[#0A0906] text-[#F5F0E8]/90 font-inter overflow-hidden selection:bg-[#C8833A]/30">
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2, ease: 'easeOut' }} className="flex h-screen bg-[#000000] text-[#E5E5E5]/90 font-inter overflow-hidden selection:bg-[#FFFFFF]/30">
 
       <Sidebar userName="Simulated Account" isMarketOpen={isMarketOpen} />
       <MobileBottomNav />
@@ -184,7 +184,7 @@ function Academy() {
           
           {/* 📱 Mobile top bar */}
           <div className="md:hidden flex items-center justify-between pt-2 mb-2">
-            <h1 className="text-lg font-black tracking-tight"><span className="text-[#C8833A]">PAPER</span> TRADE</h1>
+            <h1 className="text-lg font-black tracking-tight"><span className="text-[#FFFFFF]">PAPER</span> TRADE</h1>
           </div>
 
           <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6 mb-4 md:mb-8">
@@ -195,13 +195,13 @@ function Academy() {
             
             {/* 🚀 SEARCH BAR */}
             <div className="relative">
-               <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#F5F0E8]/30">search</span>
+               <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#E5E5E5]/30">search</span>
                <input 
                  type="text" 
                  value={searchTerm}
                  onChange={(e) => setSearchTerm(e.target.value)}
                  placeholder="Search patterns..." 
-                 className="w-full md:w-64 bg-[#131009] border border-[#2A2318] rounded-xl pl-11 pr-4 py-3 text-sm text-white outline-none focus:border-[#C8833A]/50 transition-colors"
+                 className="w-full md:w-64 bg-[#0A0A0A] border border-[#222222] rounded-xl pl-11 pr-4 py-3 text-sm text-white outline-none focus:border-[#FFFFFF]/50 transition-colors"
                />
             </div>
           </header>
@@ -212,7 +212,7 @@ function Academy() {
                 <button 
                   key={cat}
                   onClick={() => setActiveTab(cat)}
-                  className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest whitespace-nowrap transition-all ${activeTab === cat ? 'bg-[#3de530] text-[#003a00] shadow-[0_0_10px_rgba(61,229,48,0.2)]' : 'bg-[#131009] text-[#bbcbb2] hover:text-white border border-[#2A2318]'}`}
+                  className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest whitespace-nowrap transition-all ${activeTab === cat ? 'bg-[#FFFFFF] text-[#000000] shadow-[0_0_10px_rgba(255,255,255,0.2)]' : 'bg-[#0A0A0A] text-[#bbcbb2] hover:text-white border border-[#222222]'}`}
                 >
                   {cat}
                 </button>
@@ -223,11 +223,11 @@ function Academy() {
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
              <AnimatePresence>
              {filteredPatterns.length === 0 ? (
-                <div className="col-span-full text-center py-20 text-[#F5F0E8]/40">No patterns found matching your criteria.</div>
+                <div className="col-span-full text-center py-20 text-[#E5E5E5]/40">No patterns found matching your criteria.</div>
              ) : (
                  filteredPatterns.map((item) => (
-                    <motion.div initial={{opacity:0, scale: 0.9}} animate={{opacity:1, scale:1}} exit={{opacity:0, scale:0.9}} key={item.id} className="bg-[#131009] border border-[#2A2318] rounded-2xl overflow-hidden shadow-lg flex flex-col">
-                       <div className="h-48 bg-[#0A0906] border-b border-[#2A2318] flex items-center justify-center p-8 relative overflow-hidden">
+                    <motion.div initial={{opacity:0, scale: 0.9}} animate={{opacity:1, scale:1}} exit={{opacity:0, scale:0.9}} key={item.id} className="bg-[#0A0A0A] border border-[#222222] rounded-2xl overflow-hidden shadow-lg flex flex-col">
+                       <div className="h-48 bg-[#000000] border-b border-[#222222] flex items-center justify-center p-8 relative overflow-hidden">
                           <div className="absolute inset-0 bg-gradient-to-t from-[#131313] to-transparent opacity-50"></div>
                           <div className="w-24 h-24 relative z-10 hover:scale-110 transition-transform duration-500">
                              {item.svg}
@@ -238,7 +238,7 @@ function Academy() {
                           <div className="flex justify-between items-start mb-4">
                              <div>
                                 <h3 className="font-bold text-lg text-white leading-tight">{item.title}</h3>
-                                <p className="text-[10px] text-[#F5F0E8]/40 mt-1">{item.category}</p>
+                                <p className="text-[10px] text-[#E5E5E5]/40 mt-1">{item.category}</p>
                              </div>
                              <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-md border ${item.bg} ${item.color} ${item.border} shrink-0`}>
                                 {item.type}
@@ -246,7 +246,7 @@ function Academy() {
                           </div>
                           <p className="text-[#bbcbb2] text-sm leading-relaxed mb-6 flex-1 line-clamp-3">{item.desc}</p>
                           
-                          <button onClick={() => setSelectedPattern(item)} className="w-full py-3 bg-[#1C1710] border border-[#2A2318] rounded-lg text-xs font-bold text-white uppercase tracking-widest hover:bg-white hover:text-black transition-all">
+                          <button onClick={() => setSelectedPattern(item)} className="w-full py-3 bg-[#141414] border border-[#222222] rounded-lg text-xs font-bold text-white uppercase tracking-widest hover:bg-white hover:text-black transition-all">
                              Study Pattern
                           </button>
                        </div>
@@ -262,25 +262,25 @@ function Academy() {
       {/* 🟢 THE STUDY MODAL (WITH ANIMATION & OUTCOME CHART) */}
       <AnimatePresence>
         {selectedPattern && (
-          <div className="fixed inset-0 bg-[#0A0906]/95 flex items-center justify-center z-50 p-4 backdrop-blur-xl">
+          <div className="fixed inset-0 bg-[#000000]/95 flex items-center justify-center z-50 p-4 backdrop-blur-xl">
             <motion.div initial={{scale:0.95, opacity: 0}} animate={{scale:1, opacity: 1}} exit={{scale:0.95, opacity: 0}} transition={{ duration: 0.2 }}
-              className="bg-[#131009] border border-[#2A2318] rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl"
+              className="bg-[#0A0A0A] border border-[#222222] rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl"
             >
-              <div className="p-6 bg-[#1C1710]/50 border-b border-[#2A2318] flex justify-between items-center relative">
-                <div className={`absolute top-0 left-0 w-full h-1 ${selectedPattern.preTrendDir === 1 ? 'bg-gradient-to-r from-[#ff3b30] to-[#ffcc00]' : 'bg-gradient-to-r from-blue-500 to-[#3de530]'}`}></div>
+              <div className="p-6 bg-[#141414]/50 border-b border-[#222222] flex justify-between items-center relative">
+                <div className={`absolute top-0 left-0 w-full h-1 ${selectedPattern.preTrendDir === 1 ? 'bg-gradient-to-r from-[#ff3b30] to-[#ffcc00]' : 'bg-gradient-to-r from-blue-500 to-[#FFFFFF]'}`}></div>
                 <div>
                   <h3 className="text-2xl font-black text-white flex items-center gap-3">
                     {selectedPattern.title} 
-                    <span className="px-2 py-0.5 bg-[#3de530]/20 text-[#C8833A] text-[10px] uppercase tracking-widest rounded border border-[#3de530]/30 animate-pulse">
+                    <span className="px-2 py-0.5 bg-[#FFFFFF]/20 text-[#FFFFFF] text-[10px] uppercase tracking-widest rounded border border-[#FFFFFF]/30 animate-pulse">
                       Live Example
                     </span>
                   </h3>
                   <p className="text-xs text-[#bbcbb2] font-mono mt-1 flex items-center gap-1.5">
-                    Context: <span className="font-bold text-[#F5F0E8]">{selectedPattern.exampleStock}</span> 
+                    Context: <span className="font-bold text-[#E5E5E5]">{selectedPattern.exampleStock}</span> 
                     <span className="opacity-50">|</span> Historical Date: <span className="text-blue-400">{selectedPattern.exampleDate}</span>
                   </p>
                 </div>
-                <button onClick={() => setSelectedPattern(null)} className="text-[#bbcbb2] hover:text-white bg-[#0A0906] p-2 rounded-lg border border-[#2A2318] transition-colors">
+                <button onClick={() => setSelectedPattern(null)} className="text-[#bbcbb2] hover:text-white bg-[#000000] p-2 rounded-lg border border-[#222222] transition-colors">
                   <span className="material-symbols-outlined">close</span>
                 </button>
               </div>
@@ -293,9 +293,9 @@ function Academy() {
                      <SvgChartWidget pattern={selectedPattern} />
                    </div>
 
-                   <div className="p-4 bg-[#1C1710] rounded-xl border border-[#2A2318] border-l-4 border-l-blue-500">
+                   <div className="p-4 bg-[#141414] rounded-xl border border-[#222222] border-l-4 border-l-blue-500">
                      <p className="text-xs text-[#bbcbb2] leading-relaxed">
-                       <span className="font-bold text-[#F5F0E8]">AI Context Engine:</span> Reconstructing price action for <strong className="text-white">{selectedPattern.exampleStock}</strong>. Notice how the price breaks out <strong className="text-white">after</strong> the {selectedPattern.title} formation.
+                       <span className="font-bold text-[#E5E5E5]">AI Context Engine:</span> Reconstructing price action for <strong className="text-white">{selectedPattern.exampleStock}</strong>. Notice how the price breaks out <strong className="text-white">after</strong> the {selectedPattern.title} formation.
                      </p>
                    </div>
                 </div>
@@ -303,10 +303,10 @@ function Academy() {
                 {/* In your Academy.jsx Study Modal Layout */}
               <div className="space-y-6">
                 <div>
-                    <h4 className="text-[#C8833A] font-black text-xs uppercase mb-3 tracking-widest flex items-center gap-2">
+                    <h4 className="text-[#FFFFFF] font-black text-xs uppercase mb-3 tracking-widest flex items-center gap-2">
                       <span className="material-symbols-outlined text-[16px]">psychology</span> Psychology
                     </h4>
-                    <p className="text-[#bbcbb2] leading-relaxed text-sm bg-[#1C1710] p-4 rounded-xl border border-[#2A2318]">{selectedPattern.desc}</p>
+                    <p className="text-[#bbcbb2] leading-relaxed text-sm bg-[#141414] p-4 rounded-xl border border-[#222222]">{selectedPattern.desc}</p>
                 </div>
 
                 {/* 🚀 NEW: REAL MARKET INSTANCE BLOCK */}
@@ -319,7 +319,7 @@ function Academy() {
                       <div className="text-white text-sm space-y-2 relative z-10 font-mono">
                         {/* Split by newline \n to render perfectly formatted lines */}
                         {selectedPattern.caseStudy.split('\n').map((line, idx) => (
-                          <p key={idx} className={`${line.includes('After:') ? 'text-[#C8833A]' : line.includes('Before:') ? 'text-[#ff3b30]' : 'text-white'}`}>
+                          <p key={idx} className={`${line.includes('After:') ? 'text-[#FFFFFF]' : line.includes('Before:') ? 'text-[#ff3b30]' : 'text-white'}`}>
                             {line}
                           </p>
                         ))}
@@ -327,14 +327,14 @@ function Academy() {
                   </div>
                 )}
                 
-                <div className="p-5 bg-gradient-to-br from-[#1c1b1b] to-[#131313] rounded-xl border border-[#2A2318] shadow-lg">
+                <div className="p-5 bg-gradient-to-br from-[#1c1b1b] to-[#131313] rounded-xl border border-[#222222] shadow-lg">
                     <h4 className="text-white font-bold mb-4 flex items-center gap-2">
                       <span className="material-symbols-outlined text-[18px] text-blue-500">query_stats</span> How to trade?
                     </h4>
                     <ul className="text-[#bbcbb2] text-sm space-y-3">
-                      <li className="flex items-start gap-2"><span className="text-[#C8833A] mt-0.5">■</span> Wait for the daily candle to fully close before entering.</li>
-                      <li className="flex items-start gap-2"><span className="text-[#C8833A] mt-0.5">■</span> Always look for trading volume confirmation on the breakout.</li>
-                      <li className="flex items-start gap-2"><span className="text-[#C8833A] mt-0.5">■</span> Set a strict stop-loss slightly below/above the wick to minimize risk.</li>
+                      <li className="flex items-start gap-2"><span className="text-[#FFFFFF] mt-0.5">■</span> Wait for the daily candle to fully close before entering.</li>
+                      <li className="flex items-start gap-2"><span className="text-[#FFFFFF] mt-0.5">■</span> Always look for trading volume confirmation on the breakout.</li>
+                      <li className="flex items-start gap-2"><span className="text-[#FFFFFF] mt-0.5">■</span> Set a strict stop-loss slightly below/above the wick to minimize risk.</li>
                     </ul>
                 </div>
                 <button onClick={() => navigate('/markets')} className="w-full py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-xl text-xs uppercase tracking-widest transition-colors shadow-lg shadow-blue-500/20 active:scale-[0.98]">

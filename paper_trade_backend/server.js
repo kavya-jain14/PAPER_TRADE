@@ -47,15 +47,15 @@ app.use(express.json({ limit: '500kb' })); // cap body size to prevent DoS
 // 🚦  RATE LIMITERS
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Global limiter: 200 requests per 15 minutes per IP
-const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 200,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: 'Too many requests. Please slow down.' },
-});
-app.use(globalLimiter);
+// Global limiter disabled for debugging
+// const globalLimiter = rateLimit({
+//   windowMs: 15 * 60 * 1000,
+//   max: 200,
+//   standardHeaders: true,
+//   legacyHeaders: false,
+//   message: { error: 'Too many requests. Please slow down.' },
+// });
+// app.use(globalLimiter);
 
 // Auth limiter: 10 requests per 15 minutes per IP (prevents brute force)
 const authLimiter = rateLimit({
@@ -116,7 +116,7 @@ app.use((err, req, res, next) => { // eslint-disable-line no-unused-vars
 
 app.get('/', (req, res) => res.json({ status: 'Paper Trade API is running 🚀', version: '2.0' }));
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5005;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
 
 // ─────────────────────────────────────────────────────────────────────────────

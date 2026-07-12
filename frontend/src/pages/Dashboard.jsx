@@ -144,6 +144,7 @@ const UniversalTradeModal = ({ symbol, marketData, onClose, balance, token, refr
   );
 };
 
+
 function Dashboard() {
   const [userName, setUserName] = useState('');
   const [balance, setBalance] = useState(0);
@@ -211,7 +212,6 @@ function Dashboard() {
     let abortCtrl = new AbortController();
 
     const fetchLivePrices = async () => {
-      // Cancel any in-flight request before starting a new one
       abortCtrl.abort();
       abortCtrl = new AbortController();
       try {
@@ -222,7 +222,6 @@ function Dashboard() {
         });
         if (!response.ok) return;
         const realPrices = await response.json();
-        // BUG FIX: guard against non-object responses before spreading
         if (!realPrices || typeof realPrices !== 'object' || Array.isArray(realPrices)) return;
         setMarketPrices(prev => ({ ...prev, ...realPrices }));
       } catch (error) {
@@ -231,11 +230,10 @@ function Dashboard() {
     };
     
     fetchLivePrices(); 
-    const intervalId = setInterval(fetchLivePrices, 10000); // 10s — avoid hammering Yahoo
+    const intervalId = setInterval(fetchLivePrices, 10000);
     return () => { clearInterval(intervalId); abortCtrl.abort(); };
   }, []);
 
-  // Global listener for Command Palette Trade Action
   useEffect(() => {
     const handleOpenModal = (e) => setSelectedAsset(e.detail);
     window.addEventListener('open-trade-modal', handleOpenModal);
@@ -252,59 +250,11 @@ function Dashboard() {
     } else if (!sym) {
       toast.error('Enter a symbol');
     } else if (!ALL_SYMBOLS.includes(sym)) {
-      toast.error('Symbol not found. Try: RELIANCE, TCS, NIFTY 50...');
+      toast.error('Symbol not found.');
     } else {
       toast.error('Already in watchlist');
     }
   };
-
-  const [sentiment, setSentiment] = useState({ zone: 'neutral', globalScore: 50 });
-  
-  useEffect(() => {
-    const activeGainers = TOP_STOCKS.filter(sym => {
-      const liveData = marketPrices[sym] || {};
-      return (liveData.change || 0) >= 0;
-    }).length;
-
-    const marketStrength = activeGainers / TOP_STOCKS.length; 
-    const score = Math.round(marketStrength * 100) || 50;
-    
-    let sZone = 'neutral';
-    if (score <= 33) sZone = 'bearish';
-    else if (score >= 67) sZone = 'bullish';
-    
-    setSentiment({ zone: sZone, globalScore: score });
-  }, [marketPrices]);
-
-  const needleLeft = sentiment.globalScore;
-
-  // ── Dynamic News Engine ──
-  const newsImages = [
-    'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=400&q=80',
-    'https://images.unsplash.com/photo-1526628953301-3e589a6a8b74?w=400&q=80',
-    'https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?w=400&q=80',
-    'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&q=80',
-    'https://images.unsplash.com/photo-1518186285589-2f7649de83e0?w=400&q=80',
-    'https://images.unsplash.com/photo-1560472355-536de3962603?w=400&q=80',
-  ];
-  const buildNewsFeed = () => {
-    const all = Object.entries(marketPrices).map(([sym, d]) => ({ sym, change: d?.change || 0, price: d?.price || 0 }));
-    const sorted = [...all].sort((a, b) => b.change - a.change);
-    const topGainer = sorted[0]; const topLoser = sorted[sorted.length - 1];
-    const feed = [];
-    const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
-    const hm = `${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')} IST`;
-    if (topGainer?.change > 0) feed.push({ title: `${topGainer.sym} surges ${topGainer.change.toFixed(2)}% — Bulls accelerate buying momentum`, time: `Updated ${hm}`, link: 'https://www.moneycontrol.com/', img: newsImages[0], tag: 'GAINER' });
-    if (topLoser?.change < 0) feed.push({ title: `${topLoser.sym} falls ${Math.abs(topLoser.change).toFixed(2)}% — Profit booking & sector headwinds weigh on price`, time: `Updated ${hm}`, link: 'https://economictimes.indiatimes.com/', img: newsImages[1], tag: 'LOSER' });
-    const extra = [
-      { title: 'FIIs net buyers for 3rd session; Nifty Bank eyes fresh highs above key resistance', time: 'Market Outlook', link: 'https://www.livemint.com/', img: newsImages[2], tag: 'FII' },
-      { title: `India VIX ${sentiment.zone === 'Fearful' ? 'spikes — uncertainty rising' : 'cools — market confidence returning'} ahead of data`, time: 'Volatility', link: 'https://www.nseindia.com/', img: newsImages[3], tag: 'VIX' },
-      { title: 'RBI policy minutes: Rates steady, liquidity support continues for markets', time: 'Policy', link: 'https://www.livemint.com/', img: newsImages[4], tag: 'RBI' },
-    ];
-    return [...feed, ...extra].slice(0, 5);
-  };
-  const newsFeed = Object.keys(marketPrices).length > 0 ? buildNewsFeed() : [{ title: 'Fetching live market news...', time: 'Loading', link: '#', img: newsImages[0], tag: 'LIVE' }];
-
 
   const stocksWithChange = TOP_STOCKS.map(sym => {
     const liveData = marketPrices[sym] || {};
@@ -314,217 +264,195 @@ function Dashboard() {
   }).sort((a,b) => b.change - a.change);
 
   const gainers = stocksWithChange.filter(s => s.change >= 0).slice(0, 4);
-  const losers = stocksWithChange.filter(s => s.change < 0).reverse().slice(0, 4);
 
   const istTime = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
   const currentHour = istTime.getHours();
-  const greeting = currentHour < 12 ? 'Good Morning' : currentHour < 18 ? 'Good Afternoon' : 'Good Evening';
+  const greeting = currentHour < 12 ? 'Good morning' : currentHour < 18 ? 'Good afternoon' : 'Good evening';
+  
+  // Ticker items
+  const tickerItems = [...INDICES, ...TOP_STOCKS.slice(0, 5)];
+  
+  // Nifty 50 Chart data
+  const mainChartAsset = 'NIFTY 50';
+  const mainChartData = marketPrices[mainChartAsset] || {};
+  const mainChartIsGreen = (mainChartData.change || 0) >= 0;
 
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2, ease: 'easeOut' }} className="flex h-screen bg-[#0A0906] text-[#F5F0E8] font-inter overflow-hidden selection:bg-[#C8833A]/30">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} className="flex h-screen bg-[#0B0D10] text-[#E5E5E5] font-sans overflow-hidden selection:bg-[#D4A574]/30">
 
       <Sidebar userName={userName} balance={balance} isMarketOpen={isMarketOpen} avatar={avatar} />
       <MobileBottomNav />
 
-      {/* 🔴 MAIN DASHBOARD */}
-      <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-10 pb-24 md:pb-0 relative custom-scrollbar">
-        {/* 📱 Mobile top bar — visible only on phones */}
-        <div className="md:hidden flex items-center justify-between mb-6 pt-2">
-          <div>
-            <h1 className="text-lg font-black tracking-tight"><span className="text-[#C8833A]">PAPER</span> TRADE</h1>
-            <p className="text-[10px] text-[#F5F0E8]/40 mt-0.5">Welcome back, {userName}</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${isMarketOpen ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
-            <span className="text-[10px] font-bold text-[#F5F0E8]/50 uppercase tracking-wider">{isMarketOpen ? 'Live' : 'Closed'}</span>
+      <main className="flex-1 flex flex-col min-w-0 relative h-full">
+        {/* Animated Market Ticker */}
+        <div className="w-full bg-[#D4A574] text-[#0B0D10] overflow-hidden whitespace-nowrap py-1.5 shrink-0 flex items-center shadow-[0_0_20px_rgba(212,165,116,0.15)] z-20">
+          <div className="flex gap-12 animate-ticker shrink-0 w-max font-mono text-[10px] font-black uppercase tracking-widest px-4">
+            {tickerItems.map((sym, i) => {
+              const liveData = marketPrices[sym] || {};
+              const price = liveData.price || 0;
+              const change = liveData.change || 0;
+              return (
+                <span key={`${sym}-${i}`} className="flex items-center gap-2">
+                  <span className="opacity-70">{sym}</span>
+                  <span>{price > 0 ? price.toLocaleString('en-IN', {minimumFractionDigits: 2}) : '---'}</span>
+                  <span className={change >= 0 ? 'text-[#0B0D10] font-black' : 'text-red-900 font-black'}>{change >= 0 ? '▲' : '▼'}{Math.abs(change).toFixed(2)}%</span>
+                </span>
+              )
+            })}
+             {/* Duplicate for infinite seamless scroll */}
+             {tickerItems.map((sym, i) => {
+              const liveData = marketPrices[sym] || {};
+              const price = liveData.price || 0;
+              const change = liveData.change || 0;
+              return (
+                <span key={`dup-${sym}-${i}`} className="flex items-center gap-2">
+                  <span className="opacity-70">{sym}</span>
+                  <span>{price > 0 ? price.toLocaleString('en-IN', {minimumFractionDigits: 2}) : '---'}</span>
+                  <span className={change >= 0 ? 'text-[#0B0D10] font-black' : 'text-red-900 font-black'}>{change >= 0 ? '▲' : '▼'}{Math.abs(change).toFixed(2)}%</span>
+                </span>
+              )
+            })}
           </div>
         </div>
-        <div className="max-w-7xl mx-auto space-y-6 md:space-y-8 relative z-10">
-          
-          <header className="flex flex-col xl:flex-row xl:items-end justify-between gap-4 md:gap-6">
-            <div className="hidden md:block">
-              <h2 className="text-3xl font-black text-[#F5F0E8] tracking-tight">{greeting}, {userName}</h2>
-              <p className="text-[#F5F0E8]/60 text-sm mt-1">Available Margin: <span className="text-[#C8833A] font-mono font-bold text-base">₹{balance.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></p>
-            </div>
+
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10 pb-32">
+          <div className="max-w-[1600px] mx-auto space-y-12">
             
-            <div className="flex gap-3 md:gap-4 overflow-x-auto pb-2 xl:pb-0 custom-scrollbar -mx-4 md:mx-0 px-4 md:px-0">
-              {INDICES.map((idx) => {
-                const liveData = marketPrices[idx] || {};
-                const p = liveData.price || 0;
-                const cPercent = liveData.change || 0;
-                const isGreen = cPercent >= 0;
-                
-                return (
-                  <div key={idx} onClick={() => setSelectedAsset(idx)} className="bg-[#131009] border border-[#2A2318] rounded-2xl p-4 md:p-5 flex justify-between items-center min-w-[200px] md:min-w-[240px] cursor-pointer hover:border-[#C8833A]/30 transition-all shadow-md group">
-                    <div>
-                      <p className="text-[10px] text-[#F5F0E8]/50 uppercase tracking-widest font-bold">{idx}</p>
-                      <p className="text-lg font-bold font-mono text-[#F5F0E8] mt-1">{p > 0 ? p.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '...'}</p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <p className={`text-[11px] font-bold ${isGreen ? 'text-green-500' : 'text-red-500'}`}>{isGreen ? '▲' : '▼'} {isGreen ? '+' : ''}{cPercent}%</p>
-                        {liveData.prevClose > 0 && (
-                          <p className={`text-[10px] font-mono ${isGreen ? 'text-green-500/60' : 'text-red-500/60'}`}>
-                            {isGreen ? '+' : ''}₹{(p - (liveData.prevClose || p)).toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="opacity-70 group-hover:opacity-100 transition-opacity w-[90px] h-[40px] relative pointer-events-none">
-                      <SmartChart symbol={idx} currentPrice={p} isGreen={isGreen} mini={true} />
+            {/* Header: Typography focused */}
+            <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+              <div>
+                <motion.h1 initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="text-4xl md:text-5xl lg:text-[56px] font-light tracking-tight text-[#E5E5E5] leading-none mb-4">
+                  {greeting}, <span className="font-bold">{userName}</span>.
+                </motion.h1>
+                <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }} className="flex flex-col md:flex-row gap-8">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.2em] text-[#E5E5E5]/40 font-bold mb-1">Available Margin</p>
+                    <p className="text-3xl font-mono font-bold text-[#E5E5E5]">
+                      ₹{balance.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                    </p>
+                  </div>
+                  <div className="hidden md:block w-px h-12 bg-[#2C2E33]" />
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.2em] text-[#E5E5E5]/40 font-bold mb-1">Market Status</p>
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <div className={`w-2.5 h-2.5 rounded-full ${isMarketOpen ? 'bg-[#4ADE80] animate-pulse shadow-[0_0_10px_#4ADE80]' : 'bg-[#EF4444]'}`} />
+                      <p className="text-sm font-bold text-[#E5E5E5]/90">{isMarketOpen ? 'Live Market' : 'AI Synthetic Mode'}</p>
                     </div>
                   </div>
-                )
-              })}
-            </div>
-          </header>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-8">
-              <div className="bg-[#131009] border border-[#2A2318] rounded-3xl overflow-hidden shadow-xl">
-                 <div className="p-6 border-b border-[#2A2318] flex justify-between items-center bg-[#1C1710]/50">
-                   <h3 className="font-bold text-[#F5F0E8] text-lg flex items-center gap-2">
-                      <span className="material-symbols-outlined text-[#C8833A]/60 text-[20px]">visibility</span> My Watchlist
-                   </h3>
-                   <form onSubmit={addToWatchlist} className="flex gap-2">
-                     <input type="text" value={newStock} onChange={(e)=>setNewStock(e.target.value.toUpperCase())} placeholder="Add Symbol..." className="bg-[#0A0906] border border-[#2A2318] rounded-xl px-4 py-2 text-xs text-[#F5F0E8] outline-none focus:border-[#C8833A] w-36 uppercase font-mono transition-colors" />
-                     <button type="submit" className="bg-[#1C1710] hover:bg-[#2A2318] text-[#F5F0E8]/50 hover:text-[#F5F0E8] rounded-xl px-3 py-2 transition-colors border border-[#2A2318]"><span className="material-symbols-outlined text-[18px]">add</span></button>
-                   </form>
-                 </div>
-
-                 <div className="divide-y divide-[#2A2318]">
-                     {watchlist.length === 0 ? (
-                        <div className="p-10 text-center text-[#F5F0E8]/40 text-sm font-medium">Watchlist is empty. Search and add assets to track.</div>
-                     ) : (
-                        watchlist.map(sym => {
-                          const liveData = marketPrices[sym] || {};
-                          const price = liveData.price || 0;
-                          const change = liveData.change || 0;
-                          const isUp = change >= 0;
-                          
-                          return (
-                            <div key={sym} onClick={() => setSelectedAsset(sym)} className="p-4 px-6 flex items-center justify-between hover:bg-[#C8833A]/[0.03] transition-colors cursor-pointer group">
-                              <div className="flex items-center gap-5">
-                                <div className="w-12 h-12 rounded-xl bg-[#1C1710] border border-[#2A2318] flex items-center justify-center font-bold text-sm text-[#C8833A]">
-                                  {sym.substring(0, 1)}
-                                </div>
-                                <div>
-                                  <p className="font-bold text-[#F5F0E8]/90 group-hover:text-[#F5F0E8]">{sym}</p>
-                                  <p className="text-[10px] text-[#F5F0E8]/40 uppercase tracking-widest font-semibold mt-0.5">NSE</p>
-                                </div>
-                              </div>
-                              
-                              <div className="hidden sm:block flex-1 px-10 opacity-40 group-hover:opacity-100 transition-opacity">
-                                <div className="w-full h-[35px] relative pointer-events-none">
-                                  <SmartChart symbol={sym} currentPrice={price} isGreen={isUp} mini={true} />
-                                </div>
-                              </div>
-
-                              <div className="text-right flex items-center gap-6">
-                                <div>
-                                  <p className="font-mono text-[#F5F0E8] font-bold text-base">₹{price.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
-                                  <p className={`text-[11px] font-bold ${isUp ? 'text-green-500' : 'text-red-500'}`}>{isUp ? '+' : ''}{change.toFixed(2)}%</p>
-                                </div>
-                                <button onClick={(e) => { e.stopPropagation(); setWatchlist(watchlist.filter(s => s !== sym)); }} className="text-[#F5F0E8]/20 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><span className="material-symbols-outlined text-[20px]">delete</span></button>
-                              </div>
-                            </div>
-                          )
-                        })
-                     )}
-                 </div>
+                </motion.div>
               </div>
+            </header>
 
-              <div className="bg-[#131009] border border-[#2A2318] rounded-3xl overflow-hidden shadow-xl">
-                 <div className="flex p-2 bg-[#1C1710] border-b border-[#2A2318]">
-                    <button onClick={() => setActiveMoverTab('gainers')} className={`flex-1 py-2.5 text-xs font-bold uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-1 ${activeMoverTab === 'gainers' ? 'bg-[#2A2318] text-green-400 shadow-sm' : 'text-[#F5F0E8]/30 hover:text-[#F5F0E8]/70'}`}>
-                      <span className="material-symbols-outlined text-[16px]">trending_up</span> Top Gainers
-                    </button>
-                    <button onClick={() => setActiveMoverTab('losers')} className={`flex-1 py-2.5 text-xs font-bold uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-1 ${activeMoverTab === 'losers' ? 'bg-[#2A2318] text-red-400 shadow-sm' : 'text-[#F5F0E8]/30 hover:text-[#F5F0E8]/70'}`}>
-                      <span className="material-symbols-outlined text-[16px]">trending_down</span> Top Losers
-                    </button>
-                 </div>
-                 
-                 <div className="p-2 relative min-h-[300px]">
-                   <AnimatePresence mode="wait">
-                     <motion.div key={activeMoverTab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.15 }} className="absolute inset-0 p-2">
-                       {(activeMoverTab === 'gainers' ? gainers : losers).map((m, i) => {
-                          return (
-                          <div key={i} onClick={() => setSelectedAsset(m.symbol)} className="flex justify-between items-center p-3.5 rounded-xl hover:bg-[#C8833A]/[0.03] cursor-pointer group">
-                            <div>
-                              <p className="font-bold text-[#F5F0E8]/90 text-sm tracking-tight group-hover:text-[#F5F0E8]">{m.symbol}</p>
-                              <p className="text-[11px] text-[#F5F0E8]/40 font-mono mt-0.5">₹{m.price.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
-                            </div>
-                            <div className="opacity-30 group-hover:opacity-100 transition-opacity w-[70px] h-[30px] relative pointer-events-none">
-                              <SmartChart symbol={m.symbol} currentPrice={m.price} isGreen={activeMoverTab === 'gainers'} mini={true} />
-                            </div>
-                            <div className={`px-2.5 py-1 rounded bg-[#1C1710] border border-[#2A2318]`}>
-                              <p className={`text-[11px] font-bold font-mono ${activeMoverTab === 'gainers' ? 'text-green-500' : 'text-red-500'}`}>{activeMoverTab === 'gainers' ? '+' : ''}{m.change.toFixed(2)}%</p>
-                            </div>
+            {/* Main Asymmetric Grid */}
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 md:gap-10">
+              
+              {/* Massive Live Chart (Col Span 8) */}
+              <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.3 }} className="xl:col-span-8 flex flex-col">
+                <div className="flex items-center justify-between mb-4 px-2">
+                  <div className="flex items-baseline gap-4">
+                    <h2 className="text-2xl font-black tracking-tighter text-[#E5E5E5]">{mainChartAsset}</h2>
+                    <span className="text-sm font-mono text-[#E5E5E5]/60">₹{mainChartData.price > 0 ? mainChartData.price.toLocaleString('en-IN', {minimumFractionDigits: 2}) : '...'}</span>
+                    <span className={`text-sm font-black ${mainChartIsGreen ? 'text-[#4ADE80]' : 'text-[#EF4444]'}`}>{mainChartIsGreen ? '+' : ''}{mainChartData.change || 0}%</span>
+                  </div>
+                  <button onClick={() => setSelectedAsset(mainChartAsset)} className="text-xs font-bold text-[#D4A574] hover:text-[#E5E5E5] uppercase tracking-widest transition-colors hover-glow px-3 py-1.5 rounded bg-[#D4A574]/10 border border-[#D4A574]/20">
+                    Trade Now
+                  </button>
+                </div>
+                
+                {/* Chart Container - No Borders, Floating Depth */}
+                <div className="h-[450px] w-full relative bg-gradient-to-b from-[#16181D] to-[#0B0D10] rounded-[24px] overflow-hidden shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)]">
+                  <div className="absolute inset-0 pointer-events-none border border-[#2C2E33]/30 rounded-[24px] z-10" />
+                  <SmartChart symbol={mainChartAsset} currentPrice={mainChartData.price} isGreen={mainChartIsGreen} />
+                </div>
+              </motion.div>
+
+              {/* Watchlist (Col Span 4) */}
+              <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.4 }} className="xl:col-span-4 flex flex-col">
+                <div className="flex items-center justify-between mb-4 px-2">
+                  <h3 className="text-xs uppercase tracking-[0.2em] font-bold text-[#E5E5E5]/40">Watchlist</h3>
+                  <button className="text-[#E5E5E5]/40 hover:text-[#D4A574] transition-colors"><span className="material-symbols-outlined text-[18px]">add</span></button>
+                </div>
+                
+                <div className="flex-1 bg-[#16181D]/30 rounded-[24px] p-2 flex flex-col gap-1">
+                  {watchlist.slice(0, 5).map((sym, idx) => {
+                    const data = marketPrices[sym] || {};
+                    const isUp = (data.change || 0) >= 0;
+                    return (
+                      <div key={sym} onClick={() => setSelectedAsset(sym)} className="flex items-center justify-between p-4 hover:bg-[#1F2229] rounded-[16px] transition-colors cursor-pointer group">
+                        <div className="flex items-center gap-4">
+                          <div className={`w-10 h-10 rounded-[10px] flex items-center justify-center font-bold text-sm ${isUp ? 'bg-[#4ADE80]/10 text-[#4ADE80]' : 'bg-[#EF4444]/10 text-[#EF4444]'}`}>
+                            {sym.substring(0, 1)}
                           </div>
-                       )})}
-                     </motion.div>
-                   </AnimatePresence>
-                 </div>
-              </div>
-            </div>
+                          <div>
+                            <p className="font-bold text-[#E5E5E5] group-hover:text-[#D4A574] transition-colors">{sym}</p>
+                            <p className="text-[10px] uppercase tracking-widest text-[#E5E5E5]/40 mt-0.5">NSE</p>
+                          </div>
+                        </div>
+                        
+                        <div className="hidden sm:block w-20 h-8 opacity-40 group-hover:opacity-100 transition-opacity">
+                          <SmartChart symbol={sym} currentPrice={data.price} isGreen={isUp} mini={true} />
+                        </div>
 
-            <div className="space-y-8">
-              <div className="bg-[#131009] border border-[#2A2318] rounded-3xl p-6 relative overflow-hidden shadow-xl">
-                 <div className="mb-8">
-                   <h3 className="text-lg font-bold text-[#F5F0E8] flex items-center gap-2">
-                     <span className="material-symbols-outlined text-[#C8833A]/60 text-[18px]">psychology</span> Live Sentiment
-                   </h3>
-                   <p className="text-[10px] text-[#F5F0E8]/40 mt-1 uppercase tracking-widest font-semibold">Sub-Zone Analysis Engine</p>
-                 </div>
-                 
-                 <div className="relative mt-8 mb-4">
-                    <motion.div 
-                      animate={{ left: `${needleLeft}%` }} transition={{ type: "spring", stiffness: 40 }}
-                      className="absolute top-[-28px] flex flex-col items-center z-20"
-                      style={{ transform: 'translateX(-50%)' }}
-                    >
-                       <span className={`text-[10px] font-black mb-0.5 px-2 py-0.5 rounded shadow-lg ${sentiment.zone === 'bearish' ? 'bg-[#F5F0E8]/10 text-[#F5F0E8]' : sentiment.zone === 'bullish' ? 'bg-[#C8833A]/20 text-[#C8833A]' : 'bg-[#F5F0E8]/10 text-[#F5F0E8]'}`}>
-                         {sentiment.globalScore}%
-                       </span>
-                       <span className="text-[#F5F0E8] text-xs drop-shadow-[0_0_5px_rgba(245,240,232,0.8)]">▼</span>
-                    </motion.div>
+                        <div className="text-right">
+                          <p className="font-mono font-bold text-[#E5E5E5]">₹{(data.price || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</p>
+                          <p className={`text-[11px] font-bold mt-0.5 ${isUp ? 'text-[#4ADE80]' : 'text-[#EF4444]'}`}>{isUp ? '+' : ''}{(data.change || 0).toFixed(2)}%</p>
+                        </div>
+                      </div>
+                    )
+                  })}
+                  {watchlist.length > 5 && (
+                     <div className="p-3 text-center text-[#E5E5E5]/30 text-[10px] uppercase font-bold tracking-widest cursor-pointer hover:text-[#E5E5E5]">View all {watchlist.length}</div>
+                  )}
+                </div>
+              </motion.div>
 
-                    <div className="h-3 w-full rounded-full overflow-hidden flex shadow-inner">
-                       <div className="h-full w-1/3 bg-gradient-to-r from-[#F5F0E8]/40 to-[#F5F0E8]/20 border-r border-[#0A0906]"></div>
-                       <div className="h-full w-1/3 bg-gradient-to-r from-[#C8833A]/60 to-[#C8833A]/40 border-r border-[#0A0906]"></div>
-                       <div className="h-full w-1/3 bg-gradient-to-r from-[#C8833A] to-[#C8833A]"></div>
+              {/* Lower Section Asymmetry: Portfolio (5) and Market Insight (7) */}
+              <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.5 }} className="xl:col-span-5 bg-[#16181D] rounded-[32px] p-8 shadow-2xl relative overflow-hidden">
+                 <div className="absolute top-0 right-0 p-8 opacity-5">
+                    <span className="material-symbols-outlined text-[100px]">pie_chart</span>
+                 </div>
+                 <h3 className="text-xs uppercase tracking-[0.2em] font-bold text-[#E5E5E5]/40 mb-6">Positions Overview</h3>
+                 {holdings.length === 0 ? (
+                    <div className="py-10 text-[#E5E5E5]/30 text-sm font-medium">No open positions.</div>
+                 ) : (
+                    <div className="space-y-4">
+                      {holdings.slice(0,3).map((h, i) => (
+                        <div key={i} className="flex justify-between items-center border-b border-[#2C2E33]/50 pb-4 last:border-0">
+                           <div>
+                             <p className="font-bold text-[#E5E5E5]">{h.symbol}</p>
+                             <p className="text-xs text-[#E5E5E5]/50 mt-1">{h.quantity} units</p>
+                           </div>
+                           <div className="text-right">
+                             <p className="font-mono text-[#E5E5E5]">Avg ₹{h.avgPrice.toLocaleString('en-IN')}</p>
+                           </div>
+                        </div>
+                      ))}
                     </div>
-                 </div>
+                 )}
+                 <button onClick={() => navigate('/portfolio')} className="mt-8 text-xs font-bold text-[#D4A574] uppercase tracking-widest hover:text-[#E5E5E5] transition-colors flex items-center gap-1">
+                   View Full Portfolio <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+                 </button>
+              </motion.div>
 
-                 <div className="flex justify-between text-[10px] uppercase font-bold tracking-wider mt-4">
-                    <span className={`transition-opacity ${sentiment.zone === 'bearish' ? 'text-[#F5F0E8] opacity-100' : 'text-[#F5F0E8]/30 opacity-40'}`}>Bearish</span>
-                    <span className={`text-center relative -left-2 transition-opacity ${sentiment.zone === 'neutral' ? 'text-[#C8833A] opacity-100' : 'text-[#F5F0E8]/30 opacity-40'}`}>Neutral</span>
-                    <span className={`text-right transition-opacity ${sentiment.zone === 'bullish' ? 'text-[#C8833A] opacity-100' : 'text-[#F5F0E8]/30 opacity-40'}`}>Bullish</span>
+              <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.6 }} className="xl:col-span-7 bg-[#D4A574] rounded-[32px] p-8 shadow-[0_20px_40px_-15px_rgba(212,165,116,0.3)] text-[#0B0D10] relative overflow-hidden group">
+                 <div className="absolute inset-0 bg-gradient-to-tr from-transparent to-[#ffffff]/20 opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                 <div className="flex items-center gap-3 mb-6 relative z-10">
+                   <span className="material-symbols-outlined text-[24px]">insights</span>
+                   <h3 className="text-xs uppercase tracking-[0.2em] font-black text-[#0B0D10]/60">Trade of the Day</h3>
                  </div>
-              </div>
+                 <div className="relative z-10">
+                   <h2 className="text-3xl md:text-4xl font-light tracking-tight leading-snug mb-4">
+                     <span className="font-black">{gainers[0]?.symbol || 'MARKETS'}</span> showing strong momentum with <span className="font-bold text-green-900">{gainers[0]?.change.toFixed(2) || 'bullish'}%</span> upside.
+                   </h2>
+                   <p className="text-[#0B0D10]/70 font-medium max-w-lg mb-8">
+                     Our AI sentiment engine detects institutional accumulation. Consider watching key breakout levels in the next 15 minutes.
+                   </p>
+                   <button onClick={() => setSelectedAsset(gainers[0]?.symbol || 'NIFTY 50')} className="bg-[#0B0D10] text-[#D4A574] px-6 py-3 rounded-full font-bold uppercase tracking-widest text-xs hover:bg-[#16181D] hover-lift transition-all shadow-xl">
+                     Analyze Asset
+                   </button>
+                 </div>
+              </motion.div>
 
-              <div className="bg-[#131009] border border-[#2A2318] rounded-3xl overflow-hidden shadow-xl">
-                 <div className="p-6 border-b border-[#2A2318] flex items-center gap-2 bg-[#1C1710]/50">
-                   <span className="material-symbols-outlined text-[#C8833A]/60 text-[20px]">public</span>
-                   <h3 className="font-bold text-[#F5F0E8] text-lg">Market Updates</h3>
-                 </div>
-                 <div className="p-2">
-                    {newsFeed.map((news, i) => (
-                       <a key={i} href={news.link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-5 p-5 hover:bg-[#C8833A]/[0.03] transition-colors group border-b border-[#2A2318] last:border-0 rounded-xl">
-                         <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 border border-[#2A2318] relative">
-                            <div className="absolute inset-0 bg-black/30 group-hover:bg-transparent transition-colors z-10"></div>
-                            <img src={news.img} alt="news" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" onError={(e) => { e.target.style.display='none'; }} />
-                         </div>
-                         <div className="flex-1 min-w-0">
-                            {news.tag && <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md mb-1.5 inline-block ${news.tag === 'GAINER' ? 'bg-green-500/15 text-green-400 border border-green-500/20' : news.tag === 'LOSER' ? 'bg-red-500/15 text-red-400 border border-red-500/20' : 'bg-[#C8833A]/15 text-[#C8833A] border border-[#C8833A]/20'}`}>{news.tag}</span>}
-                            <p className="text-sm font-semibold text-[#F5F0E8]/90 group-hover:text-[#C8833A] transition-colors line-clamp-2 leading-snug">{news.title}</p>
-                            <p className="text-[10px] text-[#F5F0E8]/40 mt-1.5 uppercase tracking-widest font-semibold flex items-center gap-1">
-                              {news.time} <span className="material-symbols-outlined text-[10px] opacity-0 group-hover:opacity-100 transition-opacity">open_in_new</span>
-                            </p>
-                         </div>
-                       </a>
-                    ))}
-
-                 </div>
-              </div>
             </div>
           </div>
         </div>

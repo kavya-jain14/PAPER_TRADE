@@ -1,16 +1,21 @@
 import React from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { 
+  TrendingUp,
+  LayoutDashboard, 
+  LineChart, 
+  History, 
+  GraduationCap, 
+  User, 
+  LogOut
+} from 'lucide-react';
 
-// Professional "neural network / brain" SVG icon for AI Assistant
-const AIBrainIcon = ({ className = 'w-5 h-5' }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M12 2C9.5 2 7.5 3.5 7 5.5C5.5 5.5 4 7 4 8.5C4 9.2 4.3 9.9 4.7 10.4C4.3 11 4 11.7 4 12.5C4 14.2 5.2 15.6 6.8 16C7.2 17.7 8.9 19 10.8 19H13.2C15.1 19 16.8 17.7 17.2 16C18.8 15.6 20 14.2 20 12.5C20 11.7 19.7 11 19.3 10.4C19.7 9.9 20 9.2 20 8.5C20 7 18.5 5.5 17 5.5C16.5 3.5 14.5 2 12 2Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
-    <circle cx="9" cy="10" r="1" fill="currentColor"/>
-    <circle cx="15" cy="10" r="1" fill="currentColor"/>
-    <circle cx="12" cy="13" r="1" fill="currentColor"/>
-    <path d="M9 10 L12 13 L15 10" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
-    <path d="M12 16 L12 19" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-    <path d="M10 22 L14 22" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+const PTLogo = ({ className = "w-6 h-6" }) => (
+  <svg viewBox="0 0 100 100" className={`${className} text-[#FFFFFF] drop-shadow-[0_0_5px_rgba(255,255,255,0.5)]`} fill="none" stroke="currentColor">
+    <rect x="15" y="15" width="70" height="70" rx="16" strokeWidth="6" />
+    <path d="M 32 35 L 68 35" strokeWidth="6" strokeLinecap="round" />
+    <path d="M 42 35 L 42 65" strokeWidth="6" strokeLinecap="round" />
+    <path d="M 42 35 L 54 35 A 10 10 0 0 1 54 55 L 42 55" strokeWidth="6" strokeLinecap="round" />
   </svg>
 );
 
@@ -29,8 +34,8 @@ const NAV_ITEMS = [
 const BOTTOM_NAV = [
   { path: '/dashboard', icon: 'grid_view',  label: 'Home'      },
   { path: '/markets',   icon: 'monitoring', label: 'Markets'   },
-  { path: '/ai',        icon: 'psychology', label: 'AI'        },
   { path: '/portfolio', icon: 'pie_chart',  label: 'Portfolio' },
+  { path: '/history',  icon: 'history',    label: 'History'   },
   { path: '/profile',   icon: 'person',     label: 'Profile'   },
 ];
 
@@ -38,7 +43,7 @@ export function MobileBottomNav() {
   const location = useLocation();
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#131009]/95 backdrop-blur-xl border-t border-[#2A2318]">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#0B0D10]/95 backdrop-blur-xl border-t border-[#2C2E33]">
       <div className="flex items-stretch h-16">
         {BOTTOM_NAV.map(({ path, icon, label }) => {
           const isActive = location.pathname === path;
@@ -47,11 +52,11 @@ export function MobileBottomNav() {
               key={path}
               to={path}
               className={`flex-1 relative flex flex-col items-center justify-center gap-0.5 transition-all active:scale-95 ${
-                isActive ? 'text-[#C8833A]' : 'text-[#F5F0E8]/35'
+                isActive ? 'text-[#D4A574]' : 'text-[#E5E5E5]/35'
               }`}
             >
               {isActive && (
-                <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-[2px] bg-[#C8833A] rounded-b-full" />
+                <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-[2px] bg-[#D4A574] rounded-b-full shadow-[0_0_10px_#D4A574]" />
               )}
               <span className={`material-symbols-outlined transition-all ${
                 isActive ? 'text-[22px]' : 'text-[20px]'
@@ -59,7 +64,7 @@ export function MobileBottomNav() {
                 {icon}
               </span>
               <span className={`text-[9px] font-bold uppercase tracking-wider leading-none ${
-                isActive ? 'text-[#C8833A]' : 'text-[#F5F0E8]/30'
+                isActive ? 'text-[#E5E5E5]' : 'text-[#E5E5E5]/30'
               }`}>
                 {label}
               </span>
@@ -84,121 +89,104 @@ function Sidebar({ userName = '', balance, isMarketOpen = false, avatar = '' }) 
     navigate('/login');
   };
 
-  const isAIActive     = location.pathname === '/ai';
   const isLegalActive  = location.pathname === '/legal';
 
   return (
-    <aside className="w-64 bg-[#131009] border-r border-[#2A2318] flex flex-col justify-between hidden md:flex z-10 shrink-0">
+    <aside className="w-[280px] bg-transparent flex flex-col justify-between hidden md:flex z-10 shrink-0 border-r border-[#2C2E33]/30">
 
       {/* ── TOP ──────────────────────────────── */}
-      <div className="flex flex-col min-h-0">
-
+      <div className="flex flex-col min-h-0 pt-8 px-4">
+        
         {/* Logo */}
-        <div className="h-20 flex items-center px-6 border-b border-[#2A2318] shrink-0">
-          <h1 className="text-xl font-black tracking-tight">
-            <span className="text-[#C8833A]">PAPER</span>
-            <span className="text-[#F5F0E8]"> TRADE</span>
+        <div className="flex items-center gap-3 px-2 mb-12 cursor-pointer hover-lift" onClick={() => navigate('/dashboard')}>
+          <div className="w-10 h-10 rounded-[12px] bg-[#D4A574] flex items-center justify-center shadow-[0_0_15px_rgba(212,165,116,0.3)] shrink-0">
+            <TrendingUp className="w-6 h-6 text-[#0B0D10]" strokeWidth={2.5} />
+          </div>
+          <h1 className="text-xl font-black tracking-tight text-[#D4A574]">
+            <span className="text-[#E5E5E5]">PAPER</span> TRADE
           </h1>
         </div>
 
-        {/* User card — clickable → profile page */}
-        <div className="px-4 pt-4 pb-3 border-b border-[#2A2318] shrink-0">
-          <button onClick={() => navigate('/profile')} className="w-full bg-[#1C1710] p-3 rounded-2xl border border-[#2A2318] flex items-center gap-3 hover:bg-[#2A2318]/60 transition-colors group">
-            {/* Avatar: image or initials */}
-            {avatar ? (
-              <img src={avatar} alt="avatar" className="w-10 h-10 rounded-xl object-cover border border-[#2A2318] shrink-0" />
-            ) : (
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#C8833A]/20 to-[#8B5A20]/20 border border-[#C8833A]/20 flex items-center justify-center shrink-0">
-                <span className="text-xs font-black text-[#C8833A] leading-none">{initials}</span>
-              </div>
-            )}
-            <div className="overflow-hidden flex-1 min-w-0 text-left">
-              <p className="text-sm font-bold text-[#F5F0E8] truncate group-hover:text-[#C8833A] transition-colors">{userName || 'Loading…'}</p>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${isMarketOpen ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
-                <p className="text-[10px] text-[#F5F0E8]/50 font-bold uppercase tracking-wider truncate">
-                  {isMarketOpen ? 'Market Open' : 'Market Closed'}
-                </p>
-              </div>
-            </div>
-            <span className="material-symbols-outlined text-[14px] text-[#F5F0E8]/20 group-hover:text-[#F5F0E8]/50 transition-colors shrink-0">chevron_right</span>
-          </button>
-
-          {/* Balance chip */}
-          {balance !== undefined && (
-            <div className="mt-2.5 px-3 py-2 rounded-xl bg-[#0A0906] border border-[#2A2318]">
-              <p className="text-[9px] font-bold text-[#F5F0E8]/30 uppercase tracking-widest mb-0.5">Available Margin</p>
-              <p className="text-sm font-mono font-bold text-[#C8833A] tracking-tight">
-                ₹{Number(balance).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </p>
-            </div>
-          )}
-        </div>
-
         {/* Navigation */}
-        <nav className="px-3 pt-3 space-y-0.5 overflow-y-auto">
+        <nav className="space-y-2 overflow-y-auto custom-scrollbar pr-2">
           {NAV_ITEMS.map(({ path, icon, label }) => {
             const isActive = location.pathname === path;
             return (
               <Link
                 key={path}
                 to={path}
-                className={`relative flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-150 group
+                className={`relative flex items-center gap-4 px-4 py-3.5 rounded-[12px] transition-all duration-200 group overflow-hidden
                   ${isActive
-                    ? 'bg-[#C8833A]/10 text-[#F5F0E8]'
-                    : 'text-[#F5F0E8]/40 hover:text-[#F5F0E8] hover:bg-[#2A2318]/40'
+                    ? 'bg-[#16181D] text-[#E5E5E5] shadow-lg border border-[#2C2E33]/50'
+                    : 'text-[#E5E5E5]/40 hover:text-[#E5E5E5] hover:bg-[#16181D]/50 border border-transparent'
                   }`}
               >
                 {isActive && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-[#C8833A] rounded-r-full" />
+                  <span className="absolute left-0 top-0 bottom-0 w-1 bg-[#D4A574] rounded-r-full shadow-[0_0_10px_#D4A574]" />
                 )}
-                <span className={`material-symbols-outlined text-[20px] transition-colors
-                  ${isActive ? 'text-[#C8833A]' : 'group-hover:text-[#F5F0E8]/70'}`}>
+                <span className={`material-symbols-outlined text-[20px] transition-all duration-200
+                  ${isActive ? 'text-[#D4A574]' : 'group-hover:text-[#E5E5E5] group-hover:scale-110'}`}>
                   {icon}
                 </span>
-                <span className={`text-sm ${isActive ? 'font-bold' : 'font-semibold'}`}>
+                <span className={`text-sm tracking-wide ${isActive ? 'font-bold' : 'font-medium'}`}>
                   {label}
                 </span>
               </Link>
             );
           })}
-
-          {/* AI Assistant — in the main nav, below Profile */}
-          <Link
-            to="/ai"
-            className={`relative flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-150 group
-              ${isAIActive
-                ? 'bg-purple-600/20 text-purple-300'
-                : 'text-[#F5F0E8]/40 hover:text-purple-300 hover:bg-purple-600/10'
-              }`}
-          >
-            {isAIActive && (
-              <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-purple-400 rounded-r-full" />
-            )}
-            <AIBrainIcon className={`w-5 h-5 shrink-0 transition-colors ${isAIActive ? 'text-purple-400' : 'text-[#F5F0E8]/40 group-hover:text-purple-400'}`} />
-            <span className={`text-sm ${isAIActive ? 'font-bold' : 'font-semibold'}`}>AI Assistant</span>
-            <span className="ml-auto text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-purple-500/20 text-purple-400 border border-purple-500/30">Beta</span>
-          </Link>
         </nav>
       </div>
 
       {/* ── BOTTOM ───────────────────────────── */}
-      <div className="p-4 border-t border-[#2A2318] space-y-1">
-        <a href="mailto:kavyajain1407@gmail.com" className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-[#F5F0E8]/30 hover:text-[#F5F0E8] hover:bg-[#2A2318]/40 transition-colors">
-          <span className="material-symbols-outlined text-[18px]">support_agent</span>
-          <span className="font-bold text-sm">Support</span>
-        </a>
-        <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-red-500/50 hover:text-red-500 hover:bg-red-500/10 transition-colors">
-          <span className="material-symbols-outlined text-[18px]">logout</span>
-          <span className="font-bold text-sm">Sign Out</span>
+      <div className="p-6 space-y-6">
+        {/* User card — clickable → profile page */}
+        <button onClick={() => navigate('/profile')} className="w-full bg-[#16181D] p-4 rounded-[16px] flex flex-col gap-4 hover-lift border border-[#2C2E33]/50 group text-left relative overflow-hidden shadow-xl">
+          <div className="absolute inset-0 bg-gradient-to-br from-[#D4A574]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          
+          <div className="flex items-center gap-3 relative z-10">
+            {avatar ? (
+              <img src={avatar} alt="avatar" className="w-10 h-10 rounded-full object-cover border-2 border-[#2C2E33] shrink-0" />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-[#1F2229] border border-[#2C2E33] flex items-center justify-center shrink-0">
+                <span className="text-sm font-black text-[#E5E5E5]">{initials}</span>
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-[#E5E5E5] truncate group-hover:text-[#D4A574] transition-colors">{userName || 'Loading…'}</p>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${isMarketOpen ? 'bg-[#4ADE80] animate-pulse' : 'bg-[#EF4444]'}`} />
+                <p className="text-[10px] text-[#E5E5E5]/50 font-bold uppercase tracking-widest truncate">
+                  {isMarketOpen ? 'Market Open' : 'Closed'}
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          {balance !== undefined && (
+            <div className="bg-[#0B0D10] rounded-[10px] p-3 flex justify-between items-center relative z-10 border border-[#2C2E33]/50">
+               <div>
+                  <p className="text-[9px] uppercase tracking-widest text-[#E5E5E5]/40 font-bold mb-0.5">Margin</p>
+                  <p className="font-mono text-xs font-bold text-[#E5E5E5]">₹{Number(balance).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</p>
+               </div>
+               <div className="text-right">
+                  <p className="text-[9px] uppercase tracking-widest text-[#E5E5E5]/40 font-bold mb-0.5">Today P&L</p>
+                  <p className="font-mono text-xs font-bold text-[#4ADE80]">+₹0</p>
+               </div>
+            </div>
+          )}
         </button>
-        <Link
-          to="/legal"
-          className={`w-full flex items-center gap-3 px-4 py-2 rounded-xl transition-colors border-t border-[#2A2318] pt-3 mt-1 ${isLegalActive ? 'text-[#F5F0E8]/60' : 'text-[#F5F0E8]/20 hover:text-[#F5F0E8]/50 hover:bg-[#2A2318]/20'}`}
-        >
-          <span className="material-symbols-outlined text-[16px]">gavel</span>
-          <span className="font-bold text-[10px] uppercase tracking-widest">Legal & Privacy</span>
-        </Link>
+
+        <div className="flex items-center justify-between px-2 pt-2 border-t border-[#2C2E33]/30">
+          <a href="mailto:support@papertrade.com" className="text-[#E5E5E5]/30 hover:text-[#E5E5E5] transition-colors hover-lift" title="Support">
+            <span className="material-symbols-outlined text-[20px]">support_agent</span>
+          </a>
+          <Link to="/legal" className={`transition-colors hover-lift ${isLegalActive ? 'text-[#D4A574]' : 'text-[#E5E5E5]/30 hover:text-[#E5E5E5]'}`} title="Legal">
+            <span className="material-symbols-outlined text-[20px]">gavel</span>
+          </Link>
+          <button onClick={handleLogout} className="text-[#EF4444]/40 hover:text-[#EF4444] transition-colors hover-lift" title="Logout">
+            <span className="material-symbols-outlined text-[20px]">logout</span>
+          </button>
+        </div>
       </div>
     </aside>
   );

@@ -1,114 +1,73 @@
-/* 1. Google Fonts — Geist (premium modern font) + JetBrains Mono (financial data) */
+/* 1. Google Fonts — Geist + JetBrains Mono + Material Symbols + Roboto */
 @import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap');
 
 /* 2. Tailwind v4 Engine */
 @import "tailwindcss";
 
-/* 3. Paper Trade — Caramel · Black · White Theme */
+/* 3. Theme Overhaul: Asymmetric Caramel */
 @theme {
-  /* ── Caramel Accent ── */
-  --color-caramel:          #C8833A;
-  --color-caramel-light:    #E8A855;
-  --color-caramel-dark:     #8B5A20;
-  --color-caramel-muted:    rgba(200,131,58,0.15);
+  --color-background:       #0B0D10;
+  --color-surface:          #16181D;
+  --color-surface-elevated: #1F2229;
+  --color-surface-border:   #2C2E33;
+  --color-caramel:          #D4A574;
+  --color-caramel-muted:    rgba(212, 165, 116, 0.15);
+  --color-profit:           #4ADE80;
+  --color-loss:             #EF4444;
 
-  /* ── Warm Black Surfaces ── */
-  --color-background:       #0A0906;
-  --color-surface:          #131009;
-  --color-surface-elevated: #1C1710;
-  --color-surface-border:   #2A2318;
-
-  /* ── Warm White Text ── */
-  --color-on-surface:         #F5F0E8;
-  --color-on-surface-variant: rgba(245,240,232,0.6);
-  --color-on-surface-muted:   rgba(245,240,232,0.3);
-
-  /* ── Primary = Caramel ── */
-  --color-primary:           #C8833A;
-  --color-primary-container: #8B5A20;
-  --color-on-primary:        #0A0906;
-
-  /* ── Legacy aliases (kept for backward compat) ── */
-  --color-surface-container-lowest: #0A0906;
-
-  /* Fonts */
-  --font-sans:  "Geist", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans:  "Roboto", ui-sans-serif, system-ui, sans-serif;
   --font-mono:  "JetBrains Mono", "Fira Code", ui-monospace, monospace;
-
-  /* Spacing scale */
-  --spacing-xs:   4px;
-  --spacing-sm:   8px;
-  --spacing-md:  16px;
-  --spacing-lg:  24px;
-  --spacing-xl:  48px;
-  --spacing-base: 4px;
 }
 
-/* 4. Global defaults */
-*, *::before, *::after {
-  box-sizing: border-box;
-}
-
-html {
-  font-feature-settings: "cv02", "cv03", "cv04", "cv11"; /* Geist stylistic alternates */
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
+*, *::before, *::after { box-sizing: border-box; }
+html { font-feature-settings: "cv02", "cv03", "cv04", "cv11"; -webkit-font-smoothing: antialiased; }
 body {
-  font-family: "Geist", "Inter", ui-sans-serif, system-ui, sans-serif;
-  background-color: #0A0906;
-  color: #F5F0E8;
+  font-family: "Roboto", ui-sans-serif, system-ui, sans-serif;
+  background-color: #0B0D10;
+  color: #E5E5E5;
 }
 
-/* Utility aliases */
-.font-geist  { font-family: "Geist", "Inter", sans-serif; }
-.font-inter  { font-family: "Geist", "Inter", sans-serif; } /* backward-compat alias */
+.font-inter  { font-family: "Roboto", sans-serif; }
 .font-mono   { font-family: "JetBrains Mono", monospace !important; }
 
-/* 5. Hide number input spinners */
-input[type="number"]::-webkit-inner-spin-button,
-input[type="number"]::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
+input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 input[type="number"] { -moz-appearance: textfield; }
-
-/* 6. Glass panel utility — caramel-tinted */
-.glass-panel {
-  background: rgba(19, 16, 9, 0.85);
-  backdrop-filter: blur(20px);
-  border: 1px solid #2A2318;
-}
-
-/* 7. Trading background — caramel glow */
-.trading-bg {
-  background-color: #0A0906;
-  background-image:
-    radial-gradient(circle at 80% 10%, rgba(200,131,58,0.06), transparent 50%),
-    radial-gradient(circle at 20% 90%, rgba(200,131,58,0.04), transparent 50%);
-}
-
-/* 8. Chrome Autofill fix */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
 input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 1000px #0A0906 inset !important;
-  -webkit-text-fill-color: #F5F0E8 !important;
-  caret-color: #F5F0E8 !important;
+  -webkit-box-shadow: 0 0 0 1000px #0B0D10 inset !important;
+  -webkit-text-fill-color: #E5E5E5 !important;
+  caret-color: #E5E5E5 !important;
   transition: background-color 5000s ease-in-out 0s !important;
 }
 
-/* 9. Custom Scrollbar — caramel tint */
+/* Micro-animations */
+@keyframes ticker {
+  0%   { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+.animate-ticker { animation: ticker 25s linear infinite; }
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+.animate-float { animation: float 3s ease-in-out infinite; }
+
+.hover-lift { transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+.hover-lift:hover { transform: translateY(-2px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5); }
+
+.hover-glow { transition: box-shadow 0.2s ease-out; }
+.hover-glow:hover { box-shadow: 0 0 15px rgba(212, 165, 116, 0.4); }
+
 .custom-scrollbar::-webkit-scrollbar       { width: 4px; height: 4px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(200,131,58,0.2); border-radius: 999px; }
-.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(200,131,58,0.4); }
-
-/* 10. Candlestick chart overlay scrollbar */
+.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 999px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
 .modal-scrollbar::-webkit-scrollbar       { width: 3px; }
 .modal-scrollbar::-webkit-scrollbar-track { background: transparent; }
-.modal-scrollbar::-webkit-scrollbar-thumb { background: rgba(200,131,58,0.15); border-radius: 999px; }
+.modal-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 999px; }

@@ -82,57 +82,57 @@ export const patternsData = [
   // ================= 🟢 SINGLE CANDLE BULLISH =================
   {
     id: "hammer", title: "The Hammer", category: "Single Candle", type: "Bullish Reversal",
-    color: "text-[#3de530]", bg: "bg-[#3de530]/10", border: "border-[#3de530]/20",
+    color: "text-[#FFFFFF]", bg: "bg-[#FFFFFF]/10", border: "border-[#FFFFFF]/20",
     desc: "Found at the bottom of a downtrend. It has a small body and a long lower wick, indicating buyers are rejecting lower prices.",
     caseStudy: "📉 Before: RELIANCE was falling from ₹2350 to ₹2220.\n📊 Instance: Formed on 26 Oct 2023 at support level.\n📈 After: Massive buying triggered, stock rallied to ₹2600 (+17%) within 4 weeks.",
     exampleStock: "RELIANCE", exampleDate: "2023-10-26", preTrendDir: -1,
     animationCandles: [ { o: 0, c: 8, h: 12, l: -35 } ],
     svg: (
-      <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_10px_rgba(61,229,48,0.3)]">
-        <line x1="50" y1="20" x2="50" y2="90" stroke="#3de530" strokeWidth="4" strokeLinecap="round" />
-        <rect x="40" y="20" width="20" height="25" fill="#3de530" rx="4" />
+      <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]">
+        <line x1="50" y1="20" x2="50" y2="90" stroke="#FFFFFF" strokeWidth="4" strokeLinecap="round" />
+        <rect x="40" y="20" width="20" height="25" fill="#FFFFFF" rx="4" />
       </svg>
     )
   },
   {
     id: "inverted_hammer", title: "Inverted Hammer", category: "Single Candle", type: "Bullish Reversal",
-    color: "text-[#3de530]", bg: "bg-[#3de530]/10", border: "border-[#3de530]/20",
+    color: "text-[#FFFFFF]", bg: "bg-[#FFFFFF]/10", border: "border-[#FFFFFF]/20",
     desc: "Appears at the bottom of a downtrend. Long upper wick shows buyers tried to push prices up, indicating potential trend change.",
     caseStudy: "📉 Before: TATAMOTORS dropped from ₹1050 to ₹950.\n📊 Instance: Formed on 12 Dec 2023. Bears couldn't close it near the lows.\n📈 After: Trend reversed, stock pushed back to ₹1100 (+15%).",
     exampleStock: "TATAMOTORS", exampleDate: "2023-12-12", preTrendDir: -1,
     animationCandles: [ { o: 0, c: 8, h: 35, l: -5 } ],
     svg: (
-      <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_10px_rgba(61,229,48,0.3)]">
-        <line x1="50" y1="20" x2="50" y2="80" stroke="#3de530" strokeWidth="4" strokeLinecap="round" />
-        <rect x="40" y="65" width="20" height="15" fill="#3de530" rx="4" />
+      <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]">
+        <line x1="50" y1="20" x2="50" y2="80" stroke="#FFFFFF" strokeWidth="4" strokeLinecap="round" />
+        <rect x="40" y="65" width="20" height="15" fill="#FFFFFF" rx="4" />
       </svg>
     )
   },
   {
     id: "dragonfly_doji", title: "Dragonfly Doji", category: "Single Candle", type: "Bullish Reversal",
-    color: "text-[#3de530]", bg: "bg-[#3de530]/10", border: "border-[#3de530]/20",
+    color: "text-[#FFFFFF]", bg: "bg-[#FFFFFF]/10", border: "border-[#FFFFFF]/20",
     desc: "Open, close, and high are the same, creating a long lower wick. Looks like a 'T'. Massive rejection of lower prices.",
     caseStudy: "📉 Before: ICICIBANK dropped sharply from ₹1050 to ₹980 due to panic.\n📊 Instance: 24 Jan 2024. Sellers pushed it to ₹950, but aggressive buyers recovered everything.\n📈 After: V-shape recovery to ₹1100 (+12%).",
     exampleStock: "ICICIBANK", exampleDate: "2024-01-24", preTrendDir: -1,
     animationCandles: [ { o: 0, c: 0, h: 2, l: -40 } ],
     svg: (
-      <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_8px_rgba(61,229,48,0.4)]">
-        <line x1="50" y1="15" x2="50" y2="85" stroke="#3de530" strokeWidth="4" strokeLinecap="round" />
-        <line x1="35" y1="15" x2="65" y2="15" stroke="#3de530" strokeWidth="6" strokeLinecap="round" />
+      <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]">
+        <line x1="50" y1="15" x2="50" y2="85" stroke="#FFFFFF" strokeWidth="4" strokeLinecap="round" />
+        <line x1="35" y1="15" x2="65" y2="15" stroke="#FFFFFF" strokeWidth="6" strokeLinecap="round" />
       </svg>
     )
   },
   {
     id: "bullish_belt_hold", title: "Bullish Belt Hold", category: "Single Candle", type: "Bullish Reversal",
-    color: "text-[#3de530]", bg: "bg-[#3de530]/10", border: "border-[#3de530]/20",
+    color: "text-[#FFFFFF]", bg: "bg-[#FFFFFF]/10", border: "border-[#FFFFFF]/20",
     desc: "Opens with a gap down but immediately rallies to close as a massive green candle with no lower wick. Shows absolute dominance by buyers.",
     caseStudy: "📉 Before: HINDALCO corrected from ₹620 to ₹550.\n📊 Instance: Formed 18 Aug 2023. Opened gap down at ₹540 but never looked back.\n📈 After: Rallied vertically to ₹640 (+16%).",
     exampleStock: "HINDALCO", exampleDate: "2023-08-18", preTrendDir: -1,
     animationCandles: [ { o: -15, c: 35, h: 40, l: -15 } ],
     svg: (
       <svg viewBox="0 0 100 100" className="w-full h-full">
-        <line x1="50" y1="10" x2="50" y2="90" stroke="#3de530" strokeWidth="4" />
-        <rect x="40" y="20" width="20" height="70" fill="#3de530" rx="2" />
+        <line x1="50" y1="10" x2="50" y2="90" stroke="#FFFFFF" strokeWidth="4" />
+        <rect x="40" y="20" width="20" height="70" fill="#FFFFFF" rx="2" />
       </svg>
     )
   },
@@ -140,7 +140,7 @@ export const patternsData = [
   // ================= 🟢 DOUBLE CANDLE BULLISH =================
   {
     id: "bullish_engulfing", title: "Bullish Engulfing", category: "Double Candle", type: "Strong Bullish",
-    color: "text-[#3de530]", bg: "bg-[#3de530]/10", border: "border-[#3de530]/20",
+    color: "text-[#FFFFFF]", bg: "bg-[#FFFFFF]/10", border: "border-[#FFFFFF]/20",
     desc: "A small red candle is completely 'engulfed' by a large green candle. Shows massive buying pressure overturning sellers.",
     caseStudy: "📉 Before: HDFCBANK was struggling, dropping from ₹1530 to ₹1460.\n📊 Instance: 28 Nov 2023, completely swallowing previous day's red candle.\n📈 After: Trend reversed sharply, hitting ₹1700 (+16%).",
     exampleStock: "HDFCBANK", exampleDate: "2023-11-28", preTrendDir: -1,
@@ -149,14 +149,14 @@ export const patternsData = [
       <svg viewBox="0 0 100 100" className="w-full h-full">
         <line x1="30" y1="40" x2="30" y2="70" stroke="#ff3b30" strokeWidth="4" />
         <rect x="22" y="45" width="16" height="20" fill="#ff3b30" rx="2" />
-        <line x1="70" y1="20" x2="70" y2="90" stroke="#3de530" strokeWidth="4" />
-        <rect x="62" y="25" width="16" height="60" fill="#3de530" rx="2" />
+        <line x1="70" y1="20" x2="70" y2="90" stroke="#FFFFFF" strokeWidth="4" />
+        <rect x="62" y="25" width="16" height="60" fill="#FFFFFF" rx="2" />
       </svg>
     )
   },
   {
     id: "piercing_line", title: "Piercing Pattern", category: "Double Candle", type: "Bullish Reversal",
-    color: "text-[#3de530]", bg: "bg-[#3de530]/10", border: "border-[#3de530]/20",
+    color: "text-[#FFFFFF]", bg: "bg-[#FFFFFF]/10", border: "border-[#FFFFFF]/20",
     desc: "Green candle opens below the previous red candle's low, but closes above its midpoint.",
     caseStudy: "📉 Before: INFY corrected heavily from ₹1600 to ₹1360.\n📊 Instance: 18 April 2024. Gap down open trapped bears, followed by recovery.\n📈 After: Recovered to ₹1500 (+10%) in 8 sessions.",
     exampleStock: "INFY", exampleDate: "2024-04-18", preTrendDir: -1,
@@ -165,14 +165,14 @@ export const patternsData = [
       <svg viewBox="0 0 100 100" className="w-full h-full">
         <line x1="30" y1="10" x2="30" y2="80" stroke="#ff3b30" strokeWidth="4" />
         <rect x="22" y="15" width="16" height="60" fill="#ff3b30" rx="2" />
-        <line x1="70" y1="30" x2="70" y2="90" stroke="#3de530" strokeWidth="4" />
-        <rect x="62" y="40" width="16" height="45" fill="#3de530" rx="2" />
+        <line x1="70" y1="30" x2="70" y2="90" stroke="#FFFFFF" strokeWidth="4" />
+        <rect x="62" y="40" width="16" height="45" fill="#FFFFFF" rx="2" />
       </svg>
     )
   },
   {
     id: "bullish_harami", title: "Bullish Harami", category: "Double Candle", type: "Reversal Warning",
-    color: "text-[#3de530]", bg: "bg-[#3de530]/10", border: "border-[#3de530]/20",
+    color: "text-[#FFFFFF]", bg: "bg-[#FFFFFF]/10", border: "border-[#FFFFFF]/20",
     desc: "A large red candle followed by a small green 'inside' candle. Signals the downtrend is losing breath.",
     caseStudy: "📉 Before: WIPRO fell continuously from ₹520 to ₹450.\n📊 Instance: 1 Nov 2023. Selling dried up completely forming an inside day.\n📈 After: Slow climb back to ₹530 (+17%).",
     exampleStock: "WIPRO", exampleDate: "2023-11-01", preTrendDir: -1,
@@ -181,14 +181,14 @@ export const patternsData = [
       <svg viewBox="0 0 100 100" className="w-full h-full">
         <line x1="30" y1="10" x2="30" y2="90" stroke="#ff3b30" strokeWidth="4" />
         <rect x="22" y="20" width="16" height="60" fill="#ff3b30" rx="2" />
-        <line x1="70" y1="40" x2="70" y2="60" stroke="#3de530" strokeWidth="4" />
-        <rect x="62" y="45" width="16" height="10" fill="#3de530" rx="2" />
+        <line x1="70" y1="40" x2="70" y2="60" stroke="#FFFFFF" strokeWidth="4" />
+        <rect x="62" y="45" width="16" height="10" fill="#FFFFFF" rx="2" />
       </svg>
     )
   },
   {
     id: "bullish_kicker", title: "Bullish Kicker", category: "Double Candle", type: "Aggressive Bullish",
-    color: "text-[#3de530]", bg: "bg-[#3de530]/10", border: "border-[#3de530]/20",
+    color: "text-[#FFFFFF]", bg: "bg-[#FFFFFF]/10", border: "border-[#FFFFFF]/20",
     desc: "A massive gap-up reversal. Green candle opens completely above the previous red candle's high.",
     caseStudy: "📉 Before: SBIN was dragging lower towards ₹550.\n📊 Instance: 16 May 2023. Massive earnings gap up trapped all short sellers instantly.\n📈 After: Vertical run to ₹620 (+12%) in 3 days.",
     exampleStock: "SBIN", exampleDate: "2023-05-16", preTrendDir: -1,
@@ -196,7 +196,7 @@ export const patternsData = [
     svg: (
       <svg viewBox="0 0 100 100" className="w-full h-full">
         <rect x="22" y="55" width="16" height="30" fill="#ff3b30" rx="2" />
-        <rect x="62" y="15" width="16" height="35" fill="#3de530" rx="2" />
+        <rect x="62" y="15" width="16" height="35" fill="#FFFFFF" rx="2" />
       </svg>
     )
   },
@@ -204,7 +204,7 @@ export const patternsData = [
   // ================= 🟢 TRIPLE+ CANDLE BULLISH =================
   {
     id: "morning_star", title: "Morning Star", category: "Triple Candle", type: "Major Reversal",
-    color: "text-[#3de530]", bg: "bg-[#3de530]/10", border: "border-[#3de530]/20",
+    color: "text-[#FFFFFF]", bg: "bg-[#FFFFFF]/10", border: "border-[#FFFFFF]/20",
     desc: "Long red, short body gapping down, and a long green pushing into the first candle's body.",
     caseStudy: "📉 Before: ZOMATO was correcting from ₹140 to ₹115.\n📊 Instance: 20 March 2024. The 'star' showed indecision, green confirmed bulls.\n📈 After: Stock exploded to ₹190 (+65%).",
     exampleStock: "ZOMATO", exampleDate: "2024-03-20", preTrendDir: -1,
@@ -213,28 +213,28 @@ export const patternsData = [
       <svg viewBox="0 0 100 100" className="w-full h-full">
         <rect x="15" y="20" width="16" height="40" fill="#ff3b30" rx="2" />
         <rect x="42" y="65" width="16" height="10" fill="#bbcbb2" rx="2" />
-        <rect x="69" y="30" width="16" height="35" fill="#3de530" rx="2" />
+        <rect x="69" y="30" width="16" height="35" fill="#FFFFFF" rx="2" />
       </svg>
     )
   },
   {
     id: "three_white_soldiers", title: "Three White Soldiers", category: "Triple Candle", type: "Strong Bullish",
-    color: "text-[#3de530]", bg: "bg-[#3de530]/10", border: "border-[#3de530]/20",
+    color: "text-[#FFFFFF]", bg: "bg-[#FFFFFF]/10", border: "border-[#FFFFFF]/20",
     desc: "Three consecutive long-bodied green candles closing higher. A very reliable signal of strong buying.",
     caseStudy: "📉 Before: TATASTEEL was consolidating sideways around ₹115.\n📊 Instance: 2-4 Nov 2023. Three back-to-back strong daily closes.\n📈 After: Multi-month breakout reaching ₹155 (+34%).",
     exampleStock: "TATASTEEL", exampleDate: "2023-11-04", preTrendDir: -1,
     animationCandles: [ { o: 0, c: 15, h: 20, l: -5 }, { o: 10, c: 25, h: 30, l: 5 }, { o: 20, c: 35, h: 40, l: 15 } ],
     svg: (
       <svg viewBox="0 0 100 100" className="w-full h-full">
-        <rect x="15" y="60" width="16" height="30" fill="#3de530" rx="2" />
-        <rect x="42" y="40" width="16" height="30" fill="#3de530" rx="2" />
-        <rect x="69" y="20" width="16" height="30" fill="#3de530" rx="2" />
+        <rect x="15" y="60" width="16" height="30" fill="#FFFFFF" rx="2" />
+        <rect x="42" y="40" width="16" height="30" fill="#FFFFFF" rx="2" />
+        <rect x="69" y="20" width="16" height="30" fill="#FFFFFF" rx="2" />
       </svg>
     )
   },
   {
     id: "bullish_abandoned_baby", title: "Bullish Abandoned Baby", category: "Triple Candle", type: "Rare Reversal",
-    color: "text-[#3de530]", bg: "bg-[#3de530]/10", border: "border-[#3de530]/20",
+    color: "text-[#FFFFFF]", bg: "bg-[#FFFFFF]/10", border: "border-[#FFFFFF]/20",
     desc: "A Doji gaps below the prior red candle, and the next green candle gaps back up. The Doji is completely isolated (abandoned).",
     caseStudy: "📉 Before: AXISBANK crashed from ₹1000 to ₹930.\n📊 Instance: 26 Oct 2023. Gap down Doji trapped late shorts, followed by an aggressive gap up.\n📈 After: Direct rally to ₹1100 (+18%).",
     exampleStock: "AXISBANK", exampleDate: "2023-10-26", preTrendDir: -1,
@@ -243,13 +243,13 @@ export const patternsData = [
       <svg viewBox="0 0 100 100" className="w-full h-full">
         <rect x="15" y="20" width="16" height="30" fill="#ff3b30" rx="2" />
         <rect x="42" y="70" width="16" height="4" fill="#bbcbb2" rx="2" />
-        <rect x="69" y="20" width="16" height="30" fill="#3de530" rx="2" />
+        <rect x="69" y="20" width="16" height="30" fill="#FFFFFF" rx="2" />
       </svg>
     )
   },
   {
     id: "three_inside_up", title: "Three Inside Up", category: "Triple Candle", type: "Bullish Confirmation",
-    color: "text-[#3de530]", bg: "bg-[#3de530]/10", border: "border-[#3de530]/20",
+    color: "text-[#FFFFFF]", bg: "bg-[#FFFFFF]/10", border: "border-[#FFFFFF]/20",
     desc: "Starts with a Bullish Harami, followed by a third green candle that closes above the first red candle's high.",
     caseStudy: "📉 Before: JSWSTEEL was trending down to ₹730.\n📊 Instance: 15 Mar 2024. Harami paused the selling, and the 3rd candle broke out, confirming the reversal.\n📈 After: Stock pushed into a new uptrend to ₹880 (+20%).",
     exampleStock: "JSWSTEEL", exampleDate: "2024-03-15", preTrendDir: -1,
@@ -257,23 +257,23 @@ export const patternsData = [
     svg: (
       <svg viewBox="0 0 100 100" className="w-full h-full">
         <rect x="15" y="30" width="16" height="50" fill="#ff3b30" rx="2" />
-        <rect x="42" y="50" width="16" height="20" fill="#3de530" rx="2" />
-        <rect x="69" y="15" width="16" height="55" fill="#3de530" rx="2" />
+        <rect x="42" y="50" width="16" height="20" fill="#FFFFFF" rx="2" />
+        <rect x="69" y="15" width="16" height="55" fill="#FFFFFF" rx="2" />
       </svg>
     )
   },
   {
     id: "three_line_strike", title: "Three Line Strike (Bullish)", category: "Complex Pattern", type: "Continuation",
-    color: "text-[#3de530]", bg: "bg-[#3de530]/10", border: "border-[#3de530]/20",
+    color: "text-[#FFFFFF]", bg: "bg-[#FFFFFF]/10", border: "border-[#FFFFFF]/20",
     desc: "Three consecutive green candles, followed by a massive red 'strike' candle that opens higher but closes below the first green candle's open. Often a fake-out before continuing higher.",
     caseStudy: "📉 Before: HAL was rallying strong to ₹2800.\n📊 Instance: 10 Jan 2024. A sudden red wash-out candle wiped 3 days of gains, shaking out weak hands.\n📈 After: Buyers immediately stepped back in, taking it to ₹3400 (+21%).",
     exampleStock: "HAL", exampleDate: "2024-01-10", preTrendDir: 1,
     animationCandles: [ { o: 0, c: 15, h: 20, l: 0 }, { o: 15, c: 30, h: 35, l: 15 }, { o: 30, c: 45, h: 50, l: 30 }, { o: 50, c: -5, h: 55, l: -10 } ],
     svg: (
       <svg viewBox="0 0 100 100" className="w-full h-full">
-        <rect x="10" y="60" width="12" height="20" fill="#3de530" rx="1" />
-        <rect x="30" y="40" width="12" height="20" fill="#3de530" rx="1" />
-        <rect x="50" y="20" width="12" height="20" fill="#3de530" rx="1" />
+        <rect x="10" y="60" width="12" height="20" fill="#FFFFFF" rx="1" />
+        <rect x="30" y="40" width="12" height="20" fill="#FFFFFF" rx="1" />
+        <rect x="50" y="20" width="12" height="20" fill="#FFFFFF" rx="1" />
         <rect x="75" y="15" width="14" height="70" fill="#ff3b30" rx="1" />
       </svg>
     )
@@ -333,7 +333,7 @@ export const patternsData = [
     animationCandles: [ { o: 0, c: 12, h: 18, l: -5 }, { o: 15, c: -20, h: 22, l: -25 } ],
     svg: (
       <svg viewBox="0 0 100 100" className="w-full h-full">
-        <rect x="22" y="45" width="16" height="20" fill="#3de530" rx="2" />
+        <rect x="22" y="45" width="16" height="20" fill="#FFFFFF" rx="2" />
         <rect x="62" y="25" width="16" height="60" fill="#ff3b30" rx="2" />
       </svg>
     )
@@ -347,7 +347,7 @@ export const patternsData = [
     animationCandles: [ { o: 0, c: 30, h: 35, l: -5 }, { o: 40, c: 10, h: 45, l: 5 } ],
     svg: (
       <svg viewBox="0 0 100 100" className="w-full h-full">
-        <rect x="22" y="40" width="16" height="45" fill="#3de530" rx="2" />
+        <rect x="22" y="40" width="16" height="45" fill="#FFFFFF" rx="2" />
         <rect x="62" y="15" width="16" height="50" fill="#ff3b30" rx="2" />
       </svg>
     )
@@ -361,8 +361,8 @@ export const patternsData = [
     animationCandles: [ { o: 0, c: 20, h: 30, l: -5 }, { o: 20, c: -5, h: 30, l: -10 } ],
     svg: (
       <svg viewBox="0 0 100 100" className="w-full h-full">
-        <line x1="30" y1="20" x2="30" y2="80" stroke="#3de530" strokeWidth="4" />
-        <rect x="22" y="45" width="16" height="30" fill="#3de530" rx="2" />
+        <line x1="30" y1="20" x2="30" y2="80" stroke="#FFFFFF" strokeWidth="4" />
+        <rect x="22" y="45" width="16" height="30" fill="#FFFFFF" rx="2" />
         <line x1="70" y1="20" x2="70" y2="60" stroke="#ff3b30" strokeWidth="4" />
         <rect x="62" y="25" width="16" height="30" fill="#ff3b30" rx="2" />
         <line x1="20" y1="20" x2="80" y2="20" stroke="white" strokeWidth="1" strokeDasharray="2 2" />
@@ -378,7 +378,7 @@ export const patternsData = [
     animationCandles: [ { o: 0, c: 20, h: 25, l: -5 }, { o: -10, c: -35, h: -10, l: -40 } ],
     svg: (
       <svg viewBox="0 0 100 100" className="w-full h-full">
-        <rect x="22" y="15" width="16" height="30" fill="#3de530" rx="2" />
+        <rect x="22" y="15" width="16" height="30" fill="#FFFFFF" rx="2" />
         <rect x="62" y="60" width="16" height="35" fill="#ff3b30" rx="2" />
       </svg>
     )
@@ -409,7 +409,7 @@ export const patternsData = [
     animationCandles: [ { o: 0, c: 25, h: 30, l: -5 }, { o: 30, c: 28, h: 40, l: 20 }, { o: 30, c: -5, h: 35, l: -10 } ],
     svg: (
       <svg viewBox="0 0 100 100" className="w-full h-full">
-        <rect x="15" y="40" width="16" height="40" fill="#3de530" rx="2" />
+        <rect x="15" y="40" width="16" height="40" fill="#FFFFFF" rx="2" />
         <rect x="42" y="20" width="16" height="10" fill="#bbcbb2" rx="2" />
         <rect x="69" y="35" width="16" height="45" fill="#ff3b30" rx="2" />
       </svg>
@@ -424,7 +424,7 @@ export const patternsData = [
     animationCandles: [ { o: 0, c: 20, h: 25, l: -5 }, { o: 30, c: 30, h: 35, l: 25 }, { o: 10, c: -10, h: 15, l: -15 } ],
     svg: (
       <svg viewBox="0 0 100 100" className="w-full h-full">
-        <rect x="15" y="50" width="16" height="30" fill="#3de530" rx="2" />
+        <rect x="15" y="50" width="16" height="30" fill="#FFFFFF" rx="2" />
         <rect x="42" y="20" width="16" height="4" fill="#bbcbb2" rx="2" />
         <rect x="69" y="50" width="16" height="30" fill="#ff3b30" rx="2" />
       </svg>
@@ -454,7 +454,7 @@ export const patternsData = [
   },
   {
     id: "inverse_head_and_shoulders", title: "Inverse Head & Shoulders", category: "Chart Pattern", type: "Bullish Reversal",
-    color: "text-[#3de530]", bg: "bg-[#3de530]/10", border: "border-[#3de530]/20",
+    color: "text-[#FFFFFF]", bg: "bg-[#FFFFFF]/10", border: "border-[#FFFFFF]/20",
     desc: "The exact opposite of Head & Shoulders. Three bottoms where the middle is the lowest. Signals the end of a long downtrend.",
     caseStudy: "📉 Before: TATASTEEL was in a prolonged bear market hitting ₹100.\n📊 Instance: Formed over Oct-Nov 2023. The right shoulder held a higher low, and buyers aggressively broke the neckline.\n📈 After: Initiated a massive multi-month rally to ₹140 (+40%).",
     exampleStock: "TATASTEEL", exampleDate: "2023-11-20", preTrendDir: -1,
@@ -467,8 +467,8 @@ export const patternsData = [
       { o: -12, c: 25, h: 30, l: -15 }  // Right Shoulder Breakout
     ],
     svg: (
-      <svg viewBox="0 0 100 100" className="w-full h-full" fill="none" stroke="#3de530" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M 10 20 L 30 60 L 40 40 L 55 85 L 70 40 L 80 60 L 95 20" className="drop-shadow-[0_0_8px_rgba(61,229,48,0.5)]" />
+      <svg viewBox="0 0 100 100" className="w-full h-full" fill="none" stroke="#FFFFFF" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M 10 20 L 30 60 L 40 40 L 55 85 L 70 40 L 80 60 L 95 20" className="drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]" />
         <line x1="20" y1="30" x2="85" y2="30" stroke="#bbcbb2" strokeWidth="2" strokeDasharray="4 4" />
       </svg>
     )
@@ -494,7 +494,7 @@ export const patternsData = [
   },
   {
     id: "double_bottom", title: "Double Bottom (W Pattern)", category: "Chart Pattern", type: "Bullish Reversal",
-    color: "text-[#3de530]", bg: "bg-[#3de530]/10", border: "border-[#3de530]/20",
+    color: "text-[#FFFFFF]", bg: "bg-[#FFFFFF]/10", border: "border-[#FFFFFF]/20",
     desc: "Looks like the letter 'W'. The price drops, rebounds, drops to the exact same support level, then breaks out upwards.",
     caseStudy: "📉 Before: HINDUNILVR (HUL) corrected down to ₹2400.\n📊 Instance: Formed across Nov-Dec 2023. The ₹2400 zone acted as a concrete floor twice, shaking out retail.\n📈 After: Confirmed breakout pushed the stock to ₹2650 (+10%).",
     exampleStock: "HINDUNILVR", exampleDate: "2023-12-05", preTrendDir: -1,
@@ -505,15 +505,15 @@ export const patternsData = [
       { o: -15, c: 35, h: 40, l: -20 }  // Breakout
     ],
     svg: (
-      <svg viewBox="0 0 100 100" className="w-full h-full" fill="none" stroke="#3de530" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M 10 20 L 35 80 L 50 50 L 65 80 L 90 20" className="drop-shadow-[0_0_8px_rgba(61,229,48,0.5)]" />
+      <svg viewBox="0 0 100 100" className="w-full h-full" fill="none" stroke="#FFFFFF" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M 10 20 L 35 80 L 50 50 L 65 80 L 90 20" className="drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]" />
         <line x1="10" y1="50" x2="90" y2="50" stroke="#bbcbb2" strokeWidth="2" strokeDasharray="4 4" />
       </svg>
     )
   },
   {
     id: "bull_flag", title: "Bull Flag", category: "Chart Pattern", type: "Bullish Continuation",
-    color: "text-[#3de530]", bg: "bg-[#3de530]/10", border: "border-[#3de530]/20",
+    color: "text-[#FFFFFF]", bg: "bg-[#FFFFFF]/10", border: "border-[#FFFFFF]/20",
     desc: "A steep vertical rally (the flagpole) followed by a tight, downward-sloping consolidation channel (the flag). Breakout leads to another vertical leg.",
     caseStudy: "📈 Before: IRFC surged vertically from ₹40 to ₹80 (Pole).\n📊 Instance: Jan 2024. Stock consolidated cleanly between ₹70-80 for 3 weeks, lowering volatility.\n📈 After: Flag breakout triggered a mega-rally to ₹170 (+112%).",
     exampleStock: "IRFC", exampleDate: "2024-01-20", preTrendDir: 1, // Pretrend creates the pole
@@ -524,11 +524,11 @@ export const patternsData = [
       { o: -5, c: 35, h: 40, l: -5 }  // Flag Breakout (Next leg up)
     ],
     svg: (
-      <svg viewBox="0 0 100 100" className="w-full h-full" fill="none" stroke="#3de530" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M 10 90 L 30 30" strokeWidth="6" className="drop-shadow-[0_0_5px_rgba(61,229,48,0.5)]" /> {/* Pole */}
+      <svg viewBox="0 0 100 100" className="w-full h-full" fill="none" stroke="#FFFFFF" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M 10 90 L 30 30" strokeWidth="6" className="drop-shadow-[0_0_5px_rgba(255,255,255,0.5)]" /> {/* Pole */}
         <path d="M 30 30 L 45 45 L 60 35 L 75 50" stroke="#bbcbb2" strokeWidth="3" /> {/* Flag */}
         <line x1="20" y1="20" x2="70" y2="45" stroke="#ff3b30" strokeWidth="2" strokeDasharray="2 2" /> {/* Upper bound */}
-        <line x1="30" y1="50" x2="80" y2="75" stroke="#3de530" strokeWidth="2" strokeDasharray="2 2" /> {/* Lower bound */}
+        <line x1="30" y1="50" x2="80" y2="75" stroke="#FFFFFF" strokeWidth="2" strokeDasharray="2 2" /> {/* Lower bound */}
       </svg>
     )
   }
