@@ -58,15 +58,15 @@ const UniversalTradeModal = ({ symbol, marketData, onClose, balance, token, refr
       {showCandlestick && (
         <CandlestickModal symbol={symbol} isGreen={isGreen} onClose={() => setShowCandlestick(false)} />
       )}
-      <div className="fixed inset-0 bg-background/80 flex items-center justify-center backdrop-blur-sm z-50 p-4">
+      <div className="fixed inset-0 bg-bg/80 flex items-center justify-center backdrop-blur-sm z-50 p-4">
         <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} 
-          className="bg-surface border border-border rounded-lg shadow-elevation-3 w-full max-w-[900px] overflow-hidden flex flex-col md:flex-row max-h-[90vh]">
+          className="bg-surface border border-border rounded-lg shadow-3 w-full max-w-[900px] overflow-hidden flex flex-col md:flex-row max-h-[90vh]">
           
           <div className="w-full md:w-[60%] p-6 md:p-8 border-b md:border-b-0 md:border-r border-border flex flex-col">
             <div className="flex justify-between items-start mb-6">
               <div>
                 <h3 className="text-h2 font-medium tracking-tight text-text-primary">{symbol}</h3>
-                <p className="text-label text-text-muted mt-1">{INDICES.includes(symbol) ? 'MARKET INDEX' : 'EQUITY • NSE'}</p>
+                <p className="text-label text-text-tertiary mt-1">{INDICES.includes(symbol) ? 'MARKET INDEX' : 'EQUITY • NSE'}</p>
               </div>
               <div className="text-right">
                 <p className="text-h3 font-mono font-medium text-text-primary">₹{currentPrice.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}</p>
@@ -78,7 +78,7 @@ const UniversalTradeModal = ({ symbol, marketData, onClose, balance, token, refr
               <button
                 onClick={() => setShowCandlestick(true)}
                 title="Expand as Candlestick Chart"
-                className="absolute bottom-3 right-3 z-30 flex items-center gap-1.5 bg-surface-elevated border border-border hover:border-border-hover text-text-secondary hover:text-text-primary px-3 py-1.5 rounded-md text-label transition-colors opacity-0 group-hover:opacity-100 shadow-elevation-1"
+                className="absolute bottom-3 right-3 z-30 flex items-center gap-1.5 bg-surface-raised border border-border hover:border-border-strong text-text-secondary hover:text-text-primary px-3 py-1.5 rounded-md text-label transition-colors opacity-0 group-hover:opacity-100 shadow-1"
               >
                 <span className="material-symbols-outlined text-[14px]">candlestick_chart</span>
                 Candlestick
@@ -86,11 +86,11 @@ const UniversalTradeModal = ({ symbol, marketData, onClose, balance, token, refr
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex justify-between items-center py-2 border-t border-border">
-                <span className="text-label text-text-muted">Day Low</span>
+                <span className="text-label text-text-tertiary">Day Low</span>
                 <span className="text-body font-mono font-medium text-text-primary">₹{dayLow.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
               </div>
               <div className="flex justify-between items-center py-2 border-t border-border">
-                <span className="text-label text-text-muted">Day High</span>
+                <span className="text-label text-text-tertiary">Day High</span>
                 <span className="text-body font-mono font-medium text-text-primary">₹{dayHigh.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
               </div>
             </div>
@@ -98,45 +98,45 @@ const UniversalTradeModal = ({ symbol, marketData, onClose, balance, token, refr
 
           <div className="w-full md:w-[40%] p-6 md:p-8 flex flex-col bg-surface">
             <div className="flex justify-end mb-6">
-              <button onClick={onClose} className="text-text-muted hover:text-text-primary transition-colors">
+              <button onClick={onClose} className="text-text-tertiary hover:text-text-primary transition-colors">
                 <span className="material-symbols-outlined text-[20px]">close</span>
               </button>
             </div>
             
-            <div className="flex p-1 bg-surface-elevated rounded-md mb-8 border border-border">
-              <button onClick={() => setActiveTab('BUY')} className={`flex-1 py-2 rounded-[4px] text-label transition-colors ${activeTab === 'BUY' ? 'bg-background text-text-primary shadow-elevation-1' : 'text-text-muted hover:text-text-primary'}`}>Buy</button>
-              <button onClick={() => setActiveTab('SELL')} className={`flex-1 py-2 rounded-[4px] text-label transition-colors ${activeTab === 'SELL' ? 'bg-background text-text-primary shadow-elevation-1' : 'text-text-muted hover:text-text-primary'}`}>Sell</button>
+            <div className="flex p-1 bg-surface-raised rounded-md mb-8 border border-border">
+              <button onClick={() => setActiveTab('BUY')} className={`flex-1 py-2 rounded-[4px] text-label transition-colors ${activeTab === 'BUY' ? 'bg-bg text-text-primary shadow-1' : 'text-text-tertiary hover:text-text-primary'}`}>Buy</button>
+              <button onClick={() => setActiveTab('SELL')} className={`flex-1 py-2 rounded-[4px] text-label transition-colors ${activeTab === 'SELL' ? 'bg-bg text-text-primary shadow-1' : 'text-text-tertiary hover:text-text-primary'}`}>Sell</button>
             </div>
 
             <form onSubmit={handleExecute} className="flex-1 flex flex-col">
               <div className="space-y-6 flex-1">
                 <div className="flex justify-between items-center pb-2 border-b border-border">
-                  <span className="text-label text-text-muted">{activeTab === 'BUY' ? 'Max Affordable' : 'Units Owned'}</span>
+                  <span className="text-label text-text-tertiary">{activeTab === 'BUY' ? 'Max Affordable' : 'Units Owned'}</span>
                   <span className={`text-body font-mono font-medium ${activeTab === 'BUY' ? 'text-positive' : 'text-text-primary'}`}>{activeTab === 'BUY' ? maxBuyQty.toLocaleString() : ownedQty.toLocaleString()} units</span>
                 </div>
                 
                 <div>
                   <div className="flex justify-between items-center mb-3">
-                    <label className="text-label text-text-muted">Quantity (Units)</label>
+                    <label className="text-label text-text-tertiary">Quantity (Units)</label>
                     <Badge variant="neutral" className="cursor-pointer hover:bg-border transition-colors" onClick={handleMax}>MAX</Badge>
                   </div>
                   <Input autoFocus type="number" value={qty} onChange={(e) => setQty(e.target.value)} placeholder="0" required min="1" step="1" className="font-mono text-lg text-right" />
                 </div>
                 
                 <div className="flex justify-between items-center py-4 border-y border-border">
-                  <span className="text-label text-text-muted">Limit Price</span>
+                  <span className="text-label text-text-tertiary">Limit Price</span>
                   <span className="text-body font-mono font-medium text-text-primary">₹{currentPrice.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
                 </div>
               </div>
 
               <div className="mt-8 pt-4">
                 <div className="flex justify-between items-center mb-3">
-                  <span className="text-label text-text-muted">Est. Margin</span>
+                  <span className="text-label text-text-tertiary">Est. Margin</span>
                   <span className="text-h3 font-mono font-medium text-text-primary">₹{(estCost || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                 </div>
                 {numQty > 0 && (
                   <div className="flex justify-between items-center mb-6">
-                    <span className="text-label text-text-muted">Balance After</span>
+                    <span className="text-label text-text-tertiary">Balance After</span>
                     <span className={`text-body font-mono font-medium ${balanceAfter >= 0 ? 'text-text-primary' : 'text-negative'}`}>
                       ₹{Math.max(0, balanceAfter).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                     </span>
@@ -284,7 +284,7 @@ function Dashboard() {
   const mainChartIsGreen = (mainChartData.change || 0) >= 0;
 
   return (
-    <div className="flex h-screen bg-background text-text-primary font-sans overflow-hidden">
+    <div className="flex h-screen bg-bg text-text-primary font-sans overflow-hidden">
 
       <Sidebar userName={userName} isMarketOpen={isMarketOpen} avatar={avatar} />
       <MobileBottomNav />
@@ -299,7 +299,7 @@ function Dashboard() {
               const change = liveData.change || 0;
               return (
                 <span key={`${sym}-${i}`} className="flex items-center gap-2">
-                  <span className="text-text-muted">{sym}</span>
+                  <span className="text-text-tertiary">{sym}</span>
                   <span className="font-medium">{price > 0 ? price.toLocaleString('en-IN', {minimumFractionDigits: 2}) : '---'}</span>
                   <span className={change >= 0 ? 'text-positive font-medium' : 'text-negative font-medium'}>{change >= 0 ? '▲' : '▼'}{Math.abs(change).toFixed(2)}%</span>
                 </span>
@@ -311,7 +311,7 @@ function Dashboard() {
               const change = liveData.change || 0;
               return (
                 <span key={`dup-${sym}-${i}`} className="flex items-center gap-2">
-                  <span className="text-text-muted">{sym}</span>
+                  <span className="text-text-tertiary">{sym}</span>
                   <span className="font-medium">{price > 0 ? price.toLocaleString('en-IN', {minimumFractionDigits: 2}) : '---'}</span>
                   <span className={change >= 0 ? 'text-positive font-medium' : 'text-negative font-medium'}>{change >= 0 ? '▲' : '▼'}{Math.abs(change).toFixed(2)}%</span>
                 </span>
@@ -331,12 +331,12 @@ function Dashboard() {
                 </motion.h1>
                 <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }} className="flex flex-wrap items-center gap-8 mt-4">
                   <div className="flex flex-col gap-1">
-                    <span className="text-label text-text-muted">AVAILABLE MARGIN</span>
+                    <span className="text-label text-text-tertiary">AVAILABLE MARGIN</span>
                     <span className="text-subtitle font-mono font-medium">₹{balance.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                   </div>
                   <div className="hidden md:block w-px h-8 bg-border" />
                   <div className="flex flex-col gap-1">
-                    <span className="text-label text-text-muted">MARKET STATUS</span>
+                    <span className="text-label text-text-tertiary">MARKET STATUS</span>
                     <div className="flex items-center gap-2 h-7">
                       <div className={`w-2 h-2 rounded-full ${isMarketOpen ? 'bg-positive animate-pulse' : 'bg-negative'}`} />
                       <span className="text-body font-medium">{isMarketOpen ? 'Live Market' : 'Offline'}</span>
@@ -369,7 +369,7 @@ function Dashboard() {
 
                 {/* Insights Block - Unboxed */}
                 <div className="border-t border-border pt-8">
-                  <h3 className="text-label text-text-muted mb-4">MARKET INSIGHTS</h3>
+                  <h3 className="text-label text-text-tertiary mb-4">MARKET INSIGHTS</h3>
                   <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                      <div className="flex-1">
                        <h4 className="text-subtitle font-medium mb-2">{gainers[0]?.symbol || 'MARKETS'} showing strong momentum</h4>
@@ -391,8 +391,8 @@ function Dashboard() {
                 {/* Watchlist - Unboxed List */}
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-label text-text-muted">WATCHLIST</h3>
-                    <button className="text-text-muted hover:text-text-primary transition-colors">
+                    <h3 className="text-label text-text-tertiary">WATCHLIST</h3>
+                    <button className="text-text-tertiary hover:text-text-primary transition-colors">
                       <span className="material-symbols-outlined text-[18px]">add</span>
                     </button>
                   </div>
@@ -405,7 +405,7 @@ function Dashboard() {
                         <div key={sym} onClick={() => setSelectedAsset(sym)} className="flex items-center justify-between py-4 group cursor-pointer">
                           <div className="flex flex-col">
                             <span className="font-medium text-body group-hover:text-accent transition-colors">{sym}</span>
-                            <span className="text-caption text-text-muted">NSE</span>
+                            <span className="text-caption text-text-tertiary">NSE</span>
                           </div>
                           <div className="text-right">
                             <p className="font-mono font-medium text-body">₹{(data.price || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</p>
@@ -419,16 +419,16 @@ function Dashboard() {
 
                 {/* Open Positions - Unboxed List */}
                 <div>
-                  <h3 className="text-label text-text-muted mb-4">OPEN POSITIONS</h3>
+                  <h3 className="text-label text-text-tertiary mb-4">OPEN POSITIONS</h3>
                   <div className="flex flex-col divide-y divide-border border-t border-border">
                     {holdings.length === 0 ? (
-                      <div className="py-4 text-text-muted text-caption">No open positions.</div>
+                      <div className="py-4 text-text-tertiary text-caption">No open positions.</div>
                     ) : (
                       holdings.slice(0,4).map((h, i) => (
                         <div key={i} className="flex justify-between items-center py-4">
                            <div className="flex flex-col">
                              <span className="font-medium text-body">{h.symbol}</span>
-                             <span className="text-caption text-text-muted">{h.quantity} units</span>
+                             <span className="text-caption text-text-tertiary">{h.quantity} units</span>
                            </div>
                            <div className="text-right">
                              <span className="font-mono text-body text-text-secondary">Avg ₹{h.avgPrice.toLocaleString('en-IN')}</span>
