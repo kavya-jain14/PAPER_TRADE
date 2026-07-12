@@ -506,8 +506,8 @@ const SmartChart = ({ symbol, currentPrice, isGreen, mini = false }) => {
   }, [currentPrice, mode, mini]);
 
   return (
-    <div className="w-full h-full absolute inset-0">
-      <div ref={containerRef} className="w-full h-full" />
+    <div className="w-full h-full relative">
+      <div ref={containerRef} className="w-full h-full absolute inset-0" />
 
       {!mini && loading && (
         <div className="absolute inset-0 flex items-center justify-center bg-[#000000]/80 z-10">
