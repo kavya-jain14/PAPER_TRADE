@@ -10,6 +10,8 @@ const yahooFinance = new YahooFinance({
   suppressNotices: ['yahooSurvey', 'ripHistorical']
 });
 
+const priceCache = {}; // { [symbol]: { timestamp, data: { price, change, high, low } } }
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Helper: Validate trade inputs (FIX #9)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -248,25 +250,65 @@ router.post('/live-prices', async (req, res) => {
         new Promise((_, r) => setTimeout(() => r(new Error('timeout')), ms)),
       ]);
 
-    const quotes = await Promise.allSettled(
-      Object.values(symbolMap).map(sym =>
-        withTimeout(yahooFinance.quote(sym, undefined, { validateResult: false }), 8000)
-      )
-    );
+    const symbolsToFetch = [];
+    const now = Date.now();
 
-    Object.keys(symbolMap).forEach((originalSym, index) => {
-      const result = quotes[index];
-      let p = 0, c = 0, h = 0, l = 0;
-
-      if (result.status === 'fulfilled' && result.value) {
-        const q = result.value;
-        p = Number(q.regularMarketPrice?.toFixed(2)) || 0;
-        c = Number(q.regularMarketChangePercent?.toFixed(2)) || 0;
-        h = q.regularMarketDayHigh || 0;
-        l = q.regularMarketDayLow || 0;
+    // Check cache first
+    Object.keys(symbolMap).forEach((originalSym) => {
+      const sym = symbolMap[originalSym];
+      const cached = priceCache[sym];
+      if (cached && (now - cached.timestamp < 10000)) {
+        livePrices[originalSym] = cached.data;
+      } else {
+        symbolsToFetch.push(originalSym);
       }
-      livePrices[originalSym] = { price: p, change: c, high: h, low: l };
     });
+
+    if (symbolsToFetch.length > 0) {
+      const quotes = await Promise.allSettled(
+        symbolsToFetch.map(originalSym =>
+          withTimeout(yahooFinance.quote(symbolMap[originalSym], undefined, { validateResult: false }), 8000)
+        )
+      );
+
+      symbolsToFetch.forEach((originalSym, index) => {
+        const result = quotes[index];
+        const sym = symbolMap[originalSym];
+        let p = 0, c = 0, h = 0, l = 0;
+
+        if (result.status === 'fulfilled' && result.value) {
+          const q = result.value;
+          p = Number(q.regularMarketPrice?.toFixed(2)) || 0;
+          c = Number(q.regularMarketChangePercent?.toFixed(2)) || 0;
+          h = q.regularMarketDayHigh || 0;
+          l = q.regularMarketDayLow || 0;
+          
+          const data = { price: p, change: c, high: h, low: l };
+          livePrices[originalSym] = data;
+          priceCache[sym] = { timestamp: now, data };
+        } else {
+           // Fallback to cache if request fails but we have old data
+           if (priceCache[sym]) {
+             livePrices[originalSym] = priceCache[sym].data;
+           } else {
+             // FALLBACK TO SYNTHETIC PRICES IF YAHOO FAILS COMPLETELY
+             let p = 0, c = 0, h = 0, l = 0;
+             const history = brain.getSyntheticHistory(originalSym);
+             if (history && history.length > 0) {
+               const lastCandle = history[history.length - 1];
+               const seedPrice  = brain.getSeedPrice(originalSym);
+               p = lastCandle.close;
+               h = lastCandle.high;
+               l = lastCandle.low;
+               if (seedPrice && seedPrice > 0) {
+                 c = parseFloat((((p - seedPrice) / seedPrice) * 100).toFixed(2));
+               }
+             }
+             livePrices[originalSym] = { price: p, change: c, high: h, low: l };
+           }
+        }
+      });
+    }
 
     res.json(livePrices);
   } catch (error) {
