@@ -1,0 +1,70 @@
+/* ============================================================
+   LogoMorph — PaperTrade brand transformation sequence
+   ============================================================
+
+   Placement:
+   - Upper-left quadrant of the left workspace
+   - Below telemetry, left of center, above ticker
+   - Responsive clamps used for layout
+
+   Scale:
+   - 92–108px visual size on desktop
+   - 72–88px on tablet
+
+   Visual:
+   - Transparent background
+   - Soft radial warm-black backdrop for legibility
+   - No container or card edges
+   ============================================================ */
+
+/* ── Wrapper ──────────────────────────────────────────────────── */
+.wrapper {
+  position: absolute;
+  
+  /* Left offset: positioned in upper-left, offset from center */
+  left: clamp(72px, 8.5vw, 132px);
+  top: clamp(132px, 18vh, 196px);
+  z-index: 4;
+  pointer-events: none;
+  user-select: none;
+
+  /* Soft radial warm-black backdrop for legibility — no visible hard edge */
+  background: radial-gradient(
+    ellipse 140% 140% at 50% 50%,
+    rgba(11, 9, 7, 0.50) 0%,
+    rgba(11, 9, 7, 0.15) 55%,
+    transparent 100%
+  );
+  border-radius: 50%;
+  padding: 42px;
+}
+
+/* ── SVG canvas ──────────────────────────────────────────────── */
+.logoMorph {
+  display: block;
+  /* Target ~136px visual size */
+  width: clamp(120px, 9.5vw, 144px);
+  aspect-ratio: 1;
+  overflow: visible;
+}
+
+/* ── Tablet ──────────────────────────────────────────────────── */
+@media (min-width: 900px) and (max-width: 1199px) {
+  .wrapper {
+    left: clamp(32px, 5vw, 72px);
+    top: clamp(84px, 12vh, 120px);
+    padding: 30px;
+  }
+
+  .logoMorph {
+    /* Larger size on tablet to remain dominant */
+    width: clamp(100px, 9vw, 120px);
+  }
+}
+
+/* ── Mobile: hide animation wrapper completely ──────────────── */
+@media (max-width: 899px) {
+  .wrapper {
+    display: none;
+  }
+}
