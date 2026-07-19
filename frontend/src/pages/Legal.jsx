@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
-import Sidebar, { MobileBottomNav } from '../components/Sidebar';
+import { AppShell } from '../components/AppShell';
 
 // ── SVG: Scales of Justice for Terms
 const LadyJusticeSVG = ({ progress = 0 }) => (
@@ -188,7 +188,6 @@ export default function Legal() {
   const [activeTab, setActiveTab] = useState('privacy');
   const [iconVal, setIconVal] = useState(0);
   const [userName, setUserName] = useState('');
-  const [balance, setBalance] = useState(0);
   const [avatar, setAvatar] = useState('');
   const [isMarketOpen, setIsMarketOpen] = useState(false);
 
@@ -198,10 +197,11 @@ export default function Legal() {
       const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
       fetch(`${API_URL}/api/auth/getuser`, { headers: { 'auth-token': token } })
         .then(r => r.json())
-        .then(d => {
-          setUserName(d.name ? d.name.split(' ')[0] : '');
-          setBalance(d.virtualBalance || d.balance || 0);
-          setAvatar(d.avatar || '');
+        .then(data => {
+          if (data.name) {
+            setUserName(data.name.split(' ')[0]);
+            setAvatar(data.avatar || '');
+          }
         }).catch(() => {});
     }
     const checkMarket = () => {
@@ -233,24 +233,16 @@ export default function Legal() {
   const sections = activeTab === 'privacy' ? PRIVACY_SECTIONS : TERMS_SECTIONS;
 
   const accentClasses = {
-    num:    activeTab === 'privacy' ? 'text-[#E5E5E5]' : 'text-[#D4A574]',
+    num:    activeTab === 'privacy' ? 'text-text-primary' : 'text-accent-gold',
     border: activeTab === 'privacy' ? 'border-[#E5E5E5]/15 hover:border-[#E5E5E5]/30' : 'border-[#D4A574]/15 hover:border-[#D4A574]/30',
-    dot:    activeTab === 'privacy' ? 'bg-[#E5E5E5]' : 'bg-[#D4A574]',
+    dot:    activeTab === 'privacy' ? 'bg-[#E5E5E5]' : 'bg-accent-gold',
     glow:   activeTab === 'privacy' ? 'bg-[radial-gradient(ellipse_at_center,rgba(229,229,229,0.07)_0%,transparent_70%)]' : 'bg-[radial-gradient(ellipse_at_center,rgba(212,165,116,0.07)_0%,transparent_70%)]',
     divider: activeTab === 'privacy' ? 'via-[#E5E5E5]/30' : 'via-[#D4A574]/30',
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="flex h-screen bg-[#0B0D10] text-[#E5E5E5] overflow-hidden"
-    >
-      <Sidebar userName={userName} balance={balance} isMarketOpen={isMarketOpen} avatar={avatar} />
-      <MobileBottomNav />
-
-      <main className="flex-1 overflow-y-auto custom-scrollbar relative">
+    <AppShell userName={userName} isMarketOpen={isMarketOpen} avatar={avatar}>
+      <div className="flex-1 overflow-y-auto custom-scrollbar relative">
 
         {/* ── HERO SECTION ── */}
         <div className={`relative min-h-[460px] flex flex-col items-center justify-center px-6 pt-16 pb-10 overflow-hidden`}>
@@ -275,7 +267,7 @@ export default function Legal() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, delay: 0.15 }}
-            className="text-5xl lg:text-[56px] font-light text-[#E5E5E5] text-center tracking-tight"
+            className="text-5xl lg:text-[56px] font-light text-text-primary text-center tracking-tight"
           >
             {activeTab === 'privacy' ? 'Privacy Policy' : 'Terms of Use'}
           </motion.h1>
@@ -287,24 +279,24 @@ export default function Legal() {
             transition={{ duration: 0.45, delay: 0.28 }}
             className="flex items-center gap-3 mt-4 flex-wrap justify-center font-mono"
           >
-            <span className="text-[#E5E5E5]/40 text-xs font-semibold">Last Updated: {LAST_UPDATED}</span>
-            <span className="w-1 h-1 rounded-full bg-[#E5E5E5]/20" />
-            <span className="text-[#E5E5E5]/40 text-xs font-semibold">Version {VERSION}</span>
+            <span className="text-text-secondary text-xs font-semibold">Last Updated: {LAST_UPDATED}</span>
+            <span className="w-1 h-1 rounded-full bg-border" />
+            <span className="text-text-secondary text-xs font-semibold">Version {VERSION}</span>
           </motion.div>
 
           {/* Tab Toggle */}
           <div className="flex gap-3 mt-10">
             {[
               { key: 'privacy', label: '🔐 Privacy Policy', active: 'bg-[#E5E5E5] text-[#0B0D10] shadow-[0_0_20px_rgba(229,229,229,0.3)]' },
-              { key: 'terms',   label: '⚖️ Terms of Use',   active: 'bg-[#D4A574] text-[#0B0D10] shadow-[0_0_20px_rgba(212,165,116,0.3)]' },
+              { key: 'terms',   label: '⚖️ Terms of Use',   active: 'bg-accent-gold text-[#0B0D10] shadow-[0_0_20px_rgba(212,165,116,0.3)]' },
             ].map(tab => (
               <button
                 key={tab.key}
                 onClick={() => { setActiveTab(tab.key); setIconVal(0); }}
-                className={`px-8 py-3 rounded-full font-bold text-xs uppercase tracking-widest transition-all duration-300 ${
+                className={`px-8 py-3 rounded-full font-bold type-label transition-all duration-300 ${
                   activeTab === tab.key
                     ? tab.active
-                    : 'bg-[#16181D]/50 border border-[#E5E5E5]/5 text-[#E5E5E5]/40 hover:text-[#E5E5E5] hover:bg-[#16181D]'
+                    : 'bg-surface-raised/50 border border-border text-text-secondary hover:text-text-primary hover:bg-surface-raised'
                 }`}
               >
                 {tab.label}
@@ -321,8 +313,8 @@ export default function Legal() {
         {/* ── INTRO BLURB ── */}
         <div className="max-w-4xl mx-auto px-6 mb-10">
           <AnimatedSection>
-            <div className="bg-[#16181D]/30 border border-[#E5E5E5]/5 rounded-[32px] p-8 shadow-xl">
-              <p className="text-[#E5E5E5]/50 text-sm leading-relaxed">
+            <div className="bg-surface-raised/30 border border-border rounded-[32px] p-8 shadow-xl">
+              <p className="text-text-secondary text-sm leading-relaxed">
                 {activeTab === 'privacy'
                   ? 'Paper Trade is committed to protecting your privacy. This Privacy Policy explains what information we collect, why we collect it, how we use it, and the choices you have. By using the Platform, you agree to the collection and use of information in accordance with this policy. We do not collect, store, or process any real financial data.'
                   : 'Please read these Terms of Use carefully before using Paper Trade. These Terms govern your access to and use of the Platform. Paper Trade is a simulated trading environment for educational purposes only — no real money, securities, or financial transactions are involved at any time. Your use of the Platform constitutes acceptance of these Terms.'}
@@ -335,7 +327,7 @@ export default function Legal() {
         <div className="max-w-4xl mx-auto px-6 pb-24 space-y-6">
           {sections.map((sec, i) => (
             <AnimatedSection key={`${activeTab}-${i}`} delay={i * 0.05}>
-              <div className={`group relative bg-[#16181D]/30 border ${accentClasses.border} rounded-[32px] p-8 shadow-xl transition-colors duration-300 hover:bg-[#16181D]/60`}>
+              <div className={`group relative bg-surface-raised/30 border ${accentClasses.border} rounded-[32px] p-8 shadow-xl transition-colors duration-300 hover:bg-surface-raised/60`}>
                 {/* Background number */}
                 <span className={`absolute top-5 right-8 text-7xl font-black ${accentClasses.num} opacity-[0.03] select-none pointer-events-none leading-none`}>
                   {sec.num}
@@ -346,9 +338,9 @@ export default function Legal() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-4 mb-3">
                       <span className={`text-[10px] font-black uppercase tracking-widest ${accentClasses.num} opacity-60`}>{sec.num}</span>
-                      <h3 className="text-xl font-bold text-[#E5E5E5] tracking-tight">{sec.title}</h3>
+                      <h3 className="text-xl font-bold text-text-primary tracking-tight">{sec.title}</h3>
                     </div>
-                    <p className="text-[#E5E5E5]/60 text-sm leading-relaxed">{sec.content}</p>
+                    <p className="text-text-primary/60 text-sm leading-relaxed">{sec.content}</p>
                   </div>
                 </div>
               </div>
@@ -357,22 +349,22 @@ export default function Legal() {
 
           {/* ── CONTACT & FOOTER NOTE ── */}
           <AnimatedSection delay={sections.length * 0.05}>
-            <div className="mt-8 bg-[#16181D]/30 border border-[#E5E5E5]/5 rounded-[32px] p-8 text-center shadow-xl">
-              <div className={`w-12 h-12 rounded-2xl ${activeTab === 'privacy' ? 'bg-[#E5E5E5]/10 border border-[#E5E5E5]/20 text-[#E5E5E5]' : 'bg-[#D4A574]/10 border border-[#D4A574]/20 text-[#D4A574]'} flex items-center justify-center mx-auto mb-5`}>
+            <div className="mt-8 bg-surface-raised/30 border border-border rounded-[32px] p-8 text-center shadow-xl">
+              <div className={`w-12 h-12 rounded-lg ${activeTab === 'privacy' ? 'bg-surface-raised border border-border-strong text-text-primary' : 'bg-accent-gold-muted border border-accent-gold/20 text-accent-gold'} flex items-center justify-center mx-auto mb-5`}>
                 <span className="material-symbols-outlined text-[20px]">mail</span>
               </div>
-              <p className="text-[#E5E5E5]/40 text-sm mb-2">Questions about this policy?</p>
+              <p className="text-text-secondary text-sm mb-2">Questions about this policy?</p>
               <a
                 href="mailto:kavyajain1407@gmail.com"
-                className={`font-bold text-sm transition-colors ${activeTab === 'privacy' ? 'text-[#E5E5E5] hover:text-[#E5E5E5]/80' : 'text-[#D4A574] hover:text-[#D4A574]/80'}`}
+                className={`font-bold text-sm transition-colors ${activeTab === 'privacy' ? 'text-text-primary hover:text-text-primary/80' : 'text-accent-gold hover:text-accent-gold/80'}`}
               >
                 kavyajain1407@gmail.com
               </a>
-              <div className="mt-8 pt-6 border-t border-[#E5E5E5]/5">
-                <p className="text-[#E5E5E5]/20 text-[10px] uppercase tracking-widest font-semibold">
+              <div className="mt-8 pt-6 border-t border-border">
+                <p className="text-text-primary/20 type-label font-semibold">
                   Paper Trade &copy; {new Date().getFullYear()} &nbsp;&bull;&nbsp; All rights reserved &nbsp;&bull;&nbsp; Version {VERSION}
                 </p>
-                <p className="text-[#E5E5E5]/15 text-[9px] mt-2">
+                <p className="text-text-primary/15 text-[9px] mt-2">
                   This platform is not affiliated with NSE, BSE, SEBI, or any registered financial institution.
                 </p>
               </div>
@@ -380,7 +372,7 @@ export default function Legal() {
           </AnimatedSection>
         </div>
 
-      </main>
-    </motion.div>
+      </div>
+    </AppShell>
   );
 }

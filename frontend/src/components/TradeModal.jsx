@@ -74,18 +74,18 @@ export default function TradeModal({ symbol, marketData, balance, token, ownedQt
 
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center p-4"
-        style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)' }}
+        className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+        style={{ background: 'rgba(0,0,0,0.80)', backdropFilter: 'blur(8px)' }}
         onClick={onClose}
         aria-modal="true"
         role="dialog"
         aria-label={`Trade ${symbol}`}
       >
         <motion.div
-          initial={{ opacity: 0, scale: 0.97, y: 8 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.97, y: 8 }}
-          transition={{ duration: 0.18, ease: [0.2, 0, 0, 1] }}
+          initial={{ opacity: 0, y: 32 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 24 }}
+          transition={{ duration: 0.28, ease: [0.34, 1.1, 0.64, 1] }}
           className="w-full max-w-[880px] max-h-[92vh] overflow-hidden flex flex-col md:flex-row rounded-lg"
           style={{
             background: 'var(--color-surface)',

@@ -1,31 +1,60 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import Sidebar, { MobileBottomNav } from '../components/Sidebar';
+import { AppShell } from '../components/AppShell';
+import useMarketStatus from '../hooks/useMarketStatus';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
+const SUGGESTED_PROMPTS = [
+  "What is NIFTY 50?",
+  "Explain P&L for beginners",
+  "Best sectors to watch in 2025?",
+  "What is a stop-loss order?",
+  "How does paper trading work?",
+];
+
 export default function AIPage() {
   const navigate = useNavigate();
+  const [userName, setUserName] = useState('');
+  const [avatar, setAvatar] = useState('');
+  const isMarketOpen = useMarketStatus();
   const [messages, setMessages] = useState([
-    { role: 'ai', content: "Hello! I am your AI Trading Assistant. How can I help you analyze the markets today?" }
+    { role: 'ai', content: "Hello! I'm your AI Trading Assistant powered by Market Brain. Ask me anything about markets, stocks, strategies, or how to use this platform." }
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef(null);
+  const inputRef = useRef(null);
+  const token = localStorage.getItem('token');
+
+  useEffect(() => {
+    if (!token) { navigate('/login'); return; }
+    const fetchUser = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/auth/getuser`, { headers: { 'auth-token': token } });
+        const data = await res.json();
+        if (res.ok) {
+          setUserName(data.name ? data.name.split(' ')[0] : 'Trader');
+          setAvatar(data.avatar || '');
+        }
+      } catch { /* ignore */ }
+    };
+    fetchUser();
+  }, [token, navigate]);
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, isTyping]);
 
-  const handleSend = async (e) => {
-    e.preventDefault();
-    if (!input.trim()) return;
+  const handleSend = async (e, overrideText) => {
+    if (e) e.preventDefault();
+    const text = (overrideText || input).trim();
+    if (!text || isTyping) return;
 
-    const userMsg = input.trim();
-    setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
+    setMessages(prev => [...prev, { role: 'user', content: text }]);
     setInput('');
     setIsTyping(true);
 
@@ -33,90 +62,135 @@ export default function AIPage() {
       const res = await fetch(`${API_URL}/api/synthetic/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userMsg })
+        body: JSON.stringify({ message: text })
       });
       const data = await res.json();
       setMessages(prev => [...prev, { role: 'ai', content: data.reply }]);
-    } catch (err) {
+    } catch {
       setMessages(prev => [...prev, { role: 'ai', content: 'Connection to Market Brain lost. Please try again.' }]);
     } finally {
       setIsTyping(false);
+      inputRef.current?.focus();
     }
   };
 
+  const handlePromptClick = (prompt) => {
+    handleSend(null, prompt);
+  };
+
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} className="flex h-screen bg-[#0B0D10] text-[#E5E5E5] font-sans overflow-hidden selection:bg-[#D4A574]/30">
-      <Sidebar />
-      <MobileBottomNav />
-      <main className="flex-1 flex flex-col min-w-0 relative h-full">
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10 pb-32">
-          <div className="max-w-[1200px] mx-auto space-y-8 h-full flex flex-col">
-            
-            <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 shrink-0">
-              <div>
-                <motion.h1 initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="text-4xl md:text-5xl lg:text-[56px] font-light tracking-tight text-[#E5E5E5] leading-none mb-4">
-                  Market <span className="font-bold">Brain</span>.
-                </motion.h1>
-                <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }} className="flex items-center gap-2">
-                  <div className={`w-2.5 h-2.5 rounded-full bg-[#4ADE80] animate-pulse shadow-[0_0_10px_#4ADE80]`} />
-                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#E5E5E5]/40">System Online</p>
-                </motion.div>
-              </div>
-            </header>
-
-            <div className="flex-1 flex flex-col bg-[#16181D]/50 rounded-[32px] overflow-hidden shadow-2xl border border-[#E5E5E5]/5 min-h-[500px]">
-              
-              <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 md:p-10 space-y-8 custom-scrollbar">
-                {messages.map((msg, i) => (
-                  <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[85%] md:max-w-[70%] p-6 rounded-[24px] text-lg leading-relaxed shadow-lg transition-transform hover:-translate-y-1 ${
-                      msg.role === 'user' 
-                        ? 'bg-[#D4A574] text-[#0B0D10] rounded-br-sm' 
-                        : 'bg-[#1F2229] border border-[#E5E5E5]/5 text-[#E5E5E5] rounded-bl-sm'
-                    }`}>
-                      {msg.role === 'ai' && <div className="text-[10px] uppercase tracking-[0.2em] font-black text-[#D4A574] mb-3 flex items-center gap-2"><span className="material-symbols-outlined text-[14px]">smart_toy</span> Brain</div>}
-                      {msg.content}
-                    </div>
-                  </div>
-                ))}
-                {isTyping && (
-                  <div className="flex justify-start">
-                    <div className="bg-[#1F2229] border border-[#E5E5E5]/5 text-[#E5E5E5] rounded-[24px] rounded-bl-sm px-6 py-5 flex gap-2">
-                      <span className="w-2.5 h-2.5 bg-[#D4A574] rounded-full animate-bounce" />
-                      <span className="w-2.5 h-2.5 bg-[#D4A574] rounded-full animate-bounce [animation-delay:-0.15s]" />
-                      <span className="w-2.5 h-2.5 bg-[#D4A574] rounded-full animate-bounce [animation-delay:-0.3s]" />
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="p-6 md:p-8 bg-[#0B0D10]/30 shrink-0 border-t border-[#E5E5E5]/5 backdrop-blur-md">
-                <form onSubmit={handleSend} className="relative flex items-center">
-                  <input
-                    type="text"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    placeholder="Ask about market trends..."
-                    className="w-full bg-[#16181D] border border-[#E5E5E5]/10 rounded-full py-5 pl-8 pr-16 text-lg text-white placeholder-[#E5E5E5]/30 outline-none focus:border-[#D4A574]/50 transition-colors shadow-inner"
-                  />
-                  <button 
-                    type="submit" 
-                    disabled={!input.trim() || isTyping}
-                    className="absolute right-3 w-12 h-12 flex items-center justify-center bg-[#D4A574] hover:bg-[#D4A574]/80 text-[#0B0D10] rounded-full transition-colors disabled:opacity-50 hover-glow"
-                  >
-                    <span className="material-symbols-outlined text-[24px]">send</span>
-                  </button>
-                </form>
-                <div className="mt-4 text-center">
-                   <p className="text-[10px] uppercase tracking-widest text-[#E5E5E5]/20 font-bold">AI analysis is simulated and does not constitute financial advice.</p>
-                </div>
-              </div>
-              
+    <AppShell userName={userName} isMarketOpen={isMarketOpen} avatar={avatar}>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-1 flex flex-col min-w-0 h-full">
+        
+        {/* Page layout: header + chat window filling height */}
+        <div className="flex flex-col h-full max-w-[900px] mx-auto w-full p-4 md:p-8 pb-4 gap-4">
+          
+          {/* Header */}
+          <header className="flex items-end justify-between shrink-0 pb-4 border-b border-border">
+            <div>
+              <motion.h1 initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="type-h2 mb-1">
+                Market Brain
+              </motion.h1>
+              <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-positive animate-pulse" />
+                <p className="type-caption uppercase tracking-widest">AI Assistant Online</p>
+              </motion.div>
             </div>
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-accent/10 border border-accent/20 rounded-full">
+              <span className="material-symbols-outlined text-accent" style={{fontSize: '14px'}}>smart_toy</span>
+              <span className="type-caption text-accent font-medium">Powered by AI</span>
+            </div>
+          </header>
+
+          {/* Chat Window */}
+          <div className="flex-1 bg-surface border border-border rounded-lg overflow-hidden flex flex-col shadow-1 min-h-0">
             
+            {/* Messages */}
+            <div ref={scrollRef} className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 space-y-4">
+              {messages.map((msg, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  {msg.role === 'ai' && (
+                    <div className="w-7 h-7 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0 mr-2 mt-0.5">
+                      <span className="material-symbols-outlined text-accent" style={{fontSize: '14px'}}>smart_toy</span>
+                    </div>
+                  )}
+                  <div className={`max-w-[80%] md:max-w-[70%] px-4 py-3 rounded-lg text-sm leading-relaxed ${
+                    msg.role === 'user'
+                      ? 'bg-accent text-bg rounded-br-sm font-medium'
+                      : 'bg-surface-raised border border-border text-text-primary rounded-bl-sm'
+                  }`}>
+                    {msg.role === 'ai' && (
+                      <p className="type-caption text-accent mb-1.5">Market Brain</p>
+                    )}
+                    {msg.content}
+                  </div>
+                </motion.div>
+              ))}
+
+              {/* Typing indicator */}
+              {isTyping && (
+                <div className="flex justify-start">
+                  <div className="w-7 h-7 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0 mr-2 mt-0.5">
+                    <span className="material-symbols-outlined text-accent" style={{fontSize: '14px'}}>smart_toy</span>
+                  </div>
+                  <div className="bg-surface-raised border border-border rounded-lg rounded-bl-sm px-4 py-3 flex gap-1.5 items-center">
+                    <span className="w-1.5 h-1.5 bg-accent rounded-full animate-bounce" />
+                    <span className="w-1.5 h-1.5 bg-accent rounded-full animate-bounce [animation-delay:-0.15s]" />
+                    <span className="w-1.5 h-1.5 bg-accent rounded-full animate-bounce [animation-delay:-0.3s]" />
+                  </div>
+                </div>
+              )}
+
+              {/* Suggested prompts (shown only at start) */}
+              {messages.length === 1 && !isTyping && (
+                <div className="pt-2">
+                  <p className="type-caption-muted mb-3 text-center">Suggested questions</p>
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    {SUGGESTED_PROMPTS.map((prompt, i) => (
+                      <button
+                        key={i}
+                        onClick={() => handlePromptClick(prompt)}
+                        className="px-3 py-1.5 bg-surface-raised hover:bg-border border border-border rounded-full type-caption text-text-secondary hover:text-text-primary transition-colors"
+                      >
+                        {prompt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Input Bar */}
+            <div className="shrink-0 p-4 border-t border-border bg-surface-raised/40">
+              <form onSubmit={handleSend} className="flex items-center gap-3">
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="Ask about markets, stocks, or strategies..."
+                  className="flex-1 bg-surface border border-border rounded-lg px-4 py-2.5 type-body text-text-primary placeholder-text-tertiary outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors"
+                />
+                <button
+                  type="submit"
+                  disabled={!input.trim() || isTyping}
+                  className="w-10 h-10 flex items-center justify-center bg-accent hover:opacity-90 text-bg rounded-lg transition-all disabled:opacity-30 shrink-0"
+                >
+                  <span className="material-symbols-outlined" style={{fontSize: '18px'}}>send</span>
+                </button>
+              </form>
+              <p className="type-caption-muted text-center mt-2">AI analysis is simulated and does not constitute financial advice.</p>
+            </div>
+
           </div>
         </div>
-      </main>
-    </motion.div>
+      </motion.div>
+    </AppShell>
   );
 }

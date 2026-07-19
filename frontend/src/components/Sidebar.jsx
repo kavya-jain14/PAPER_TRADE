@@ -16,8 +16,10 @@ const NAV_ITEMS = [
   { path: '/dashboard', icon: 'grid_view',  label: 'Dashboard' },
   { path: '/markets',   icon: 'monitoring', label: 'Markets'   },
   { path: '/portfolio', icon: 'pie_chart',  label: 'Portfolio' },
-  { path: '/history',   icon: 'history',    label: 'Ledger'    },
-  { path: '/academy',   icon: 'school',     label: 'Academy'   },
+  { path: '/history',     icon: 'history',            label: 'Ledger'    },
+  { path: '/academy',     icon: 'school',             label: 'Academy'   },
+  { path: '/leaderboard', icon: 'social_leaderboard', label: 'Rankings'  },
+  { path: '/ai',          icon: 'smart_toy',          label: 'AI'        },
 ];
 
 /* ── Mobile bottom navigation ─────────────────────────────────────────────── */
@@ -171,7 +173,7 @@ function Sidebar({ userName = '', isMarketOpen = false, avatar = '' }) {
         {/* Market status */}
         <div className="flex items-center gap-2">
           <span
-            className="w-1.5 h-1.5 rounded-full"
+            className={`w-1.5 h-1.5 rounded-full ${isMarketOpen ? 'animate-pulse' : ''}`}
             style={{ background: isMarketOpen ? 'var(--color-positive)' : 'var(--color-text-tertiary)' }}
             aria-hidden="true"
           />

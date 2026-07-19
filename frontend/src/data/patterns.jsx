@@ -5,7 +5,7 @@ export const patternsData = [
   // ================= 📚 MARKET EDUCATION GUIDE =================
   {
     id: "how_to_study", title: "How to Study the Market", category: "Market Guide", type: "Education",
-    color: "text-[#E5E5E5]", bg: "bg-[#E5E5E5]/10", border: "border-[#E5E5E5]/20",
+    color: "text-text-primary", bg: "bg-surface-raised", border: "border-border-strong",
     desc: "Markets move in 4 phases: Accumulation (smart money buys quietly), Markup (price rises as public buys), Distribution (smart money exits), Markdown (price falls). Identifying which phase a stock is in is step 1 of any trade setup.",
     caseStudy: "Phase 1 (Accumulation): SBIN sideways ₹480-500 for 2 months.\nPhase 2 (Markup): Volume surge + price breaks ₹500, rockets to ₹620.\nPhase 3 (Distribution): Price stalls near ₹620 with high volume but no new highs.\nPhase 4 (Markdown): FII selling triggers breakdown, stock falls to ₹540.",
     exampleStock: "SBIN", exampleDate: "2023-08-01", preTrendDir: -1,
@@ -24,7 +24,7 @@ export const patternsData = [
   // ================= 🕯️ DOJI CANDLE FAMILY =================
   {
     id: "standard_doji", title: "Standard Doji", category: "Single Candle", type: "Indecision Signal",
-    color: "text-[#E5E5E5]", bg: "bg-[#E5E5E5]/10", border: "border-[#E5E5E5]/20",
+    color: "text-text-primary", bg: "bg-surface-raised", border: "border-border-strong",
     desc: "Open and close are almost identical, forming a cross or plus sign. Neither bulls nor bears won the session. A Doji after a strong trend is a WARNING — it signals that the trend is losing momentum and a reversal may be near.",
     caseStudy: "📈 Before: RELIANCE was in a strong uptrend reaching ₹2900.\n📊 Instance: 15 Jan 2024. Opened and closed at almost the exact same price ₹2895, with wicks both ways.\n⚠️ After: Doji appeared at resistance — price consolidated and then reversed to ₹2750 within 10 days.",
     exampleStock: "RELIANCE", exampleDate: "2024-01-15", preTrendDir: 1,
@@ -52,7 +52,7 @@ export const patternsData = [
   },
   {
     id: "longlegged_doji", title: "Long-Legged Doji", category: "Single Candle", type: "High Volatility Signal",
-    color: "text-[#E5E5E5]", bg: "bg-[#E5E5E5]/10", border: "border-[#E5E5E5]/20",
+    color: "text-text-primary", bg: "bg-surface-raised", border: "border-border-strong",
     desc: "Very long upper AND lower wicks with an almost equal open/close. Extreme tug-of-war between bulls and bears. When this appears after a major trend, a big move is loading — the market is deciding its next direction.",
     caseStudy: "📊 Instance: ZOMATO on key results day. Swung from ₹140 low to ₹165 high intraday but closed at ₹152.\n⚠️ Signal: Extreme indecision. Next 3 candles determine direction. A break of the wick high = bullish, break of wick low = bearish.",
     exampleStock: "ZOMATO", exampleDate: "2024-02-14", preTrendDir: 1,
@@ -66,7 +66,7 @@ export const patternsData = [
   },
   {
     id: "spinning_top", title: "Spinning Top", category: "Single Candle", type: "Indecision Warning",
-    color: "text-[#E5E5E5]", bg: "bg-[#E5E5E5]/10", border: "border-[#E5E5E5]/20",
+    color: "text-text-primary", bg: "bg-surface-raised", border: "border-border-strong",
     desc: "A small real body with upper and lower wicks of roughly equal length. Similar to a Doji but with a visible body. It shows that while a direction was decided (small body), neither side fully committed. Context is everything — bearish at a top, bullish at a bottom.",
     caseStudy: "📈 Before: HDFCBANK was in a 3-week uptrend.\n📊 Instance: 5 March 2024. Small green body, equal wicks — market indecision.\n📉 After: Located at a key resistance, it preceded a 6% pullback.",
     exampleStock: "HDFCBANK", exampleDate: "2024-03-05", preTrendDir: 1,

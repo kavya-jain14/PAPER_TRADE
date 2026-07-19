@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -8,17 +8,16 @@ import {
   Area,
   XAxis,
   YAxis,
-  CartesianGrid,
   Tooltip,
-  ReferenceLine,
 } from 'recharts';
 import SmartChart from '../components/SmartChart';
 import { AppShell } from '../components/AppShell';
 import TradeModal from '../components/TradeModal';
+import useAnalytics from '../hooks/useAnalytics';
+import AnalyticsDashboard from '../components/Portfolio/AnalyticsDashboard';
+import useMarketStatus from '../hooks/useMarketStatus';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
-
-const INDICES = ['NIFTY 50', 'SENSEX', 'NIFTY BANK'];
 
 // ⚠️ DANGER ZONE: MASSIVE 5-SEC DELAY TOAST
 const ResetConfirmToast = ({ t, onConfirm }) => {
@@ -32,28 +31,28 @@ const ResetConfirmToast = ({ t, onConfirm }) => {
   }, [countdown]);
 
   return (
-    <div className="flex flex-col gap-6 p-6 font-inter w-full max-w-[500px] border border-red-500/20 bg-[#000000] rounded-3xl">
+    <div className="flex flex-col gap-6 p-6 font-inter w-full max-w-[500px] border border-negative/20 bg-bg rounded-lg shadow-3">
       <div className="text-center">
-        <div className="w-28 h-28 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-red-500/20 shadow-[0_0_30px_rgba(239,68,68,0.2)]">
-           <span className="material-symbols-outlined text-red-500 text-6xl">warning</span>
+        <div className="w-20 h-20 bg-negative/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-negative/20">
+           <span className="material-symbols-outlined text-negative text-5xl">warning</span>
         </div>
-        <h3 className="text-4xl font-extrabold text-white tracking-tight">DANGER ZONE</h3>
-        <p className="text-base text-[#E5E5E5]/70 mt-4 leading-relaxed px-2">
-          This action is irreversible. It will permanently delete all trades, wipe your ledger history, and reset your starting virtual margin.
+        <h3 className="text-2xl font-extrabold text-text-primary tracking-tight">Danger Zone</h3>
+        <p className="type-caption-muted mt-3 leading-relaxed px-2">
+          This is irreversible. It will permanently delete all trades, wipe your ledger history, and reset your virtual margin.
         </p>
       </div>
-      <div className="flex gap-4 mt-6">
-        <button onClick={() => toast.dismiss(t.id)} className="flex-1 py-5 rounded-2xl text-sm font-bold uppercase tracking-widest bg-[#141414] text-[#E5E5E5]/50 hover:text-white hover:bg-[#222222] transition-colors">
+      <div className="flex gap-3 mt-2">
+        <button onClick={() => toast.dismiss(t.id)} className="flex-1 py-3 rounded-lg type-label-body bg-surface-raised text-text-secondary hover:text-text-primary hover:bg-border transition-colors">
           Cancel
         </button>
         <button
           onClick={() => { toast.dismiss(t.id); onConfirm(); }}
           disabled={countdown > 0}
-          className={`flex-1 py-5 rounded-2xl text-sm font-bold uppercase tracking-widest transition-all ${
-            countdown > 0 ? 'bg-red-500/10 text-red-500/30 cursor-not-allowed border border-red-500/10' : 'bg-red-500 text-white shadow-[0_0_25px_rgba(239,68,68,0.4)] hover:scale-[1.02] active:scale-[0.98]'
+          className={`flex-1 py-3 rounded-lg type-label-body transition-all ${
+            countdown > 0 ? 'bg-negative/10 text-negative/30 cursor-not-allowed border border-negative/10' : 'bg-negative text-white hover:opacity-90'
           }`}
         >
-          {countdown > 0 ? `Wait (${countdown}s)` : 'Yes, Nuke Everything'}
+          {countdown > 0 ? `Wait (${countdown}s)` : 'Yes, Reset Everything'}
         </button>
       </div>
     </div>
@@ -66,13 +65,10 @@ const PnLTooltip = ({ active, payload, label }) => {
     const pnl = payload[0]?.value || 0;
     const isProfit = pnl >= 0;
     return (
-      <div className="bg-[#141414] border border-[#222222] rounded-2xl px-4 py-3 shadow-2xl backdrop-blur-xl">
-        <p className="text-[10px] text-[#E5E5E5]/40 uppercase tracking-widest font-bold mb-1">{label}</p>
-        <p className={`text-base font-black font-mono ${isProfit ? 'text-green-400' : 'text-red-400'}`}>
+      <div className="bg-surface border border-border rounded-lg px-3 py-2 shadow-xl">
+        <p className="type-caption text-text-tertiary mb-1">{label}</p>
+        <p className={`type-data-sm ${isProfit ? 'type-positive' : 'type-negative'}`}>
           {isProfit ? '+' : ''}₹{Math.abs(pnl).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-        </p>
-        <p className={`text-[9px] font-bold uppercase mt-0.5 ${isProfit ? 'text-green-500/60' : 'text-red-500/60'}`}>
-          {isProfit ? 'Profit' : 'Loss'}
         </p>
       </div>
     );
@@ -88,24 +84,12 @@ function Portfolio() {
   const [livePrices, setLivePrices] = useState({});
   const [selectedAsset, setSelectedAsset] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isMarketOpen, setIsMarketOpen] = useState(false);
-
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
+  const { metrics, loading: analyticsLoading } = useAnalytics(token);
+  const isMarketOpen = useMarketStatus();
 
-  useEffect(() => {
-    const checkMarketStatus = () => {
-      const istTime = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
-      const day = istTime.getDay();
-      const timeInMinutes = istTime.getHours() * 60 + istTime.getMinutes();
-      setIsMarketOpen(day >= 1 && day <= 5 && timeInMinutes >= 555 && timeInMinutes < 930);
-    };
-    checkMarketStatus();
-    const interval = setInterval(checkMarketStatus, 60000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const fetchUserDataAndPortfolio = async () => {
+  const fetchUserDataAndPortfolio = useCallback(async () => {
     try {
       const userRes = await fetch(`${API_URL}/api/auth/getuser`, { headers: { "Content-Type": "application/json", "auth-token": token } });
       const userData = await userRes.json();
@@ -130,29 +114,29 @@ function Portfolio() {
         }
       }
     } catch (error) { console.error(error); } finally { setIsLoading(false); }
-  };
+  }, [token]);
 
   useEffect(() => {
     if (!token) { navigate('/login'); return; }
     fetchUserDataAndPortfolio();
     const interval = setInterval(fetchUserDataAndPortfolio, 5000);
     return () => clearInterval(interval);
-  }, [token, navigate]);
+  }, [token, navigate, fetchUserDataAndPortfolio]);
 
   const handleReset = () => {
     toast((t) => (
       <ResetConfirmToast 
         t={t} 
         onConfirm={async () => {
-          const tid = toast.loading("Nuking Portfolio...", { style: { background: '#121212', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' } });
+          const tid = toast.loading("Resetting account...");
           try {
             const res = await fetch(`${API_URL}/api/trade/reset`, { method: "DELETE", headers: { "auth-token": token } });
-            if (res.ok) { toast.success("Account Reset Successful!", { id: tid }); fetchUserDataAndPortfolio(); } 
+            if (res.ok) { toast.success("Account reset successfully!", { id: tid }); fetchUserDataAndPortfolio(); } 
             else { toast.error("Failed to reset account", { id: tid }); }
-          } catch (error) { toast.error("Network Error", { id: tid }); }
+          } catch { toast.error("Network Error", { id: tid }); }
         }} 
       />
-    ), { duration: Infinity, position: 'top-center', style: { background: 'transparent', padding: '0px', boxShadow: 'none', borderRadius: '0px', border: 'none', marginTop: '22vh' } });
+    ), { duration: Infinity, position: 'top-center', style: { background: 'transparent', padding: '0px', boxShadow: 'none', border: 'none', marginTop: '20vh' } });
   };
 
   const totalInvested = holdings.reduce((sum, item) => sum + (item.investedValue || (item.avgPrice * item.quantity)), 0);
@@ -172,147 +156,185 @@ function Portfolio() {
     const inv = pos.investedValue || (pos.avgPrice * pos.quantity);
     const cur = ltp * pos.quantity;
     const pnl = parseFloat((cur - inv).toFixed(2));
-    return {
-      name: pos.symbol,
-      pnl,
-      invested: parseFloat(inv.toFixed(2)),
-      current: parseFloat(cur.toFixed(2)),
-    };
+    return { name: pos.symbol, pnl, invested: parseFloat(inv.toFixed(2)), current: parseFloat(cur.toFixed(2)) };
   }).sort((a, b) => b.pnl - a.pnl);
 
   return (
     <AppShell userName={userName} isMarketOpen={isMarketOpen} avatar={avatar}>
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} className="flex-1 flex flex-col min-w-0 relative h-full">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="flex-1 flex flex-col min-w-0 relative h-full">
         <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10 pb-32">
-          <div className="max-w-[1600px] mx-auto space-y-12">
+          <div className="max-w-[1400px] mx-auto space-y-8">
             
             {/* Header */}
-            <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-4 border-b border-border">
               <div>
-                <motion.h1 initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="text-4xl md:text-5xl lg:text-[56px] font-light tracking-tight text-[#E5E5E5] leading-none mb-4">
-                  Portfolio <span className="font-bold">Holdings</span>.
+                <motion.h1 initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="type-h2 mb-1">
+                  Portfolio
                 </motion.h1>
-                <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }} className="flex items-center gap-2">
-                  <div className={`w-2.5 h-2.5 rounded-full ${isMarketOpen ? 'bg-[#4ADE80] animate-pulse shadow-[0_0_10px_#4ADE80]' : 'bg-[#EF4444]'}`} />
-                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#E5E5E5]/40">{isMarketOpen ? 'Live Market' : 'AI Synthetic Mode'}</p>
+                <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="flex items-center gap-2">
+                  <div className={`w-1.5 h-1.5 rounded-full ${isMarketOpen ? 'bg-positive animate-pulse' : 'bg-text-tertiary'}`} />
+                  <p className="type-caption uppercase tracking-widest">{isMarketOpen ? 'Live Prices' : 'AI Synthetic Mode'}</p>
                 </motion.div>
               </div>
-              <button onClick={handleReset} className="flex items-center gap-1.5 text-[10px] font-bold text-red-500/70 hover:text-red-500 uppercase tracking-widest transition-colors bg-red-500/10 px-3 py-1.5 rounded border border-red-500/20 hover-glow">
-                Reset Account
+              <button onClick={handleReset} className="flex items-center gap-1.5 type-caption text-negative/70 hover:text-negative transition-colors bg-negative/5 hover:bg-negative/10 px-3 py-1.5 rounded-lg border border-negative/20">
+                <span className="material-symbols-outlined" style={{fontSize:'16px'}}>restart_alt</span> Reset Account
               </button>
             </header>
 
-            {/* Asymmetric Grid */}
-            <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 md:gap-10">
+            {!analyticsLoading && <AnalyticsDashboard metrics={metrics} />}
+
+            {/* Main Grid */}
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
               
-              {/* Massive Holdings Section (Col Span 7) */}
-              <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3 }} className="xl:col-span-7 flex flex-col">
-                <div className="flex items-center justify-between mb-4 px-2">
-                  <h3 className="text-xs uppercase tracking-[0.2em] font-bold text-[#E5E5E5]/40">Active Positions</h3>
-                </div>
-                
-                <div className="flex-1 bg-[#16181D]/30 rounded-[24px] p-2 flex flex-col gap-1">
-                  {isLoading ? (
-                    <div className="p-10 flex justify-center"><span className="w-8 h-8 border-2 border-[#D4A574] border-t-transparent rounded-full animate-spin" /></div>
-                  ) : holdings.length === 0 ? (
-                    <div className="p-10 text-center">
-                      <span className="material-symbols-outlined text-[#E5E5E5]/20 text-4xl">inbox</span>
-                      <p className="text-[#E5E5E5]/40 font-medium mt-3">Portfolio is empty.</p>
-                      <button onClick={() => navigate('/markets')} className="mt-4 text-xs font-bold text-[#D4A574] uppercase tracking-widest hover:text-[#E5E5E5] transition-colors">Trade Now</button>
-                    </div>
-                  ) : (
-                    holdings.map((pos, i) => {
-                      const liveData = livePrices[pos.symbol] || {};
-                      const currentPrice = liveData.price || pos.avgPrice;
-                      const investedValue = pos.investedValue || (pos.avgPrice * pos.quantity);
-                      const currentValue = currentPrice * pos.quantity;
-                      const pnl = currentValue - investedValue;
-                      const pnlPercent = investedValue > 0 ? ((pnl / investedValue) * 100) : 0;
-                      const isProfit = pnl >= 0;
-                      return (
-                        <div key={i} onClick={() => setSelectedAsset(pos.symbol)} className="flex items-center justify-between p-4 hover:bg-[#1F2229] rounded-[16px] transition-colors cursor-pointer group">
-                          <div className="flex items-center gap-6">
-                            <div className="w-12 h-12 rounded-[12px] bg-[#0B0D10] flex items-center justify-center font-bold text-lg text-[#E5E5E5]/80 group-hover:text-[#D4A574] transition-colors shadow-inner">
-                              {pos.symbol.charAt(0)}
-                            </div>
-                            <div>
-                              <p className="text-lg font-bold text-[#E5E5E5] group-hover:text-[#D4A574] transition-colors tracking-tight">{pos.symbol}</p>
-                              <p className="text-[10px] uppercase tracking-widest text-[#E5E5E5]/40 mt-1">{pos.quantity} units · avg ₹{pos.avgPrice.toLocaleString('en-IN')}</p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-xl font-mono font-bold text-[#E5E5E5]">₹{currentPrice.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
-                            <p className={`text-[12px] font-bold mt-1 ${isProfit ? 'text-[#4ADE80]' : 'text-[#EF4444]'}`}>
-                              {isProfit ? '+' : ''}₹{Math.abs(pnl).toLocaleString('en-IN', {minimumFractionDigits: 0, maximumFractionDigits: 0})} ({isProfit ? '+' : ''}{pnlPercent.toFixed(1)}%)
-                            </p>
-                          </div>
+              {/* Holdings Table */}
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="xl:col-span-7 flex flex-col">
+                <div className="bg-surface border border-border rounded-lg shadow-1 overflow-hidden flex flex-col">
+                  
+                  {/* Table header */}
+                  <div className="grid grid-cols-12 gap-2 p-3 border-b border-border bg-surface-raised/50 type-label text-text-secondary">
+                    <div className="col-span-4">POSITION</div>
+                    <div className="col-span-3 text-right">LTP / AVG</div>
+                    <div className="col-span-3 text-right">VALUE</div>
+                    <div className="col-span-2 text-right">P&L</div>
+                  </div>
+
+                  <div className="min-h-[320px]">
+                    {isLoading ? (
+                      <div className="p-10 flex justify-center">
+                        <span className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                      </div>
+                    ) : holdings.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center p-16 text-center h-full">
+                        <div className="w-16 h-16 rounded-full bg-surface-raised border border-border flex items-center justify-center mb-4 shadow-1">
+                          <span className="material-symbols-outlined text-text-tertiary" style={{ fontSize: '28px' }}>inventory_2</span>
                         </div>
-                      );
-                    })
-                  )}
+                        <h3 className="type-body font-medium text-text-primary mb-1">No open positions</h3>
+                        <p className="type-caption text-text-secondary mb-6 max-w-[200px]">You haven't bought any stocks yet. Head to the markets to place your first trade.</p>
+                        <button onClick={() => navigate('/markets')} className="px-5 py-2.5 bg-accent hover:opacity-90 transition-opacity text-bg type-label rounded-lg font-bold">Browse Markets</button>
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-border">
+                        {holdings.map((pos, i) => {
+                          const liveData = livePrices[pos.symbol] || {};
+                          const currentPrice = liveData.price || pos.avgPrice;
+                          const investedValue = pos.investedValue || (pos.avgPrice * pos.quantity);
+                          const currentValue = currentPrice * pos.quantity;
+                          const pnl = currentValue - investedValue;
+                          const pnlPercent = investedValue > 0 ? ((pnl / investedValue) * 100) : 0;
+                          const isProfit = pnl >= 0;
+                          // Position weight bar
+                          const weightPct = currentTotalValue > 0 ? (currentValue / currentTotalValue) * 100 : 0;
+
+                          return (
+                            <div key={i} onClick={() => setSelectedAsset(pos.symbol)} className="grid grid-cols-12 gap-2 p-3 items-center hover:bg-surface-raised transition-colors cursor-pointer group">
+                              <div className="col-span-4 flex items-center gap-3">
+                                <div className="w-7 h-7 rounded-md bg-surface-overlay border border-border flex items-center justify-center type-label font-bold text-text-primary shrink-0">
+                                  {pos.symbol.charAt(0)}
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="type-body font-medium text-text-primary group-hover:text-accent transition-colors truncate">{pos.symbol}</p>
+                                  <p className="type-caption-muted truncate">{pos.quantity} units</p>
+                                  {/* Weight bar — staggered mount */}
+                                  <div className="w-full h-0.5 bg-border rounded-full mt-1 overflow-hidden">
+                                    <div
+                                      className="h-full bg-accent/60 rounded-full"
+                                      style={{
+                                        width: `${weightPct}%`,
+                                        transition: `width 700ms cubic-bezier(0.2, 0, 0, 1) ${i * 80}ms`,
+                                      }}
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="col-span-3 text-right">
+                                <p className="type-data-sm text-text-primary">₹{currentPrice.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+                                <p className="type-caption-muted">avg ₹{pos.avgPrice.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+                              </div>
+                              <div className="col-span-3 text-right">
+                                <p className="type-data-sm text-text-primary">₹{currentValue.toLocaleString('en-IN', {minimumFractionDigits: 0})}</p>
+                                <p className="type-caption-muted">{weightPct.toFixed(1)}% of port.</p>
+                              </div>
+                              <div className="col-span-2 text-right">
+                                <p className={`type-data-sm ${isProfit ? 'type-positive' : 'type-negative'}`}>
+                                  {isProfit ? '+' : ''}₹{Math.abs(pnl).toLocaleString('en-IN', {minimumFractionDigits: 0})}
+                                </p>
+                                <p className={`type-caption ${isProfit ? 'type-positive' : 'type-negative'}`}>
+                                  {isProfit ? '+' : ''}{pnlPercent.toFixed(1)}%
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </motion.div>
 
-              {/* Portfolio Insights (Col Span 5) */}
-              <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.4 }} className="xl:col-span-5 flex flex-col gap-6">
+              {/* Portfolio Insights */}
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="xl:col-span-5 flex flex-col gap-6">
                 
-                {/* Massive PnL Card */}
-                <div className={`bg-gradient-to-br rounded-[32px] p-8 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5)] relative overflow-hidden group ${isOverallGreen ? 'from-[#002a10] to-[#0B0D10]' : 'from-[#2a0000] to-[#0B0D10]'}`}>
-                   <div className="absolute inset-0 bg-[#ffffff]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-                   
-                   <h3 className={`text-xs uppercase tracking-[0.2em] font-black mb-6 ${isOverallGreen ? 'text-[#4ADE80]/80' : 'text-[#EF4444]/80'}`}>Total P&L</h3>
-                   
-                   <div className="relative z-10 mb-8">
-                     <div className="flex items-end gap-3">
-                       <p className={`text-4xl md:text-5xl font-mono font-black tracking-tight ${isOverallGreen ? 'text-[#4ADE80]' : 'text-[#EF4444]'}`}>
-                         {isOverallGreen ? '+' : ''}₹{Math.abs(totalPnL).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                       </p>
-                     </div>
-                     <p className={`text-lg font-bold mt-2 ${isOverallGreen ? 'text-[#4ADE80]/80' : 'text-[#EF4444]/80'}`}>
-                       {isOverallGreen ? '+' : ''}{pnlPercentage.toFixed(2)}% Overall Returns
-                     </p>
-                   </div>
-
-                   <div className="grid grid-cols-2 gap-6 pt-6 border-t border-[#E5E5E5]/5 relative z-10">
-                     <div>
-                       <p className="text-[10px] uppercase tracking-widest text-[#E5E5E5]/40 font-bold mb-1">Invested Value</p>
-                       <p className="text-xl font-mono font-bold text-[#E5E5E5]">₹{totalInvested.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
-                     </div>
-                     <div>
-                       <p className="text-[10px] uppercase tracking-widest text-[#E5E5E5]/40 font-bold mb-1">Current Value</p>
-                       <p className="text-xl font-mono font-bold text-[#E5E5E5]">₹{currentTotalValue.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
-                     </div>
-                   </div>
+                {/* P&L Summary Card */}
+                <div className={`rounded-lg p-5 border shadow-1 relative overflow-hidden ${isOverallGreen ? 'bg-positive-muted border-positive/20' : 'bg-negative-muted border-negative/20'}`}>
+                  <p className={`type-label mb-3 ${isOverallGreen ? 'type-positive' : 'type-negative'}`}>Unrealized P&L</p>
+                  <p className={`type-data-xl ${isOverallGreen ? 'type-positive' : 'type-negative'}`}>
+                    {isOverallGreen ? '+' : ''}₹{Math.abs(totalPnL).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                  </p>
+                  <p className={`type-caption mt-1 ${isOverallGreen ? 'type-positive' : 'type-negative'}`}>
+                    {isOverallGreen ? '+' : ''}{pnlPercentage.toFixed(2)}% overall return
+                  </p>
+                  
+                  <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-border/30">
+                    <div>
+                      <p className="type-label mb-1">Invested</p>
+                      <p className="type-data-sm text-text-primary">₹{totalInvested.toLocaleString('en-IN', {minimumFractionDigits: 2})}</p>
+                    </div>
+                    <div>
+                      <p className="type-label mb-1">Current</p>
+                      <p className="type-data-sm text-text-primary">₹{currentTotalValue.toLocaleString('en-IN', {minimumFractionDigits: 2})}</p>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Area Chart Card */}
+                {/* P&L by Asset Chart */}
                 {pnlChartData.length > 0 && (
-                  <div className="bg-[#16181D] rounded-[32px] p-8 flex-1 flex flex-col shadow-xl">
-                    <h3 className="text-xs uppercase tracking-[0.2em] font-bold text-[#E5E5E5]/40 mb-6">P&L by Asset</h3>
+                  <div className="bg-surface border border-border rounded-lg p-5 shadow-1 flex-1 flex flex-col">
+                    <p className="type-label mb-4">P&L by Position</p>
                     <div className="flex-1 w-full min-h-[200px]">
                       <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={pnlChartData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
+                        <AreaChart data={pnlChartData} margin={{ top: 6, right: 0, left: -20, bottom: 0 }}>
                           <defs>
                             <linearGradient id="pnlGreen" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#4ADE80" stopOpacity={0.4} />
-                              <stop offset="95%" stopColor="#4ADE80" stopOpacity={0.0} />
+                              <stop offset="5%" stopColor="#22C55E" stopOpacity={0.3} />
+                              <stop offset="95%" stopColor="#22C55E" stopOpacity={0.0} />
                             </linearGradient>
                             <linearGradient id="pnlRed" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#EF4444" stopOpacity={0.4} />
-                              <stop offset="95%" stopColor="#EF4444" stopOpacity={0.0} />
+                              <stop offset="5%" stopColor="#F43F5E" stopOpacity={0.3} />
+                              <stop offset="95%" stopColor="#F43F5E" stopOpacity={0.0} />
                             </linearGradient>
                           </defs>
-                          <XAxis dataKey="name" tick={{ fill: 'rgba(229,229,229,0.3)', fontSize: 9, fontWeight: 700 }} axisLine={false} tickLine={false} dy={10} />
+                          <XAxis dataKey="name" tick={{ fill: 'rgba(229,229,229,0.3)', fontSize: 9, fontWeight: 700 }} axisLine={false} tickLine={false} dy={8} />
                           <YAxis tick={{ fill: 'rgba(229,229,229,0.3)', fontSize: 9, fontWeight: 600 }} axisLine={false} tickLine={false} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
-                          <Tooltip content={<PnLTooltip />} cursor={{ stroke: 'rgba(229,229,229,0.1)', strokeWidth: 1 }} />
-                          <Area type="monotone" dataKey="pnl" stroke={isOverallGreen ? '#4ADE80' : '#EF4444'} strokeWidth={3} fill={isOverallGreen ? 'url(#pnlGreen)' : 'url(#pnlRed)'} />
+                          <Tooltip content={<PnLTooltip />} cursor={{ stroke: 'rgba(229,229,229,0.08)', strokeWidth: 1 }} />
+                          <Area type="monotone" dataKey="pnl" stroke={isOverallGreen ? '#22C55E' : '#F43F5E'} strokeWidth={2} fill={isOverallGreen ? 'url(#pnlGreen)' : 'url(#pnlRed)'} />
                         </AreaChart>
                       </ResponsiveContainer>
                     </div>
                   </div>
                 )}
-              </motion.div>
 
+                {/* Quick margin info */}
+                <div className="bg-surface-raised border border-border rounded-lg p-4 shadow-1 flex items-center justify-between">
+                  <div>
+                    <p className="type-label mb-1">Available Margin</p>
+                    <p className="type-data-md text-text-primary">₹{balance.toLocaleString('en-IN', {minimumFractionDigits: 2})}</p>
+                  </div>
+                  <button onClick={() => navigate('/markets')} className="px-4 py-2 bg-text-primary text-bg rounded-lg type-label-body hover:opacity-90 transition-opacity">
+                    + Trade
+                  </button>
+                </div>
+
+              </motion.div>
             </div>
           </div>
         </div>

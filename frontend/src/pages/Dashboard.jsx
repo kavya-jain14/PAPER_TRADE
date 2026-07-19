@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import toast from 'react-hot-toast';
 import SmartChart from '../components/SmartChart';
 import { AppShell } from '../components/AppShell';
+import useMarketStatus from '../hooks/useMarketStatus';
 import TradeModal from '../components/TradeModal';
-import { Button, Input, Badge, Card, CardHeader, CardTitle, CardContent } from '../components/ui';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
@@ -13,44 +12,37 @@ const TOP_STOCKS = ['RELIANCE', 'TCS', 'HDFCBANK', 'ICICIBANK', 'INFY', 'ITC', '
 const INDICES    = ['NIFTY 50', 'SENSEX', 'NIFTY BANK'];
 const ALL_SYMBOLS = [...TOP_STOCKS, ...INDICES];
 
+const MOCK_NEWS = [
+  { id: 1, title: "FIIs extend buying streak in Indian equities, pump ₹2,400 Cr.", source: "Bloomberg", time: "10 min ago" },
+  { id: 2, title: "Tech stocks rally as IT majors post strong Q3 guidance.", source: "Reuters", time: "1 hr ago" },
+  { id: 3, title: "RBI maintains repo rate at 6.5%, signals robust growth.", source: "Financial Times", time: "2 hrs ago" },
+  { id: 4, title: "Oil prices drop below $75/bbl amid demand concerns.", source: "WSJ", time: "3 hrs ago" },
+];
+
 function Dashboard() {
   const [userName, setUserName] = useState('');
   const [balance, setBalance] = useState(0);
   const [avatar, setAvatar] = useState('');
   const [holdings, setHoldings] = useState([]);
   const [marketPrices, setMarketPrices] = useState({}); 
-  const [newStock, setNewStock] = useState('');
+  const [tradeHistory, setTradeHistory] = useState([]);
   const [selectedAsset, setSelectedAsset] = useState(null);
-  const [isMarketOpen, setIsMarketOpen] = useState(false);
+
   
-  const [watchlist, setWatchlist] = useState(() => {
+  const [watchlist] = useState(() => {
     const saved = localStorage.getItem('paper_watchlist');
     return saved ? JSON.parse(saved) : ['RELIANCE', 'TCS', 'HDFCBANK', 'ICICIBANK'];
   });
+  const [priceFlash, setPriceFlash] = useState({}); // symbol → 'positive' | 'negative'
+  const prevPricesRef = useRef({});
 
   useEffect(() => { localStorage.setItem('paper_watchlist', JSON.stringify(watchlist)); }, [watchlist]);
 
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
+  const isMarketOpen = useMarketStatus();
 
-  useEffect(() => {
-    const checkMarketStatus = () => {
-      const istTime = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
-      const day = istTime.getDay();
-      const timeInMinutes = istTime.getHours() * 60 + istTime.getMinutes();
-      setIsMarketOpen(day >= 1 && day <= 5 && timeInMinutes >= 555 && timeInMinutes < 930);
-    };
-    checkMarketStatus();
-    const interval = setInterval(checkMarketStatus, 60000); 
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    if (!token) { navigate('/login'); return; }
-    fetchUserData();
-  }, [token, navigate]);
-
-  const fetchUserData = async () => {
+  const fetchUserData = useCallback(async () => {
     try {
       const response = await fetch(`${API_URL}/api/auth/getuser`, {
         method: "GET", headers: { "Content-Type": "application/json", "auth-token": token }
@@ -71,9 +63,51 @@ function Dashboard() {
           const portData = await portRes.json();
           setHoldings(portData || []);
         }
-      } catch (_) {}
+      } catch { /* ignore */ }
+
+      try {
+        const histRes = await fetch(`${API_URL}/api/trade/history`, {
+          headers: { "Content-Type": "application/json", "auth-token": token }
+        });
+        if (histRes.ok) {
+          const rawHistData = await histRes.json();
+          
+          // Calculate Win Rate logic
+          const oldestFirst = [...rawHistData].reverse();
+          const costBasis = {};
+          
+          const enriched = oldestFirst.map(t => {
+            const sym = t.symbol;
+            if (!costBasis[sym]) costBasis[sym] = { qty: 0, invested: 0 };
+            
+            if (t.transactionType?.toUpperCase() === 'BUY') {
+              costBasis[sym].qty += t.quantity;
+              costBasis[sym].invested += t.quantity * t.pricePerShare;
+              return { ...t, realizedPnL: null }; 
+            } else {
+              const avgCost = costBasis[sym].qty > 0 
+                 ? costBasis[sym].invested / costBasis[sym].qty 
+                 : t.pricePerShare;
+                 
+              const pnl = (t.pricePerShare - avgCost) * t.quantity;
+              
+              costBasis[sym].qty -= t.quantity;
+              costBasis[sym].invested = costBasis[sym].qty * avgCost; 
+              
+              return { ...t, realizedPnL: pnl };
+            }
+          });
+
+          setTradeHistory(enriched.reverse());
+        }
+      } catch { /* ignore */ }
     } catch (error) { console.error(error); }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    if (!token) { navigate('/login'); return; }
+    fetchUserData();
+  }, [token, navigate, fetchUserData]);
 
   useEffect(() => {
     let abortCtrl = new AbortController();
@@ -90,7 +124,22 @@ function Dashboard() {
         if (!response.ok) return;
         const realPrices = await response.json();
         if (!realPrices || typeof realPrices !== 'object' || Array.isArray(realPrices)) return;
+        
+        // Compute flash directions
+        const flashes = {};
+        Object.entries(realPrices).forEach(([sym, data]) => {
+          const prev = prevPricesRef.current[sym]?.price;
+          const curr = data?.price;
+          if (prev !== undefined && curr !== undefined && curr !== prev) {
+            flashes[sym] = curr > prev ? 'positive' : 'negative';
+          }
+        });
+        prevPricesRef.current = realPrices;
         setMarketPrices(prev => ({ ...prev, ...realPrices }));
+        if (Object.keys(flashes).length > 0) {
+          setPriceFlash(flashes);
+          setTimeout(() => setPriceFlash({}), 450);
+        }
       } catch (error) {
         if (error.name !== 'AbortError') console.error("Market error");
       }
@@ -107,36 +156,37 @@ function Dashboard() {
     return () => window.removeEventListener('open-trade-modal', handleOpenModal);
   }, []);
 
-  const addToWatchlist = (e) => {
-    e.preventDefault();
-    const sym = newStock.trim().toUpperCase();
-    if (sym && ALL_SYMBOLS.includes(sym) && !watchlist.includes(sym)) {
-      setWatchlist([...watchlist, sym]);
-      setNewStock('');
-      toast.success(`${sym} added to Watchlist`);
-    } else if (!sym) {
-      toast.error('Enter a symbol');
-    } else if (!ALL_SYMBOLS.includes(sym)) {
-      toast.error('Symbol not found.');
-    } else {
-      toast.error('Already in watchlist');
-    }
-  };
 
-  const stocksWithChange = TOP_STOCKS.map(sym => {
-    const liveData = marketPrices[sym] || {};
-    const price = liveData.price || 0;
-    const change = liveData.change || 0;
-    return { symbol: sym, price, change, prevClose: liveData.prevClose || price };
-  }).sort((a,b) => b.change - a.change);
+  // Metrics Calculations
+  let holdingsValue = 0;
+  let todaysPnL = 0;
+  
+  holdings.forEach(h => {
+    const liveData = marketPrices[h.symbol] || {};
+    const price = liveData.price || h.avgPrice;
+    holdingsValue += price * h.quantity;
+    const change = liveData.change || 0; // % change today
+    const prevClose = price / (1 + (change/100));
+    todaysPnL += (price - prevClose) * h.quantity;
+  });
 
-  const gainers = stocksWithChange.filter(s => s.change >= 0).slice(0, 4);
+  const portfolioValue = balance + holdingsValue;
+  
+  const sellTrades = tradeHistory.filter(t => t.transactionType?.toUpperCase() === 'SELL');
+  const profitableSells = sellTrades.filter(t => (t.realizedPnL || 0) > 0).length;
+  const winRate = sellTrades.length > 0 ? ((profitableSells / sellTrades.length) * 100).toFixed(0) : 0;
+
+  // Sentiment Calculation
+  const advancing = TOP_STOCKS.filter(sym => (marketPrices[sym]?.change || 0) >= 0).length;
+  const declining = TOP_STOCKS.length - advancing;
+  const sentimentScore = advancing / TOP_STOCKS.length;
+  const sentimentLabel = sentimentScore > 0.6 ? 'Bullish' : sentimentScore < 0.4 ? 'Bearish' : 'Neutral';
+  const sentimentColor = sentimentScore > 0.6 ? 'text-positive' : sentimentScore < 0.4 ? 'text-negative' : 'text-warning';
 
   const istTime = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
   const currentHour = istTime.getHours();
   const greeting = currentHour < 12 ? 'Good morning' : currentHour < 18 ? 'Good afternoon' : 'Good evening';
   
-  const tickerItems = [...INDICES, ...TOP_STOCKS.slice(0, 5)];
   const mainChartAsset = 'NIFTY 50';
   const mainChartData = marketPrices[mainChartAsset] || {};
   const mainChartIsGreen = (mainChartData.change || 0) >= 0;
@@ -144,165 +194,238 @@ function Dashboard() {
   return (
     <AppShell userName={userName} isMarketOpen={isMarketOpen} avatar={avatar}>
       <div className="flex-1 flex flex-col min-w-0 relative h-full">
-        {/* Minimal Ticker */}
-        <div className="w-full border-b border-border bg-surface overflow-hidden whitespace-nowrap py-2 shrink-0 flex items-center z-20">
-          <div className="flex gap-12 animate-ticker shrink-0 w-max font-mono text-label">
-            {tickerItems.map((sym, i) => {
-              const liveData = marketPrices[sym] || {};
-              const price = liveData.price || 0;
-              const change = liveData.change || 0;
-              return (
-                <span key={`${sym}-${i}`} className="flex items-center gap-2">
-                  <span className="text-text-tertiary">{sym}</span>
-                  <span className="font-medium">{price > 0 ? price.toLocaleString('en-IN', {minimumFractionDigits: 2}) : '---'}</span>
-                  <span className={change >= 0 ? 'text-positive font-medium' : 'text-negative font-medium'}>{change >= 0 ? '▲' : '▼'}{Math.abs(change).toFixed(2)}%</span>
-                </span>
-              )
-            })}
-             {tickerItems.map((sym, i) => {
-              const liveData = marketPrices[sym] || {};
-              const price = liveData.price || 0;
-              const change = liveData.change || 0;
-              return (
-                <span key={`dup-${sym}-${i}`} className="flex items-center gap-2">
-                  <span className="text-text-tertiary">{sym}</span>
-                  <span className="font-medium">{price > 0 ? price.toLocaleString('en-IN', {minimumFractionDigits: 2}) : '---'}</span>
-                  <span className={change >= 0 ? 'text-positive font-medium' : 'text-negative font-medium'}>{change >= 0 ? '▲' : '▼'}{Math.abs(change).toFixed(2)}%</span>
-                </span>
-              )
-            })}
-          </div>
-        </div>
-
         <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10 pb-32">
-          <div className="max-w-[1200px] mx-auto space-y-10">
+          <div className="max-w-[1400px] mx-auto space-y-8">
             
-            {/* Header: Typography focused */}
-            <header className="border-b border-border pb-8">
+            {/* HERO & QUICK ACTIONS */}
+            <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-border">
               <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
-                <h1 className="type-h2 mb-6">{greeting}, {userName}.</h1>
-                <div className="flex flex-wrap items-center gap-8">
-                  <div>
-                    <p className="type-label mb-2">Available Margin</p>
-                    <p className="type-data-xl">₹{balance.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
-                  </div>
-                  <div className="hidden md:block w-px h-8 bg-border" />
-                  <div>
-                    <p className="type-label mb-2">Market Status</p>
-                    <div className="flex items-center gap-2">
-                      <span className={`w-1.5 h-1.5 rounded-full ${isMarketOpen ? 'bg-positive' : 'bg-text-tertiary'}`} />
-                      <span className="type-body">{isMarketOpen ? 'Live' : 'Closed'}</span>
-                    </div>
-                  </div>
+                <h1 className="type-h2 mb-2">{greeting}, {userName}.</h1>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className={`w-1.5 h-1.5 rounded-full ${isMarketOpen ? 'bg-positive animate-pulse' : 'bg-text-tertiary'}`} />
+                  <span className="type-caption uppercase tracking-widest">{isMarketOpen ? 'Market is Open' : 'AI Synthetic Mode'}</span>
                 </div>
+              </motion.div>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }} className="flex gap-3">
+                <button onClick={() => navigate('/portfolio')} className="px-4 py-2 bg-surface-raised hover:bg-border border border-border rounded-lg type-label-body text-text-primary transition-colors flex items-center gap-2">
+                  <span className="material-symbols-outlined" style={{fontSize: '16px'}}>account_balance_wallet</span> Deposit
+                </button>
+                <button onClick={() => navigate('/markets')} className="px-4 py-2 bg-text-primary hover:bg-accent-hover text-bg border border-transparent rounded-lg type-label-body transition-colors flex items-center gap-2">
+                  <span className="material-symbols-outlined" style={{fontSize: '16px'}}>add</span> Trade
+                </button>
               </motion.div>
             </header>
 
-            {/* Main Layout Grid */}
-            <div className="grid grid-cols-1 xl:grid-cols-12 gap-10 md:gap-16 pt-2">
+            {/* BALANCE CARDS */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <motion.div initial={{opacity:0, y: 10}} animate={{opacity:1, y:0}} transition={{delay: 0.1}} className="bg-surface-raised border border-border rounded-lg p-5 shadow-1">
+                <p className="type-label mb-2">Total Value</p>
+                <p className="type-data-xl">₹{portfolioValue.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+              </motion.div>
+              <motion.div initial={{opacity:0, y: 10}} animate={{opacity:1, y:0}} transition={{delay: 0.15}} className="bg-surface-raised border border-border rounded-lg p-5 shadow-1">
+                <p className="type-label mb-2">Available Margin</p>
+                <p className="type-data-lg text-text-primary mt-1">₹{balance.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+              </motion.div>
+              <motion.div initial={{opacity:0, y: 10}} animate={{opacity:1, y:0}} transition={{delay: 0.2}} className="bg-surface-raised border border-border rounded-lg p-5 shadow-1">
+                <p className="type-label mb-2">Today's P&L (Unrealized)</p>
+                <p className={`type-data-lg mt-1 ${todaysPnL >= 0 ? 'type-positive' : 'type-negative'}`}>
+                  {todaysPnL >= 0 ? '+' : ''}₹{todaysPnL.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                </p>
+              </motion.div>
+              <motion.div initial={{opacity:0, y: 10}} animate={{opacity:1, y:0}} transition={{delay: 0.25}} className="bg-surface-raised border border-border rounded-lg p-5 shadow-1 relative overflow-hidden group">
+                <p className="type-label mb-2">Win Rate</p>
+                <p className="type-data-lg text-text-primary mt-1">{winRate}% <span className="type-data-sm text-text-tertiary font-normal tracking-normal ml-1">of {sellTrades.length} closed</span></p>
+                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                  <span className="material-symbols-outlined" style={{fontSize: '48px'}}>sports_score</span>
+                </div>
+              </motion.div>
+            </div>
+
+            {/* MAIN GRID */}
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
               
-              {/* Primary Content (Chart & Insights) */}
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="xl:col-span-8 flex flex-col gap-10">
+              {/* LEFT COLUMN: Chart & Trades */}
+              <div className="xl:col-span-8 flex flex-col gap-8">
                 
-                {/* Live Chart */}
-                <div>
-                  <div className="flex items-end justify-between mb-4">
-                    <div>
-                      <h2 className="type-subtitle mb-1">{mainChartAsset}</h2>
-                      <div className="flex items-baseline gap-3">
-                        <span className="type-data-md">₹{mainChartData.price > 0 ? mainChartData.price.toLocaleString('en-IN', {minimumFractionDigits: 2}) : '—'}</span>
-                        <span className={`type-caption ${mainChartIsGreen ? 'type-positive' : 'type-negative'}`}>{mainChartIsGreen ? '+' : ''}{mainChartData.change || 0}% today</span>
-                      </div>
-                    </div>
-                    <Button size="sm" variant="secondary" onClick={() => setSelectedAsset(mainChartAsset)}>Trade</Button>
-                  </div>
-                  <Card className="h-[420px] p-0 overflow-hidden">
-                    <SmartChart symbol={mainChartAsset} currentPrice={mainChartData.price} isGreen={mainChartIsGreen} />
-                  </Card>
+                {/* Index Ticker Bar */}
+                <div className="grid grid-cols-3 gap-4">
+                  {INDICES.map((idx, i) => {
+                    const data = marketPrices[idx] || {};
+                    const isUp = (data.change || 0) >= 0;
+                    return (
+                      <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay: 0.3 + (i*0.05)}} key={idx} onClick={() => setSelectedAsset(idx)} className="bg-surface border border-border rounded-lg p-3 flex flex-col cursor-pointer hover:border-border-strong transition-colors">
+                        <p className="type-label text-text-secondary">{idx}</p>
+                        <div className="flex items-baseline justify-between mt-1">
+                          <p className="type-data-md">{(data.price || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</p>
+                          <p className={`type-caption ${isUp ? 'type-positive' : 'type-negative'}`}>{isUp ? '+' : ''}{(data.change || 0).toFixed(2)}%</p>
+                        </div>
+                      </motion.div>
+                    )
+                  })}
                 </div>
 
-                {/* Market Insight */}
-                {gainers[0] && (
-                  <div className="pt-6 border-t border-border">
-                    <p className="type-label mb-3">Market Signal</p>
-                    <div className="flex items-start justify-between gap-6">
-                      <div className="flex-1">
-                        <p className="type-subtitle mb-2">
-                          <span className="type-positive">{gainers[0].symbol}</span> {gainers[0].change > 0 ? `+${gainers[0].change.toFixed(2)}%` : `${gainers[0].change.toFixed(2)}%`} today
-                        </p>
-                        <p className="type-body-secondary max-w-md">
-                          Institutional accumulation detected. Watch key breakout levels in the next session.
-                        </p>
+                {/* Main Chart */}
+                <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay: 0.4}} className="bg-surface border border-border rounded-lg shadow-1 overflow-hidden flex flex-col">
+                  <div className="p-4 border-b border-border flex items-center justify-between bg-surface-raised/50">
+                    <div>
+                      <h2 className="type-subtitle">{mainChartAsset}</h2>
+                      <div className="flex items-baseline gap-2 mt-0.5">
+                        <span className="type-data-md">₹{mainChartData.price > 0 ? mainChartData.price.toLocaleString('en-IN', {minimumFractionDigits: 2}) : '—'}</span>
+                        <span className={`type-caption ${mainChartIsGreen ? 'type-positive' : 'type-negative'}`}>{mainChartIsGreen ? '+' : ''}{mainChartData.change || 0}%</span>
                       </div>
-                      <Button size="sm" onClick={() => setSelectedAsset(gainers[0].symbol)}>Trade</Button>
                     </div>
-                  </div>
-                )}
-
-              </motion.div>
-
-              {/* Secondary Content (Watchlist & Portfolio) */}
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="xl:col-span-4 flex flex-col gap-10">
-                
-                {/* Watchlist */}
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="type-label">Watchlist</p>
-                    <button className="type-caption-muted hover:text-text-primary transition-colors" aria-label="Add to watchlist">
-                      <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-md)' }}>add</span>
+                    <button onClick={() => setSelectedAsset(mainChartAsset)} className="text-xs font-bold uppercase tracking-widest text-text-secondary hover:text-text-primary flex items-center gap-1 transition-colors">
+                      <span className="material-symbols-outlined" style={{fontSize: '16px'}}>open_in_new</span> Expand
                     </button>
                   </div>
-                  
-                  <div className="flex flex-col border-t border-border">
-                    {watchlist.slice(0, 6).map((sym) => {
-                      const data = marketPrices[sym] || {};
-                      const isUp = (data.change || 0) >= 0;
-                      return (
-                        <button key={sym} onClick={() => setSelectedAsset(sym)}
-                          className="flex items-center justify-between py-3.5 border-b border-border group hover:bg-surface-raised -mx-1 px-1 rounded transition-colors text-left"
-                        >
-                          <div>
-                            <p className="type-body group-hover:text-accent transition-colors">{sym}</p>
-                            <p className="type-caption-muted">NSE</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="type-data-sm" style={{ color: 'var(--color-text-primary)' }}>₹{(data.price || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</p>
-                            <p className={`type-caption ${isUp ? 'type-positive' : 'type-negative'}`}>{isUp ? '+' : ''}{(data.change || 0).toFixed(2)}%</p>
-                          </div>
-                        </button>
-                      )
-                    })}
+                  <div className="h-[380px] w-full">
+                    <SmartChart symbol={mainChartAsset} currentPrice={mainChartData.price} isGreen={mainChartIsGreen} />
                   </div>
-                </div>
+                </motion.div>
 
-                {/* Open Positions */}
-                <div>
-                  <p className="type-label mb-3">Open Positions</p>
-                  <div className="flex flex-col border-t border-border">
-                    {holdings.length === 0 ? (
-                      <p className="type-caption-muted py-4">No open positions.</p>
+                {/* Recent Trades Feed */}
+                <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay: 0.5}}>
+                  <div className="flex items-center justify-between mb-4">
+                    <p className="type-label">Recent Executions</p>
+                    <button onClick={() => navigate('/history')} className="text-xs font-bold text-text-secondary hover:text-text-primary transition-colors flex items-center gap-1">
+                      View Ledger <span className="material-symbols-outlined" style={{fontSize: '14px'}}>arrow_forward</span>
+                    </button>
+                  </div>
+                  <div className="bg-surface border border-border rounded-lg shadow-1 overflow-hidden">
+                    {tradeHistory.length === 0 ? (
+                      <p className="type-caption-muted p-6 text-center">No recent executions.</p>
                     ) : (
-                      holdings.slice(0,4).map((h, i) => (
-                        <div key={i} className="flex justify-between items-center py-3.5 border-b border-border">
-                           <div>
-                             <p className="type-body">{h.symbol}</p>
-                             <p className="type-caption-muted">{h.quantity} units</p>
-                           </div>
-                           <div className="text-right">
-                             <p className="type-data-sm">Avg ₹{h.avgPrice.toLocaleString('en-IN')}</p>
-                           </div>
-                        </div>
-                      ))
+                      <div className="divide-y divide-border">
+                        {tradeHistory.slice(0, 4).map((trade, i) => {
+                          const isBuy = trade.transactionType?.toUpperCase() === 'BUY';
+                          const pnl = trade.realizedPnL || 0;
+                          const isProfit = pnl > 0;
+                          return (
+                            <div key={i} className="flex items-center justify-between p-4 hover:bg-surface-raised/50 transition-colors">
+                              <div className="flex items-center gap-4">
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-[10px] uppercase ${isBuy ? 'bg-accent-gold-muted text-accent-gold' : isProfit ? 'bg-positive-muted type-positive' : 'bg-negative-muted type-negative'}`}>
+                                  {isBuy ? 'Buy' : 'Sell'}
+                                </div>
+                                <div>
+                                  <p className="type-body font-medium">{trade.symbol}</p>
+                                  <p className="type-caption-muted">{new Date(trade.date || trade.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</p>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <p className="type-data-sm text-text-primary">{trade.quantity} @ ₹{Number(trade.pricePerShare).toLocaleString('en-IN', {minimumFractionDigits: 2})}</p>
+                                {!isBuy && (
+                                  <p className={`type-caption ${isProfit ? 'type-positive' : 'type-negative'}`}>
+                                    {isProfit ? '+' : ''}₹{pnl.toLocaleString('en-IN', {minimumFractionDigits: 2})}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
                     )}
                   </div>
-                  {holdings.length > 0 && (
-                    <Button variant="ghost" size="sm" className="mt-3" onClick={() => navigate('/portfolio')}>
-                      View Portfolio
-                    </Button>
-                  )}
-                </div>
+                </motion.div>
 
-              </motion.div>
+              </div>
+
+              {/* RIGHT COLUMN: Watchlist, Portfolio, News */}
+              <div className="xl:col-span-4 flex flex-col gap-8">
+                
+                {/* Market Sentiment */}
+                <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay: 0.4}} className="bg-surface border border-border rounded-lg p-5 shadow-1">
+                  <p className="type-label mb-4">Market Sentiment</p>
+                  <div className="flex items-end justify-between mb-2">
+                    <p className={`text-2xl font-black tracking-tight ${sentimentColor}`}>{sentimentLabel}</p>
+                    <p className="type-caption-muted">{advancing} Adv / {declining} Dec</p>
+                  </div>
+                  {/* Gauge bar */}
+                  <div className="w-full h-1.5 bg-border rounded-full overflow-hidden flex">
+                    <div className="h-full bg-positive transition-all duration-1000" style={{ width: `${(advancing / TOP_STOCKS.length) * 100}%` }}></div>
+                    <div className="h-full bg-negative transition-all duration-1000" style={{ width: `${(declining / TOP_STOCKS.length) * 100}%` }}></div>
+                  </div>
+                </motion.div>
+
+                {/* Watchlist */}
+                <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay: 0.5}} className="bg-surface border border-border rounded-lg shadow-1 flex flex-col">
+                  <div className="p-4 border-b border-border flex items-center justify-between">
+                    <p className="type-label">Watchlist</p>
+                    <button className="text-text-tertiary hover:text-text-primary transition-colors"><span className="material-symbols-outlined" style={{fontSize: '18px'}}>add</span></button>
+                  </div>
+                  <div className="divide-y divide-border">
+                    {watchlist.slice(0, 5).map((sym) => {
+                      const data = marketPrices[sym] || {};
+                      const isUp = (data.change || 0) >= 0;
+                      const flash = priceFlash[sym];
+                      return (
+                        <div key={sym} onClick={() => setSelectedAsset(sym)} className="flex items-center justify-between p-3.5 hover:bg-surface-raised transition-colors cursor-pointer group">
+                          <div>
+                            <p className="type-body font-medium group-hover:text-text-primary text-text-secondary transition-colors">{sym}</p>
+                          </div>
+                          <div className="text-right flex items-center gap-4">
+                            <p className={`type-data-md rounded px-1 ${flash ? `flash-${flash}` : ''}`}>₹{(data.price || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</p>
+                            <div className={`w-14 text-right type-caption ${isUp ? 'type-positive' : 'type-negative'}`}>
+                              {isUp ? '+' : ''}{(data.change || 0).toFixed(2)}%
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+
+                  </div>
+                </motion.div>
+
+                {/* Open Positions */}
+                <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay: 0.6}} className="bg-surface border border-border rounded-lg shadow-1 flex flex-col">
+                  <div className="p-4 border-b border-border flex items-center justify-between">
+                    <p className="type-label">Open Positions</p>
+                    <button onClick={() => navigate('/portfolio')} className="text-text-tertiary hover:text-text-primary transition-colors"><span className="material-symbols-outlined" style={{fontSize: '18px'}}>open_in_new</span></button>
+                  </div>
+                  <div className="divide-y divide-border">
+                    {holdings.length === 0 ? (
+                      <p className="type-caption-muted p-6 text-center">No open positions.</p>
+                    ) : (
+                      holdings.slice(0,3).map((h, i) => {
+                        const data = marketPrices[h.symbol] || {};
+                        const currentVal = (data.price || h.avgPrice) * h.quantity;
+                        const pnl = currentVal - (h.avgPrice * h.quantity);
+                        const isUp = pnl >= 0;
+                        return (
+                          <div key={i} onClick={() => setSelectedAsset(h.symbol)} className="flex items-center justify-between p-3.5 hover:bg-surface-raised transition-colors cursor-pointer group">
+                             <div>
+                               <p className="type-body font-medium group-hover:text-text-primary text-text-secondary">{h.symbol}</p>
+                               <p className="type-caption-muted">{h.quantity} units</p>
+                             </div>
+                             <div className="text-right">
+                               <p className="type-data-md">₹{currentVal.toLocaleString('en-IN', {minimumFractionDigits: 0})}</p>
+                               <p className={`type-caption ${isUp ? 'type-positive' : 'type-negative'}`}>
+                                 {isUp ? '+' : ''}₹{pnl.toLocaleString('en-IN', {minimumFractionDigits: 0})}
+                               </p>
+                             </div>
+                          </div>
+                        )
+                      })
+                    )}
+                  </div>
+                </motion.div>
+
+                {/* News Panel */}
+                <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay: 0.7}}>
+                  <p className="type-label mb-3">Top Stories</p>
+                  <div className="space-y-3">
+                    {MOCK_NEWS.map(news => (
+                      <div key={news.id} className="p-3 bg-surface hover:bg-surface-raised border border-border rounded-lg transition-colors cursor-pointer group">
+                        <p className="type-body leading-tight text-text-secondary group-hover:text-text-primary transition-colors mb-2">{news.title}</p>
+                        <div className="flex items-center justify-between">
+                          <p className="type-caption-muted">{news.source}</p>
+                          <p className="type-caption-muted">{news.time}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+
+              </div>
             </div>
           </div>
         </div>

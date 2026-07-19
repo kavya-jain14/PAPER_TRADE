@@ -46,7 +46,7 @@ const normalizeTime = (t) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // 🕯️  CANDLESTICK EXPAND MODAL — full OHLC chart with live SSE updates
 // ─────────────────────────────────────────────────────────────────────────────
-export const CandlestickModal = ({ symbol, onClose, isGreen }) => {
+export const CandlestickModal = ({ symbol, onClose }) => {
   const containerRef = useRef(null);
   const chartRef     = useRef(null);
   const seriesRef    = useRef(null);
@@ -182,16 +182,16 @@ export const CandlestickModal = ({ symbol, onClose, isGreen }) => {
                 close: Number(c.close),
               });
               setCandleCount(n => n + 1);
-            } catch (_) {}
+            } catch { /* ignore */ }
           }
         }
-      } catch (_) {}
+      } catch { /* ignore */ }
     };
 
     return () => {
       ro.disconnect();
       sse.close();
-      if (chartRef.current) { try { chartRef.current.remove(); } catch (_) {} }
+      if (chartRef.current) { try { chartRef.current.remove(); } catch { /* ignore */ } }
       chartRef.current  = null;
       seriesRef.current = null;
     };
@@ -209,11 +209,11 @@ export const CandlestickModal = ({ symbol, onClose, isGreen }) => {
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#222222] bg-[#000000] shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-[#000000] shrink-0">
           <div className="flex items-center gap-4">
             <div>
-              <h2 className="text-xl font-black text-[#E5E5E5] tracking-tight">{symbol}</h2>
-              <p className="text-[10px] text-[#E5E5E5]/40 uppercase tracking-widest font-semibold mt-0.5">
+              <h2 className="text-xl font-black text-text-primary tracking-tight">{symbol}</h2>
+              <p className="text-[10px] text-text-secondary uppercase tracking-widest font-semibold mt-0.5">
                 Candlestick Chart • {isMarketOpen() ? 'Live Market' : 'AI Synthetic'} • 5m Candles
               </p>
             </div>
@@ -227,7 +227,7 @@ export const CandlestickModal = ({ symbol, onClose, isGreen }) => {
                 <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${isMarketOpen() ? 'bg-green-400' : 'bg-purple-400'}`} />
                 {isMarketOpen() ? 'Live' : 'AI Sim'}
               </div>
-              <div className="px-2.5 py-1 rounded-lg bg-[#141414] border border-[#222222] text-[9px] font-black text-[#E5E5E5]/50 uppercase tracking-widest">
+              <div className="px-2.5 py-1 rounded-lg bg-[#141414] border border-border text-[9px] font-black text-text-secondary uppercase tracking-widest">
                 {candleCount} candles
               </div>
             </div>
@@ -237,20 +237,20 @@ export const CandlestickModal = ({ symbol, onClose, isGreen }) => {
           {bias && (
             <div className="hidden md:flex items-center gap-5 mr-8">
               <div className="text-center">
-                <p className="text-[8px] text-[#E5E5E5]/30 uppercase tracking-widest font-bold">Regime</p>
+                <p className="text-[8px] text-text-primary/30 uppercase tracking-widest font-bold">Regime</p>
                 <p className="text-[11px] font-black mt-0.5" style={{ color: regimeColor }}>
                   {bias.regime?.replace('_', ' ')}
                 </p>
               </div>
               <div className="text-center">
-                <p className="text-[8px] text-[#E5E5E5]/30 uppercase tracking-widest font-bold">RSI</p>
+                <p className="text-[8px] text-text-primary/30 uppercase tracking-widest font-bold">RSI</p>
                 <p className={`text-[11px] font-black font-mono mt-0.5 ${
-                  bias.rsi < 30 ? 'text-green-400' : bias.rsi > 70 ? 'text-red-400' : 'text-[#E5E5E5]/70'
+                  bias.rsi < 30 ? 'text-green-400' : bias.rsi > 70 ? 'text-red-400' : 'text-text-primary/70'
                 }`}>{bias.rsi?.toFixed(1)}</p>
               </div>
               {bias.bullishProbability != null && (
                 <div className="text-center">
-                  <p className="text-[8px] text-[#E5E5E5]/30 uppercase tracking-widest font-bold">Bull%</p>
+                  <p className="text-[8px] text-text-primary/30 uppercase tracking-widest font-bold">Bull%</p>
                   <p className={`text-[11px] font-black font-mono mt-0.5 ${bias.bullishProbability > 50 ? 'text-green-400' : 'text-red-400'}`}>
                     {bias.bullishProbability}%
                   </p>
@@ -261,7 +261,7 @@ export const CandlestickModal = ({ symbol, onClose, isGreen }) => {
 
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-xl bg-[#141414] hover:bg-[#222222] border border-[#222222] flex items-center justify-center text-[#E5E5E5]/50 hover:text-[#E5E5E5] transition-colors"
+            className="w-9 h-9 rounded-lg bg-[#141414] hover:bg-[#222222] border border-border flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors"
           >
             <span className="material-symbols-outlined text-[18px]">close</span>
           </button>
@@ -274,10 +274,10 @@ export const CandlestickModal = ({ symbol, onClose, isGreen }) => {
           {loading && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[#000000]">
               <div className="relative w-10 h-10">
-                <div className="absolute inset-0 border-2 border-[#222222] rounded-full" />
+                <div className="absolute inset-0 border-2 border-border rounded-full" />
                 <div className="absolute inset-0 border-2 border-t-[#FFFFFF] rounded-full animate-spin" />
               </div>
-              <p className="text-[11px] text-[#E5E5E5]/30 uppercase tracking-widest font-bold">
+              <p className="text-[11px] text-text-primary/30 uppercase tracking-widest font-bold">
                 Loading candlestick data...
               </p>
             </div>
@@ -285,13 +285,13 @@ export const CandlestickModal = ({ symbol, onClose, isGreen }) => {
         </div>
 
         {/* Footer note */}
-        <div className="px-6 py-2.5 border-t border-[#222222] bg-[#000000] flex items-center justify-between shrink-0">
-          <p className="text-[10px] text-[#E5E5E5]/20 font-medium">
+        <div className="px-6 py-2.5 border-t border-border bg-[#000000] flex items-center justify-between shrink-0">
+          <p className="text-[10px] text-text-primary/20 font-medium">
             {isMarketOpen()
               ? '🟢 Live NSE data via Yahoo Finance • Refreshes every 5 seconds'
               : '🟣 AI synthetic engine • Powered by MarketBrain pattern recognition • Educational use only'}
           </p>
-          <p className="text-[10px] text-[#E5E5E5]/20 font-mono">Click anywhere outside to close</p>
+          <p className="text-[10px] text-text-primary/20 font-mono">Click anywhere outside to close</p>
         </div>
       </div>
     </div>
@@ -397,7 +397,7 @@ const SmartChart = ({ symbol, currentPrice, isGreen, mini = false }) => {
       processAndSetData(data);
       setMode('REAL');
       setLoading(false);
-    } catch (err) {
+    } catch {
       loadAIData(); // Fallback to AI
     }
   };
@@ -435,10 +435,10 @@ const SmartChart = ({ symbol, currentPrice, isGreen, mini = false }) => {
               // STRICT greater-than guard — lightweight-charts throws on equal/backward time
               if (cTime > lastTimeRef.current) {
                 lastTimeRef.current = cTime;
-                try { seriesRef.current.update({ time: cTime, value: cVal }); } catch (_) {}
+                try { seriesRef.current.update({ time: cTime, value: cVal }); } catch { /* ignore */ }
               }
             }
-          } catch (_) {}
+          } catch { /* ignore */ }
         };
 
         sse.onerror = () => {
@@ -480,7 +480,7 @@ const SmartChart = ({ symbol, currentPrice, isGreen, mini = false }) => {
       controller.abort();           // Cancel any pending fetch
       ro.disconnect();
       if (sseRef.current) { sseRef.current.close(); sseRef.current = null; }
-      if (chartRef.current) { try { chartRef.current.remove(); } catch (_) {} chartRef.current = null; }
+      if (chartRef.current) { try { chartRef.current.remove(); } catch { /* ignore */ } chartRef.current = null; }
       seriesRef.current = null;
     };
   }, [symbol]);
@@ -513,7 +513,7 @@ const SmartChart = ({ symbol, currentPrice, isGreen, mini = false }) => {
         <div className="absolute inset-0 flex items-center justify-center bg-[#000000]/80 z-10">
           <div className="flex flex-col items-center gap-3">
             <div className="w-6 h-6 border-2 border-[#FFFFFF] border-t-transparent rounded-full animate-spin" />
-            <p className="text-[10px] text-[#E5E5E5]/40 uppercase tracking-widest font-bold">
+            <p className="text-[10px] text-text-secondary uppercase tracking-widest font-bold">
               {isMarketOpen() ? 'Loading Market Data...' : 'AI Engine Analyzing Patterns...'}
             </p>
           </div>
@@ -537,7 +537,7 @@ const SmartChart = ({ symbol, currentPrice, isGreen, mini = false }) => {
             </div>
           )}
           {mode === 'AI' && (
-            <div className="bg-purple-900/30 border border-purple-500/40 rounded-xl px-3 py-2.5 backdrop-blur-md">
+            <div className="bg-purple-900/30 border border-purple-500/40 rounded-lg px-3 py-2.5 backdrop-blur-md">
               <div className="flex items-center gap-2 mb-1.5">
                 <div className="w-2 h-2 rounded-full bg-purple-400 animate-pulse shrink-0" />
                 <span className="text-[10px] font-black text-purple-300 uppercase tracking-widest">⚠️ AI Simulation Mode</span>
@@ -557,7 +557,7 @@ const SmartChart = ({ symbol, currentPrice, isGreen, mini = false }) => {
                   <div className="flex items-center gap-1">
                     <span className="text-[8px] text-purple-400/60 uppercase font-bold">RSI</span>
                     <span className={`text-[9px] font-mono font-black ml-1 ${
-                      bias.rsi < 30 ? 'text-green-400' : bias.rsi > 70 ? 'text-red-400' : 'text-[#E5E5E5]/70'
+                      bias.rsi < 30 ? 'text-green-400' : bias.rsi > 70 ? 'text-red-400' : 'text-text-primary/70'
                     }`}>{bias.rsi?.toFixed(1)}</span>
                   </div>
                   {bias.bullishProbability != null && (

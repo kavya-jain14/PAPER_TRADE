@@ -1,10 +1,14 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite' // 👈 Yeh nayi line add ki hai
+import tailwindcss from '@tailwindcss/vite'
+import packageJson from './package.json'
 
 export default defineConfig({
   plugins: [
     react(),
-    tailwindcss(), // 👈 Aur yeh yahan add kiya hai
+    tailwindcss(),
   ],
+  define: {
+    __APP_VERSION__: JSON.stringify(packageJson.version),
+  },
 })
