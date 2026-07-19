@@ -1,0 +1,194 @@
+/* ============================================================
+   PatternRail — Seamless infinite carousel
+   ============================================================
+
+   LOOP MATH (why -50% works perfectly):
+   ─────────────────────────────────────
+   Track = [sequence-A][sequence-B], concatenated with no gap.
+   Each sequence = flex container with gap:48px between items
+                   + padding-right:48px at the end.
+
+   padding-right MUST equal gap so the spacing at the A→B seam is:
+     (sequence-A padding-right) = 48px
+     (sequence-B first item left edge) = 0   ← no item padding
+   Total A→B gap = 48px ✓  same as every internal gap.
+
+   Track total width = sequence-A.width + sequence-B.width
+                     = 2 × sequence.width   (identical sequences)
+   translateX(-50%) = exactly one sequence width → invisible reset.
+
+   No rounding issues: both sequences share the same DOM subtree
+   shape and identical CSS, so their computed widths are bit-identical.
+
+   PAUSE: rail:hover and rail:focus-within set animation-play-state
+   to paused on the track.
+   ============================================================ */
+
+/* ── Rail shell ─────────────────────────────────────────────── */
+.rail {
+  position: relative;
+  z-index: 3;
+  /* Bleed to workspace edges, undoing the workspace's padding */
+  width: calc(100% + 2 * var(--space-4));
+  margin-left: calc(-1 * var(--space-4));
+  height: 72px;
+  display: flex;
+  align-items: center;
+  background-color: rgba(11, 9, 7, 0.68);
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  overflow: hidden; /* belt-and-suspenders; viewport already clips */
+}
+
+/* ── Viewport ────────────────────────────────────────────────── */
+/* Clips the track and applies the warm-black edge fade.
+   The fade is narrow (20px) to avoid hiding substantial content. */
+.patternViewport {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0px,
+    black 20px,
+    black calc(100% - 20px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0px,
+    black 20px,
+    black calc(100% - 20px),
+    transparent 100%
+  );
+}
+
+/* ── Track ───────────────────────────────────────────────────── */
+/* Holds exactly two sequences side by side.
+   - display: flex with no gap between sequence wrappers.
+   - width: max-content = 2 × sequence intrinsic width.
+   - Animated via translate3d for GPU compositing. */
+.patternTrack {
+  display: flex;
+  width: max-content;
+  align-items: center;
+  will-change: transform;
+  animation: patternScroll 40s linear infinite;
+}
+
+/* Pause on hover or focus-within the entire rail */
+.rail:hover .patternTrack,
+.rail:focus-within .patternTrack {
+  animation-play-state: paused;
+}
+
+/* ── Sequences ───────────────────────────────────────────────── */
+/* CRITICAL: both sequences must have identical computed widths.
+   gap: 48px → spacing between items.
+   padding-right: 48px → trailing space that equals the gap,
+   so the spacing at the A→B seam is also 48px. */
+.patternSequence {
+  display: flex;
+  flex: 0 0 auto;
+  width: max-content;
+  align-items: center;
+  gap: 48px;
+  padding-right: 48px; /* must equal gap — seam correctness */
+}
+
+/* ── Keyframes ───────────────────────────────────────────────── */
+/* translate3d(-50%, 0, 0) = exactly one sequence width.
+   Triggers GPU layer for smooth composite. */
+@keyframes patternScroll {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(-50%, 0, 0); }
+}
+
+/* ── Reduced-motion ──────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .patternTrack {
+    animation: none;
+    transform: none;
+  }
+
+  /* Reveal one scrollable static sequence */
+  .patternViewport {
+    overflow-x: auto;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
+  /* Hide the aria-hidden duplicate */
+  .patternSequence + .patternSequence {
+    display: none;
+  }
+}
+
+/* ── Mobile ──────────────────────────────────────────────────── */
+@media (max-width: 899px) {
+  .rail {
+    display: none;
+  }
+}
+
+/* ── Tablet ──────────────────────────────────────────────────── */
+@media (min-width: 900px) and (max-width: 1199px) {
+  .patternTrack {
+    animation-duration: 32s;
+  }
+}
+
+/* ── Pattern item ────────────────────────────────────────────── */
+/* flex: 0 0 auto + white-space: nowrap → deterministic width.
+   No padding (spacing is handled by sequence gap).
+   No border — the gap provides natural whitespace separation. */
+.item {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+  cursor: default;
+  user-select: none;
+}
+
+/* ── SVG wrapper ─────────────────────────────────────────────── */
+.svgWrap {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 52px;   /* fixed: widest SVG (Morning Star) is 52px */
+  height: 36px;
+  opacity: 0.92;
+}
+
+/* ── Text metadata ───────────────────────────────────────────── */
+.meta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 0 0 auto;
+}
+
+.name {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.classification {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  line-height: 1;
+}
