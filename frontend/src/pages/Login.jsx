@@ -1,112 +1,106 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import toast from 'react-hot-toast';
-import { GoogleLogin } from '@react-oauth/google';
+import TextField from '../components/ui/TextField';
+import PrimaryButton from '../components/ui/PrimaryButton';
+import GhostButton from '../components/ui/GhostButton';
+import MarketTicker from '../components/ui/MarketTicker';
+import LogoMorph from '../components/brand/LogoMorph';
+import logoMorphStyles from '../components/brand/LogoMorph.module.css';
+import styles from './Login.module.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
-// 🚀 CUSTOM 'P' MERGED WITH 'T' IN A BOX LOGO
-const PTLogo = ({ className = "w-16 h-16" }) => (
-  <svg viewBox="0 0 100 100" className={`${className} text-[#FFFFFF] drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]`} fill="none" stroke="currentColor">
-    {/* The Outer Box */}
-    <rect x="15" y="15" width="70" height="70" rx="16" strokeWidth="6" />
-    {/* The Top Bar of 'T' */}
-    <path d="M 32 35 L 68 35" strokeWidth="6" strokeLinecap="round" />
-    {/* The Shared Vertical Line for 'P' and 'T' */}
-    <path d="M 42 35 L 42 65" strokeWidth="6" strokeLinecap="round" />
-    {/* The Loop of 'P' */}
-    <path d="M 42 35 L 54 35 A 10 10 0 0 1 54 55 L 42 55" strokeWidth="6" strokeLinecap="round" />
-  </svg>
-);
+// Deterministic fallback data for the ticker
+const simulatedMarketData = [
+  { symbol: "NIFTY 50", price: 24521.37, changePercent: 0.73 },
+  { symbol: "SENSEX", price: 80645.12, changePercent: 0.65 },
+  { symbol: "BTC/USD", price: 64230.50, changePercent: -1.24 },
+  { symbol: "USD/INR", price: 83.45, changePercent: 0.05 },
+  { symbol: "RELIANCE", price: 3120.40, changePercent: 1.15 },
+  { symbol: "HDFCBANK", price: 1650.75, changePercent: -0.42 },
+];
 
-// 🟢 THE PURE-CODED INSTITUTIONAL CHART BACKGROUND 📈
-const LiveChartBackground = () => {
-  const chart = useMemo(() => {
-    const points = 35; 
-    const width = 1200;
-    const step = width / points;
+// 36-candle deterministic sequence — long enough that the seam is
+// invisible at normal drift speed. Structured as:
+// consolidation → pullback → breakout → retest → continuation → distribution → recovery
+// Natural variation in body size, wick asymmetry, and local momentum.
+const CHART_CANDLES = [
+  // Consolidation — tight bodies, mixed direction
+  { open: 100, high: 102.5, low: 98.0, close: 101.2 },
+  { open: 101.2, high: 103.0, low: 99.5, close: 100.1 },
+  { open: 100.1, high: 101.8, low: 97.5, close: 99.4 },
+  { open: 99.4, high: 102.2, low: 98.8, close: 101.5 },
+  { open: 101.5, high: 102.0, low: 98.0, close: 98.5 },
+  // Pullback — bearish sequence, increasing wick length
+  { open: 98.5, high: 99.0, low: 94.0, close: 95.2 },
+  { open: 95.2, high: 96.5, low: 91.5, close: 92.8 },
+  { open: 92.8, high: 94.0, low: 89.0, close: 90.5 },
+  // Hammer / reversal signal
+  { open: 90.5, high: 91.0, low: 86.5, close: 90.2 },
+  // Breakout — strong bullish candles, short lower wicks
+  { open: 90.2, high: 98.5, low: 89.5, close: 97.8 },
+  { open: 97.8, high: 105.5, low: 96.5, close: 104.2 },
+  { open: 104.2, high: 109.0, low: 103.0, close: 107.5 },
+  { open: 107.5, high: 110.5, low: 106.0, close: 109.0 },
+  // Retest — brief bearish correction
+  { open: 109.0, high: 110.0, low: 103.5, close: 104.8 },
+  { open: 104.8, high: 106.0, low: 101.5, close: 102.5 },
+  // Doji / indecision at support
+  { open: 102.5, high: 105.0, low: 100.8, close: 102.8 },
+  // Continuation — resumption of uptrend
+  { open: 102.8, high: 108.5, low: 101.5, close: 107.0 },
+  { open: 107.0, high: 113.0, low: 106.0, close: 111.5 },
+  { open: 111.5, high: 116.0, low: 110.0, close: 114.8 },
+  { open: 114.8, high: 119.5, low: 113.5, close: 118.0 },
+  { open: 118.0, high: 122.5, low: 116.5, close: 121.0 },
+  // Distribution — topping wicks, doji, slight reversal
+  { open: 121.0, high: 124.5, low: 119.0, close: 120.5 },
+  { open: 120.5, high: 123.0, low: 118.0, close: 119.0 },
+  { open: 119.0, high: 121.5, low: 116.5, close: 117.5 },
+  // Shooting star / bearish signal
+  { open: 117.5, high: 120.0, low: 113.5, close: 114.2 },
+  // Steep downtrend
+  { open: 114.2, high: 115.5, low: 108.5, close: 109.8 },
+  { open: 109.8, high: 111.0, low: 104.0, close: 105.2 },
+  { open: 105.2, high: 106.5, low: 98.5, close: 99.5 },
+  { open: 99.5, high: 102.0, low: 96.0, close: 97.2 },
+  { open: 97.2, high: 98.5, low: 93.5, close: 94.5 },
+  // Capitulation / extreme low
+  { open: 94.5, high: 96.0, low: 88.0, close: 91.0 },
+  // Recovery
+  { open: 91.0, high: 97.5, low: 90.0, close: 96.5 },
+  { open: 96.5, high: 101.5, low: 95.5, close: 100.8 },
+  { open: 100.8, high: 103.0, low: 99.5, close: 101.5 },
+  { open: 101.5, high: 102.0, low: 98.0, close: 99.5 },
+  // Late consolidation (merging back to initial ~100 level)
+  { open: 99.5, high: 101.5, low: 98.0, close: 101.0 },
+  { open: 101.0, high: 102.5, low: 99.5, close: 100.2 },
+  { open: 100.2, high: 101.5, low: 98.5, close: 99.8 },
+  { open: 99.8, high: 101.0, low: 97.5, close: 100.5 },
+  { open: 100.5, high: 102.0, low: 99.0, close: 101.0 },
+  { open: 101.0, high: 103.0, low: 99.5, close: 100.5 },
+  { open: 100.5, high: 102.0, low: 98.5, close: 100.0 },
+  { open: 100.0, high: 101.5, low: 98.0, close: 100.5 },
+  { open: 100.5, high: 102.0, low: 99.0, close: 101.0 },
+  { open: 101.0, high: 102.5, low: 100.0, close: 100.8 },
+  { open: 100.8, high: 101.5, low: 99.5, close: 100.2 },
+  { open: 100.2, high: 101.0, low: 99.0, close: 100.0 },
+  { open: 100.0, high: 100.8, low: 99.2, close: 100.0 }
+];
 
-    const greenCurve = [];
-    const redCurve = [];
-    const blueCurve = [];
-
-    for (let i = 0; i <= points; i++) {
-      const x = i * step;
-      greenCurve.push({ x, y: 580 - (i * 11) + Math.sin(i * 0.5) * 45 });
-      redCurve.push({ x, y: 40 + (i * 10) + Math.cos(i * 0.4) * 45 });
-      blueCurve.push({ x, y: 310 + Math.sin(i * 0.25) * 100 });
-    }
-
-    const makePath = (data) => `M ${data.map(p => `${p.x},${p.y}`).join(' L ')}`;
-
-    return {
-      greenData: greenCurve,
-      redData: redCurve,
-      greenPath: makePath(greenCurve),
-      redPath: makePath(redCurve),
-      bluePath: makePath(blueCurve),
-    };
-  }, []);
-
-  return (
-    <div className="absolute inset-0 z-0 overflow-hidden bg-[#000000]">
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#222222_1px,transparent_1px),linear-gradient(to_bottom,#222222_1px,transparent_1px)] bg-[size:50px_50px] opacity-[0.3]"></div>
-      
-      <svg className="absolute w-full h-full opacity-50" preserveAspectRatio="none" viewBox="0 0 1200 600">
-        <motion.path d={chart.bluePath} fill="none" stroke="#222222" strokeWidth="1.5" strokeDasharray="5 5" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 3, ease: "easeOut" }} />
-        <motion.path d={chart.greenPath} fill="none" stroke="#FFFFFF" strokeWidth="2" opacity="0.25" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 4, ease: "easeOut" }} />
-        <motion.path d={chart.redPath} fill="none" stroke="#CCCCCC" strokeWidth="2" opacity="0.15" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 4, ease: "easeOut" }} />
-
-        {chart.greenData.map((p, i) => {
-          if (i === 0 || i === chart.greenData.length - 1) return null; 
-          const isDoji = i % 3 === 0; 
-          const boxH = isDoji ? 2 : Math.random() * 25 + 10; 
-          const wickH = boxH + Math.random() * 30 + 15; 
-          const isGreenCandle = Math.random() > 0.3; 
-          const candleColor = isGreenCandle ? "text-[#FFFFFF]" : "text-[#E5E5E5]/20";
-
-          return (
-            <motion.g key={`g-${i}`} className={candleColor} initial={{ opacity: 0, y: 20 }} animate={{ opacity: [0.3, 1, 0.3], y: 0 }} transition={{ duration: 2 + Math.random() * 3, repeat: Infinity, delay: i * 0.1 }}>
-              <line x1={p.x} y1={p.y - wickH/2} x2={p.x} y2={p.y + wickH/2} stroke="currentColor" strokeWidth="1.5" />
-              <rect x={p.x - 4} y={p.y - boxH/2} width="8" height={boxH} fill="currentColor" rx="1" />
-            </motion.g>
-          )
-        })}
-
-        {chart.redData.map((p, i) => {
-          if (i === 0 || i === chart.redData.length - 1) return null;
-          const isDoji = i % 4 === 0; 
-          const boxH = isDoji ? 2 : Math.random() * 30 + 10;
-          const wickH = boxH + Math.random() * 30 + 15;
-          const isGreenCandle = Math.random() > 0.7; 
-          const candleColor = isGreenCandle ? "text-[#FFFFFF]" : "text-[#E5E5E5]/20";
-
-          return (
-            <motion.g key={`r-${i}`} className={candleColor} initial={{ opacity: 0, y: -20 }} animate={{ opacity: [0.3, 1, 0.3], y: 0 }} transition={{ duration: 2 + Math.random() * 3, repeat: Infinity, delay: i * 0.15 }}>
-              <line x1={p.x} y1={p.y - wickH/2} x2={p.x} y2={p.y + wickH/2} stroke="currentColor" strokeWidth="1.5" />
-              <rect x={p.x - 4} y={p.y - boxH/2} width="8" height={boxH} fill="currentColor" rx="1" />
-            </motion.g>
-          )
-        })}
-      </svg>
-
-      <div className="absolute inset-0 bg-gradient-to-t from-[#000000] via-[#000000]/30 to-[#000000]/80"></div>
-      <div className="absolute inset-0 bg-gradient-to-r from-[#000000]/95 via-transparent to-[#000000]/90"></div>
-    </div>
-  );
-};
-
-// 🔴 THE MAIN LOGIN COMPONENT
-function Login() {
+export default function Login() {
   const [isLoginView, setIsLoginView] = useState(true);
-  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isInitializing, setIsInitializing] = useState(false); 
-  
+
+  const [authState, setAuthState] = useState('idle');
+  const [errorType, setErrorType] = useState(null);
+
+  const [loginAttempts, setLoginAttempts] = useState(0);
+  const [countdown, setCountdown] = useState(0);
   const navigate = useNavigate();
+  const countdownRef = useRef(null);
+  const utcClockRef = useRef(null);
 
   useEffect(() => {
     if (localStorage.getItem('token')) {
@@ -114,16 +108,49 @@ function Login() {
     }
   }, [navigate]);
 
+  useEffect(() => {
+    // UTC Clock
+    const updateClock = () => {
+      const now = new Date();
+      if (utcClockRef.current) {
+        utcClockRef.current.textContent = now.toISOString().substring(11, 19);
+      }
+    };
+    updateClock();
+    const clockTimer = setInterval(updateClock, 1000);
+    return () => clearInterval(clockTimer);
+  }, []);
+
+  useEffect(() => {
+    if (countdown > 0) {
+      countdownRef.current = setTimeout(() => setCountdown(c => c - 1), 1000);
+    } else if (countdown === 0 && authState === 'rate_limited') {
+      setAuthState('idle');
+      setLoginAttempts(0);
+    }
+    return () => clearTimeout(countdownRef.current);
+  }, [countdown, authState]);
+
   const handleAuth = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
-    
+
+    if (!email || !password) {
+      setErrorType('invalid');
+      return;
+    }
+
+    if (loginAttempts >= 3) {
+      setAuthState('rate_limited');
+      setCountdown(47);
+      return;
+    }
+
+    setAuthState('loading');
+    setErrorType(null);
+
     const url = isLoginView ? `${API_URL}/api/auth/login` : `${API_URL}/api/auth/register`;
-    const bodyData = isLoginView ? { email, password } : { username: name, email, password };
-    const toastMessage = isLoginView ? 'Authenticating credentials...' : 'Deploying your portfolio...';
-    
-    const toastId = toast.loading(toastMessage);
-    
+    const bodyData = isLoginView ? { email, password } : { username: email.split('@')[0], email, password };
+
     try {
       const response = await fetch(url, {
         method: "POST",
@@ -135,210 +162,242 @@ function Login() {
       if (response.ok) {
         if (isLoginView && (data.authtoken || data.token)) {
           const actualToken = data.authtoken || data.token;
-          localStorage.setItem('token', actualToken); 
-          toast.success('Access Granted.', { id: toastId });
-          
-          setIsInitializing(true);
-          setTimeout(() => { navigate('/dashboard'); }, 500); 
+          localStorage.setItem('token', actualToken);
+          setAuthState('success');
+          setTimeout(() => { navigate('/dashboard'); }, 500);
         } else {
-          toast.success('Account created! ₹10,00,000 virtual capital credited.', { id: toastId, duration: 4000 });
           setIsLoginView(true);
-          setPassword(''); 
-          setName('');
-          setIsLoading(false);
+          setPassword('');
+          setAuthState('idle');
         }
       } else {
         const errorMsg = data.error || data.message || "Invalid request";
-        toast.error(errorMsg, { id: toastId });
-        setIsLoading(false);
+        setLoginAttempts(prev => prev + 1);
+
+        if (errorMsg.toLowerCase().includes('locked')) {
+          setAuthState('error');
+          setErrorType('locked');
+        } else if (errorMsg.toLowerCase().includes('rate') || response.status === 429) {
+          setAuthState('rate_limited');
+          setCountdown(47);
+        } else {
+          setAuthState('error');
+          setErrorType('invalid');
+        }
       }
-    } catch (error) {
-      toast.error('Network Error! Connection lost.', { id: toastId });
-      setIsLoading(false);
-    } 
+    } catch {
+      setAuthState('error');
+      setErrorType('network');
+    }
   };
 
   const handleGoogleSuccess = async (credentialResponse) => {
-    setIsInitializing(true); 
+    setAuthState('loading');
     try {
       const res = await fetch(`${API_URL}/api/auth/googlelogin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tokenId: credentialResponse.credential })
+        body: JSON.stringify({ tokenId: credentialResponse.credential || credentialResponse.access_token })
       });
       const data = await res.json();
-      if (data.success) {
-        localStorage.setItem('token', data.authtoken);
-        toast.success("Welcome to Paper Trade!");
-        setTimeout(() => { navigate('/dashboard'); }, 500); 
+      if (data.success || data.authtoken) {
+        localStorage.setItem('token', data.authtoken || data.token);
+        setAuthState('success');
+        setTimeout(() => { navigate('/dashboard'); }, 500);
       } else {
-        toast.error(data.message || "Google Login Failed. Please check your Google Client ID configuration.");
-        console.error('Google Login Error from server:', data);
-        setIsInitializing(false);
+        setAuthState('error');
+        setErrorType('invalid');
       }
-    } catch (err) {
-      toast.error("Network Error");
-      setIsInitializing(false);
+    } catch {
+      setAuthState('error');
+      setErrorType('network');
     }
   };
 
+  const formatCountdown = (seconds) => {
+    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+    const s = (seconds % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  };
+
+  // Chart geometry — used for both sequences of the infinite carousel.
+  // All candles share the same global min/max so bodies scale consistently
+  // across the full 48-candle sequence.
+  const chartMin = Math.min(...CHART_CANDLES.map(c => c.low)) - 8;
+  const chartMax = Math.max(...CHART_CANDLES.map(c => c.high)) + 8;
+  const chartRange = chartMax - chartMin;
+  const candleSpacing = 22;   // px between candle centres in viewBox units
+  const candleHalfWidth = 5;  // half-body width
+  // Each sequence viewBox width = number of candles × spacing
+  const seqViewBoxWidth = CHART_CANDLES.length * candleSpacing;
+
   return (
-    <>
-      {/* 🚀 UPGRADED SOLID BLACK LOADER WITH CUSTOM PT LOGO */}
-      <AnimatePresence>
-        {isInitializing && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} className="fixed inset-0 z-50 bg-[#000000] flex flex-col items-center justify-center font-mono">
-            
-            <motion.div animate={{ scale: [1, 1.05, 1], opacity: [0.8, 1, 0.8] }} transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }} className="mb-6">
-               <PTLogo className="w-20 h-20" />
-            </motion.div>
-            
-            <div className="text-[#FFFFFF] text-lg tracking-[0.2em] font-bold mb-4 drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]">
-              INITIALIZING TERMINAL
-            </div>
-            
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: [0, 1, 1, 1], y: [5, 0, 0, -5] }} transition={{ times: [0, 0.2, 0.8, 1], duration: 1.5, repeat: Infinity }} className="text-[#E5E5E5]/50 text-[11px] tracking-widest flex flex-col items-center gap-1.5 uppercase opacity-70">
-              <p>Establishing secure connection...</p>
-              <p>Fetching live market data...</p>
-              <p>Syncing portfolio...</p>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+    <div className={styles.container}>
+      <div className={styles.splitLayout}>
 
-      {/* MAIN SCREEN */}
-      <div className="h-screen w-full text-[#E5E5E5] font-sans flex relative overflow-hidden selection:bg-[#FFFFFF]/30">
-        
-        <LiveChartBackground />
+        {/* LEFT: WORKSPACE */}
+        <div className={`${styles.workspace} ${styles.fadeIn}`}>
+          {/* ── Decorative 3D Perspective Grid ──────────────────────── */}
+          <div className={styles.perspectiveGrid} aria-hidden="true" tabIndex="-1"></div>
 
-        {/* LEFT SIDE: BRAND IDENTITY */}
-        <div className="hidden lg:flex w-1/2 flex-col justify-center px-24 relative z-10">
-          <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8 }}>
-            
-            <div className="mb-8">
-               <PTLogo className="w-20 h-20" />
-            </div>
+          {/* ── Brand transformation sequence ───────────────────────────────
+               Decorative, aria-hidden, not interactive.
+               Placed above the background chart (z=4).
+          ──────────────────────────────────────────────────── */}
+          <div className={logoMorphStyles.wrapper}>
+            <LogoMorph decorative />
+          </div>
 
-            <div className="space-y-4">
-              <h1 className="text-6xl font-black tracking-tighter drop-shadow-lg">
-                <span className="text-[#FFFFFF]">PAPER</span> TRADE
-              </h1>
-              <p className="text-[#E5E5E5]/60 text-lg font-light tracking-wide w-[80%] leading-relaxed drop-shadow-md">
-                Master the markets with institutional-grade execution speed. Our professional simulation environment mirrors live terminal performance without the capital risk.
-              </p>
+          {/* ── Background candlestick carousel ─────────────────────────
+               Seamless infinite horizontal loop.
+               Structure: [candlestickTrack]
+                            [svgSequence-A]  ← primary
+                            [svgSequence-B]  ← aria-hidden duplicate
+               Animation: translateX(0) → translateX(-50%) on the track.
+               -50% = exactly one sequence width because track = 2 × sequence.
+               No React state, no rAF, no timers. Pure CSS transform.
+          ─────────────────────────────────────────────────────────────── */}
+          <div className={styles.candlestickLayer} aria-hidden="true" tabIndex="-1">
+            <div className={styles.candlestickTrack}>
+              {[0, 1].map((copy) => (
+                <svg
+                  key={copy}
+                  className={styles.candlestickSequence}
+                  viewBox={`0 0 ${seqViewBoxWidth} 100`}
+                  preserveAspectRatio="none"
+                  aria-hidden="true"
+                >
+                  {CHART_CANDLES.map((candle, i) => {
+                    const isPositive = candle.close >= candle.open;
+                    const color = isPositive ? 'var(--color-positive)' : 'var(--color-negative)';
+                    const x = i * candleSpacing + candleSpacing / 2;
+                    const yHigh   = 100 - ((candle.high  - chartMin) / chartRange) * 100;
+                    const yLow    = 100 - ((candle.low   - chartMin) / chartRange) * 100;
+                    const yOpen   = 100 - ((candle.open  - chartMin) / chartRange) * 100;
+                    const yClose  = 100 - ((candle.close - chartMin) / chartRange) * 100;
+                    const bodyTop = Math.min(yOpen, yClose);
+                    const bodyH   = Math.max(Math.abs(yOpen - yClose), 0.8);
+                    return (
+                      <g key={i}>
+                        <line x1={x} y1={yHigh} x2={x} y2={yLow}
+                          stroke={color} strokeWidth="1.2" opacity="0.75" />
+                        <rect x={x - candleHalfWidth} y={bodyTop}
+                          width={candleHalfWidth * 2} height={bodyH}
+                          fill={color} opacity="0.85" />
+                      </g>
+                    );
+                  })}
+                </svg>
+              ))}
             </div>
-            <div className="flex gap-6 mt-10">
-              <div className="bg-[#141414]/70 backdrop-blur-md border border-[#222222] px-5 py-3 rounded-lg flex items-center gap-3 shadow-lg">
-                <span className="material-symbols-outlined text-[#FFFFFF]">speed</span>
-                <span className="text-xs font-bold uppercase tracking-widest text-[#E5E5E5]">Ultra Low Latency</span>
-              </div>
-              <div className="bg-[#141414]/70 backdrop-blur-md border border-[#222222] px-5 py-3 rounded-lg flex items-center gap-3 shadow-lg">
-                <span className="material-symbols-outlined text-[#FFFFFF]">security</span>
-                <span className="text-xs font-bold uppercase tracking-widest text-[#E5E5E5]">Secure Protocol</span>
-              </div>
-            </div>
-          </motion.div>
+          </div>
+
+          <div className={styles.telemetryBar}>
+            <span>MODE <span className={styles.telemetryValue}>SIMULATION</span></span>
+            <span>·</span>
+            <span>DATA <span className={styles.telemetryValue}>DETERMINISTIC</span></span>
+            <span>·</span>
+            <span>UTC <span ref={utcClockRef} className={styles.telemetryValue}>--:--:--</span></span>
+          </div>
+
+          <div className={styles.tickerWrapper}>
+            <MarketTicker items={simulatedMarketData} mode="simulated" speed="slow" />
+          </div>
         </div>
 
-        {/* RIGHT SIDE: LOGIN FORM */}
-        <div className="w-full lg:w-1/2 flex items-center justify-center p-8 relative z-10">
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6, delay: 0.2 }}
-            className="w-full max-w-[460px] bg-[#0A0A0A]/95 backdrop-blur-xl p-10 rounded-2xl shadow-[0_0_60px_rgba(255,255,255,0.08)] border border-[#222222] relative overflow-hidden"
-          >
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#FFFFFF] to-[#CCCCCC]"></div>
-            
-            <div className="mb-8">
-              <h2 className="text-3xl font-bold text-[#E5E5E5] mb-2">
-                {isLoginView ? "Terminal Access" : "Initialize Account"}
-              </h2>
-              <p className="text-[#E5E5E5]/50 text-sm">
-                {isLoginView ? "Authenticate to access the live trading terminal." : "Deploy your simulated portfolio environment."}
-              </p>
+        {/* RIGHT: AUTH PANEL */}
+        <div className={`${styles.authPanel} ${styles.slideIn}`}>
+          <div className={styles.authPanelInner}>
+
+            {errorType === 'network' && (
+              <div className={styles.networkErrorBanner}>
+                <span>Network / server failure</span>
+                <button type="button" className={styles.networkErrorRetry} onClick={() => setAuthState('idle')}>Retry</button>
+              </div>
+            )}
+
+            <div className={styles.branding}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+                <img 
+                  src="/papertrade-mark.svg" 
+                  alt="PaperTrade Logo" 
+                  style={{ width: '30px', height: '30px' }} 
+                />
+                <h1 className={styles.logoText} style={{ margin: 0 }}>PAPERTRADE</h1>
+              </div>
+              <p className={styles.subtitle}>Institutional Market Simulator</p>
             </div>
 
-            <form onSubmit={handleAuth} className="space-y-5">
-              
-              <AnimatePresence>
-                {!isLoginView && (
-                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-2 overflow-hidden">
-                    <label className="text-[10px] font-bold text-[#E5E5E5]/60 block uppercase tracking-widest">Trader Name</label>
-                    <div className="relative group">
-                      <input className="w-full bg-[#000000]/80 border border-[#222222] rounded-lg px-4 py-3 text-[#E5E5E5] outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]/50 transition-all" id="name" type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Kavya Jain" required={!isLoginView} />
-                      <span className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-[#E5E5E5]/20 group-focus-within:text-[#FFFFFF] transition-colors">person</span>
+            <div className={styles.panelHeader}>
+              <h2 className={styles.headerContext}>Authentication</h2>
+              <h3 className={styles.headerTitle}>Terminal Access</h3>
+              <p className={styles.headerDesc}>Authenticate to access your trading workspace.</p>
+            </div>
+
+            {errorType === 'locked' ? (
+              <div style={{ color: 'var(--color-negative)', fontFamily: 'var(--font-body)', fontSize: '14px', padding: '16px 0', borderTop: '1px solid var(--color-border)' }}>
+                Account locked. <a href="#" style={{ color: 'var(--color-text-primary)', textDecoration: 'underline' }}>Contact Support</a>
+              </div>
+            ) : (
+              <form onSubmit={handleAuth} className={styles.authForm} noValidate>
+                <TextField
+                  label="Email"
+                  name="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => { setEmail(e.target.value); if(errorType==='invalid') setErrorType(null); }}
+                  error={errorType === 'invalid' && !email ? 'Email is required' : ''}
+                />
+                <TextField
+                  label="Password"
+                  name="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => { setPassword(e.target.value); if(errorType==='invalid') setErrorType(null); }}
+                  error={errorType === 'invalid' && email && password ? 'Invalid credentials' : (errorType === 'invalid' && !password ? 'Password is required' : '')}
+                  capsLockAware={true}
+                />
+
+                <div className={styles.supportingActions} style={{ marginTop: 0 }}>
+                  <label className={styles.customCheckboxLabel}>
+                    <div className={styles.checkboxWrapper}>
+                      <input type="checkbox" className={styles.nativeCheckbox} />
+                      <div className={styles.customCheckbox}></div>
                     </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-[#E5E5E5]/60 block uppercase tracking-widest">Email Designation</label>
-                <div className="relative group">
-                  <input className="w-full bg-[#000000]/80 border border-[#222222] rounded-lg px-4 py-3 text-[#E5E5E5] outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]/50 transition-all" id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="trader.name@gmail.com" required />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-[#E5E5E5]/20 group-focus-within:text-[#FFFFFF] transition-colors">alternate_email</span>
+                    Remember me
+                  </label>
+                  <button type="button" className={styles.link}>Forgot password?</button>
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <label className="text-[10px] font-bold text-[#E5E5E5]/60 block uppercase tracking-widest">Security Key (Password)</label>
-                  {isLoginView && <button type="button" className="text-xs font-semibold text-[#FFFFFF] hover:underline transition-all">Forgot Password?</button>}
+                <div style={{ marginTop: '8px' }}>
+                  <PrimaryButton
+                    type="submit"
+                    state={authState === 'rate_limited' ? 'disabled' : (authState === 'loading' ? 'loading' : (authState === 'success' ? 'success' : 'idle'))}
+                  >
+                    {authState === 'rate_limited' ? <span style={{ fontFamily: 'var(--font-mono)' }}>Try again in {formatCountdown(countdown)}</span> : 'Authenticate'}
+                  </PrimaryButton>
                 </div>
-                <div className="relative group">
-                  <input className="w-full bg-[#000000]/80 border border-[#222222] rounded-lg px-4 py-3 text-[#E5E5E5] outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]/50 transition-all font-mono tracking-widest" id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required minLength={8} />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-[#E5E5E5]/20 group-focus-within:text-[#FFFFFF] transition-colors">lock</span>
-                </div>
-              </div>
+              </form>
+            )}
 
-              <button 
-                type="submit" 
-                disabled={isLoading}
-                className="w-full mt-2 bg-[#FFFFFF] hover:bg-[#CCCCCC] text-[#000000] font-bold py-3.5 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 active:scale-[0.98] shadow-[0_0_20px_rgba(255,255,255,0.25)] disabled:opacity-70 uppercase tracking-wide text-sm"
+            <div className={styles.divider} />
+
+            <GhostButton onSuccess={handleGoogleSuccess} onError={() => { setAuthState('error'); setErrorType('network'); }} />
+
+            <div style={{ marginTop: '32px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <button
+                type="button"
+                className={styles.linkPrimary}
+                onClick={() => { setIsLoginView(!isLoginView); setAuthState('idle'); setErrorType(null); }}
               >
-                {isLoading ? (
-                   <span className="flex items-center gap-2">Processing...</span>
-                ) : (
-                  <>
-                    <span className="material-symbols-outlined text-xl">{isLoginView ? 'login' : 'add_circle'}</span>
-                    {isLoginView ? 'Execute Login' : 'Deploy Account'}
-                  </>
-                )}
+                {isLoginView ? 'New here? Create account →' : 'Already have access? Login →'}
               </button>
-            </form>
-
-            <div className="flex items-center my-6">
-              <div className="flex-1 h-[1px] bg-gradient-to-r from-transparent to-[#222222]"></div>
-              <span className="px-4 text-[10px] text-[#E5E5E5]/40 uppercase tracking-widest font-bold">Or</span>
-              <div className="flex-1 h-[1px] bg-gradient-to-l from-transparent to-[#222222]"></div>
             </div>
 
-            {/* 🚀 GOOGLE AUTH BUTTON */}
-            <div className="flex justify-center w-full">
-              <GoogleLogin 
-                onSuccess={handleGoogleSuccess} 
-                onError={() => { toast.error('Google Login Failed'); setIsInitializing(false); }} 
-                theme="filled_black"
-                shape="rectangular"
-                width="100%"
-                text="continue_with"
-              />
-            </div>
-
-            <div className="mt-6 text-center">
-              <p className="text-[#E5E5E5]/50 text-xs">
-                {isLoginView ? "New to the platform?" : "Already initialized?"} 
-                <button type="button" onClick={() => { setIsLoginView(!isLoginView); setEmail(''); setPassword(''); }} className="text-[#FFFFFF] font-bold hover:underline ml-1">
-                  {isLoginView ? "Register Account" : "Sign In"}
-                </button>
-              </p>
-            </div>
-            
-          </motion.div>
+          </div>
         </div>
 
       </div>
-    </>
+    </div>
   );
 }
-
-export default Login;
