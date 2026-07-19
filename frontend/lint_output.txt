@@ -1,0 +1,350 @@
+
+> frontend@0.0.0 lint
+> eslint .
+
+
+/Users/kavyajain/Desktop/MyProjects/PAPER_TRADE/frontend/src/components/CommandPalette.jsx
+   3:10  error  'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            no-unused-vars
+  45:7   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  43 |   useEffect(() => {
+  44 |     if (isOpen) {
+> 45 |       setQuery('');
+     |       ^^^^^^^^ Avoid calling setState() directly within an effect
+  46 |       setSelectedIndex(0);
+  47 |       setTimeout(() => inputRef.current?.focus(), 50);
+  48 |     }  react-hooks/set-state-in-effect
+  71:5   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  69 |
+  70 |   useEffect(() => {
+> 71 |     setSelectedIndex(0);
+     |     ^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  72 |   }, [query]);
+  73 |
+  74 |   const handleSelect = (result) => {                                             react-hooks/set-state-in-effect
+
+/Users/kavyajain/Desktop/MyProjects/PAPER_TRADE/frontend/src/components/SmartChart.jsx
+   49:53  error    'isGreen' is defined but never used                                                                                                                                        no-unused-vars
+  185:22  error    '_' is defined but never used                                                                                                                                              no-unused-vars
+  185:25  error    Empty block statement                                                                                                                                                      no-empty
+  188:16  error    '_' is defined but never used                                                                                                                                              no-unused-vars
+  188:19  error    Empty block statement                                                                                                                                                      no-empty
+  194:73  error    '_' is defined but never used                                                                                                                                              no-unused-vars
+  194:76  error    Empty block statement                                                                                                                                                      no-empty
+  400:14  error    'err' is defined but never used                                                                                                                                            no-unused-vars
+  438:88  error    '_' is defined but never used                                                                                                                                              no-unused-vars
+  438:91  error    Empty block statement                                                                                                                                                      no-empty
+  441:20  error    '_' is defined but never used                                                                                                                                              no-unused-vars
+  441:23  error    Empty block statement                                                                                                                                                      no-empty
+  483:73  error    '_' is defined but never used                                                                                                                                              no-unused-vars
+  483:76  error    Empty block statement                                                                                                                                                      no-empty
+  486:6   warning  React Hook useEffect has missing dependencies: 'initChart', 'lineColor', 'loadAIData', 'loadRealData', and 'topColor'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/kavyajain/Desktop/MyProjects/PAPER_TRADE/frontend/src/components/TradeModal.jsx
+  18:10  error  'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+/Users/kavyajain/Desktop/MyProjects/PAPER_TRADE/frontend/src/components/ui/Button.jsx
+  17:10  error  'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+/Users/kavyajain/Desktop/MyProjects/PAPER_TRADE/frontend/src/pages/AIPage.jsx
+   2:10  error    'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                no-unused-vars
+  52:16  error    '_' is defined but never used                                                                                no-unused-vars
+  52:19  error    Empty block statement                                                                                        no-empty
+  55:6   warning  React Hook useEffect has a missing dependency: 'navigate'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  80:14  error    'err' is defined but never used                                                                              no-unused-vars
+
+/Users/kavyajain/Desktop/MyProjects/PAPER_TRADE/frontend/src/pages/Academy.jsx
+   3:10  error  'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               no-unused-vars
+   4:8   error  'toast' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                no-unused-vars
+  16:30  error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+  14 |     let price = 1000;
+  15 |     for (let i = 0; i < 15; i++) {
+> 16 |         let open  = price + (Math.random() - 0.5) * 8;
+     |                              ^^^^^^^^^^^^^ Cannot call impure function
+  17 |         let close = open + (Math.random() * 15) * pattern.preTrendDir;
+  18 |         let high  = Math.max(open, close) + Math.random() * 8;
+  19 |         let low   = Math.min(open, close) - Math.random() * 8;                                              react-hooks/purity
+  17:29  error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+  15 |     for (let i = 0; i < 15; i++) {
+  16 |         let open  = price + (Math.random() - 0.5) * 8;
+> 17 |         let close = open + (Math.random() * 15) * pattern.preTrendDir;
+     |                             ^^^^^^^^^^^^^ Cannot call impure function
+  18 |         let high  = Math.max(open, close) + Math.random() * 8;
+  19 |         let low   = Math.min(open, close) - Math.random() * 8;
+  20 |         rawData.push({ open, high, low, close, type: 'pre' });      react-hooks/purity
+  18:45  error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+  16 |         let open  = price + (Math.random() - 0.5) * 8;
+  17 |         let close = open + (Math.random() * 15) * pattern.preTrendDir;
+> 18 |         let high  = Math.max(open, close) + Math.random() * 8;
+     |                                             ^^^^^^^^^^^^^ Cannot call impure function
+  19 |         let low   = Math.min(open, close) - Math.random() * 8;
+  20 |         rawData.push({ open, high, low, close, type: 'pre' });
+  21 |         price = close;  react-hooks/purity
+  19:45  error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+  17 |         let close = open + (Math.random() * 15) * pattern.preTrendDir;
+  18 |         let high  = Math.max(open, close) + Math.random() * 8;
+> 19 |         let low   = Math.min(open, close) - Math.random() * 8;
+     |                                             ^^^^^^^^^^^^^ Cannot call impure function
+  20 |         rawData.push({ open, high, low, close, type: 'pre' });
+  21 |         price = close;
+  22 |     }                                                   react-hooks/purity
+  29:30  error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+  27 |     const postTrendDir = pattern.preTrendDir === -1 ? 1 : -1;
+  28 |     for (let i = 0; i < 12; i++) {
+> 29 |         let open  = price + (Math.random() - 0.5) * 8;
+     |                              ^^^^^^^^^^^^^ Cannot call impure function
+  30 |         let close = open + (Math.random() * 20) * postTrendDir;
+  31 |         let high  = Math.max(open, close) + Math.random() * 10;
+  32 |         let low   = Math.min(open, close) - Math.random() * 10;           react-hooks/purity
+  30:29  error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+  28 |     for (let i = 0; i < 12; i++) {
+  29 |         let open  = price + (Math.random() - 0.5) * 8;
+> 30 |         let close = open + (Math.random() * 20) * postTrendDir;
+     |                             ^^^^^^^^^^^^^ Cannot call impure function
+  31 |         let high  = Math.max(open, close) + Math.random() * 10;
+  32 |         let low   = Math.min(open, close) - Math.random() * 10;
+  33 |         rawData.push({ open, high, low, close, type: 'post' });          react-hooks/purity
+  31:45  error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+  29 |         let open  = price + (Math.random() - 0.5) * 8;
+  30 |         let close = open + (Math.random() * 20) * postTrendDir;
+> 31 |         let high  = Math.max(open, close) + Math.random() * 10;
+     |                                             ^^^^^^^^^^^^^ Cannot call impure function
+  32 |         let low   = Math.min(open, close) - Math.random() * 10;
+  33 |         rawData.push({ open, high, low, close, type: 'post' });
+  34 |         price = close;      react-hooks/purity
+  32:45  error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+  30 |         let close = open + (Math.random() * 20) * postTrendDir;
+  31 |         let high  = Math.max(open, close) + Math.random() * 10;
+> 32 |         let low   = Math.min(open, close) - Math.random() * 10;
+     |                                             ^^^^^^^^^^^^^ Cannot call impure function
+  33 |         rawData.push({ open, high, low, close, type: 'post' });
+  34 |         price = close;
+  35 |     }                                                       react-hooks/purity
+
+/Users/kavyajain/Desktop/MyProjects/PAPER_TRADE/frontend/src/pages/Dashboard.jsx
+    1:46  error    'useCallback' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                no-unused-vars
+    3:10  error    'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     no-unused-vars
+   59:5   error    Error: Cannot access variable before it is declared
+
+`fetchUserData` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+  57 |   useEffect(() => {
+  58 |     if (!token) { navigate('/login'); return; }
+> 59 |     fetchUserData();
+     |     ^^^^^^^^^^^^^ `fetchUserData` accessed before it is declared
+  60 |   }, [token, navigate]);
+  61 |
+  62 |   const fetchUserData = async () => {
+
+   60 |   }, [token, navigate]);
+   61 |
+>  62 |   const fetchUserData = async () => {
+      |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  63 |     try {
+      | ^^^^^^^^^
+>  64 |       const response = await fetch(`${API_URL}/api/auth/getuser`, {
+      …
+      | ^^^^^^^^^
+> 121 |     } catch (error) { console.error(error); }
+      | ^^^^^^^^^
+> 122 |   };
+      | ^^^^^ `fetchUserData` is declared here
+  123 |
+  124 |   useEffect(() => {
+  125 |     let abortCtrl = new AbortController();  react-hooks/immutability
+   60:6   warning  React Hook useEffect has a missing dependency: 'fetchUserData'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  react-hooks/exhaustive-deps
+   83:16  error    '_' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     no-unused-vars
+   83:19  error    Empty block statement                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             no-empty
+  120:16  error    '_' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     no-unused-vars
+  120:19  error    Empty block statement                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             no-empty
+  171:9   error    'addToWatchlist' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    no-unused-vars
+
+/Users/kavyajain/Desktop/MyProjects/PAPER_TRADE/frontend/src/pages/History.jsx
+   3:10  error    'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                               no-unused-vars
+  89:6   warning  React Hook useEffect has a missing dependency: 'fetchUserDataAndHistory'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/kavyajain/Desktop/MyProjects/PAPER_TRADE/frontend/src/pages/Legal.jsx
+    2:10  error  'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u            no-unused-vars
+  191:10  error  'balance' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+/Users/kavyajain/Desktop/MyProjects/PAPER_TRADE/frontend/src/pages/Login.jsx
+    3:10   error  'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             no-unused-vars
+   71:37   error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+  69 |           if (i === 0 || i === chart.greenData.length - 1) return null; 
+  70 |           const isDoji = i % 3 === 0; 
+> 71 |           const boxH = isDoji ? 2 : Math.random() * 25 + 10; 
+     |                                     ^^^^^^^^^^^^^ Cannot call impure function
+  72 |           const wickH = boxH + Math.random() * 30 + 15; 
+  73 |           const isGreenCandle = Math.random() > 0.3; 
+  74 |           const candleColor = isGreenCandle ? "text-[#FFFFFF]" : "text-[#E5E5E5]/20";                                                                                                                                                                                                                                                       react-hooks/purity
+   72:32   error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+  70 |           const isDoji = i % 3 === 0; 
+  71 |           const boxH = isDoji ? 2 : Math.random() * 25 + 10; 
+> 72 |           const wickH = boxH + Math.random() * 30 + 15; 
+     |                                ^^^^^^^^^^^^^ Cannot call impure function
+  73 |           const isGreenCandle = Math.random() > 0.3; 
+  74 |           const candleColor = isGreenCandle ? "text-[#FFFFFF]" : "text-[#E5E5E5]/20";
+  75 |                                                                                                                                                                                                                                                                                                                                     react-hooks/purity
+   73:33   error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+  71 |           const boxH = isDoji ? 2 : Math.random() * 25 + 10; 
+  72 |           const wickH = boxH + Math.random() * 30 + 15; 
+> 73 |           const isGreenCandle = Math.random() > 0.3; 
+     |                                 ^^^^^^^^^^^^^ Cannot call impure function
+  74 |           const candleColor = isGreenCandle ? "text-[#FFFFFF]" : "text-[#E5E5E5]/20";
+  75 |
+  76 |           return (                                                                                                                                                                                                                                                                                                                                                        react-hooks/purity
+   77:165  error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+  75 |
+  76 |           return (
+> 77 |             <motion.g key={`g-${i}`} className={candleColor} initial={{ opacity: 0, y: 20 }} animate={{ opacity: [0.3, 1, 0.3], y: 0 }} transition={{ duration: 2 + Math.random() * 3, repeat: Infinity, delay: i * 0.1 }}>
+     |                                                                                                                                                                     ^^^^^^^^^^^^^ Cannot call impure function
+  78 |               <line x1={p.x} y1={p.y - wickH/2} x2={p.x} y2={p.y + wickH/2} stroke="currentColor" strokeWidth="1.5" />
+  79 |               <rect x={p.x - 4} y={p.y - boxH/2} width="8" height={boxH} fill="currentColor" rx="1" />
+  80 |             </motion.g>     react-hooks/purity
+   87:37   error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+  85 |           if (i === 0 || i === chart.redData.length - 1) return null;
+  86 |           const isDoji = i % 4 === 0; 
+> 87 |           const boxH = isDoji ? 2 : Math.random() * 30 + 10;
+     |                                     ^^^^^^^^^^^^^ Cannot call impure function
+  88 |           const wickH = boxH + Math.random() * 30 + 15;
+  89 |           const isGreenCandle = Math.random() > 0.7; 
+  90 |           const candleColor = isGreenCandle ? "text-[#FFFFFF]" : "text-[#E5E5E5]/20";                                                                                                                                                                                                                                                            react-hooks/purity
+   88:32   error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+  86 |           const isDoji = i % 4 === 0; 
+  87 |           const boxH = isDoji ? 2 : Math.random() * 30 + 10;
+> 88 |           const wickH = boxH + Math.random() * 30 + 15;
+     |                                ^^^^^^^^^^^^^ Cannot call impure function
+  89 |           const isGreenCandle = Math.random() > 0.7; 
+  90 |           const candleColor = isGreenCandle ? "text-[#FFFFFF]" : "text-[#E5E5E5]/20";
+  91 |                                                                                                                                                                                                                                                                                                                                       react-hooks/purity
+   89:33   error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+  87 |           const boxH = isDoji ? 2 : Math.random() * 30 + 10;
+  88 |           const wickH = boxH + Math.random() * 30 + 15;
+> 89 |           const isGreenCandle = Math.random() > 0.7; 
+     |                                 ^^^^^^^^^^^^^ Cannot call impure function
+  90 |           const candleColor = isGreenCandle ? "text-[#FFFFFF]" : "text-[#E5E5E5]/20";
+  91 |
+  92 |           return (                                                                                                                                                                                                                                                                                                                                                          react-hooks/purity
+   93:166  error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+  91 |
+  92 |           return (
+> 93 |             <motion.g key={`r-${i}`} className={candleColor} initial={{ opacity: 0, y: -20 }} animate={{ opacity: [0.3, 1, 0.3], y: 0 }} transition={{ duration: 2 + Math.random() * 3, repeat: Infinity, delay: i * 0.15 }}>
+     |                                                                                                                                                                      ^^^^^^^^^^^^^ Cannot call impure function
+  94 |               <line x1={p.x} y1={p.y - wickH/2} x2={p.x} y2={p.y + wickH/2} stroke="currentColor" strokeWidth="1.5" />
+  95 |               <rect x={p.x - 4} y={p.y - boxH/2} width="8" height={boxH} fill="currentColor" rx="1" />
+  96 |             </motion.g>  react-hooks/purity
+  162:14   error  'error' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         no-unused-vars
+  186:14   error  'err' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           no-unused-vars
+
+/Users/kavyajain/Desktop/MyProjects/PAPER_TRADE/frontend/src/pages/Markets.jsx
+    3:10  error    'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     no-unused-vars
+    4:8   error    'toast' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      no-unused-vars
+   71:21  error    'setWatchlist' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      no-unused-vars
+   93:5   error    Error: Cannot access variable before it is declared
+
+`fetchUserData` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+  91 |   useEffect(() => {
+  92 |     if (!token) { navigate('/login'); return; }
+> 93 |     fetchUserData();
+     |     ^^^^^^^^^^^^^ `fetchUserData` accessed before it is declared
+  94 |   }, [token, navigate]);
+  95 |
+  96 |   const fetchUserData = async () => {
+
+   94 |   }, [token, navigate]);
+   95 |
+>  96 |   const fetchUserData = async () => {
+      |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  97 |     try {
+      | ^^^^^^^^^
+>  98 |       const response = await fetch(`${API_URL}/api/auth/getuser`, {
+      …
+      | ^^^^^^^^^
+> 117 |     } catch (error) { console.error(error); }
+      | ^^^^^^^^^
+> 118 |   };
+      | ^^^^^ `fetchUserData` is declared here
+  119 |
+  120 |   useEffect(() => {
+  121 |     let abortCtrl = new AbortController();  react-hooks/immutability
+   94:6   warning  React Hook useEffect has a missing dependency: 'fetchUserData'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  react-hooks/exhaustive-deps
+  116:16  error    '_' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     no-unused-vars
+  116:19  error    Empty block statement                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             no-empty
+  313:33  error    'inWatchlist' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       no-unused-vars
+
+/Users/kavyajain/Desktop/MyProjects/PAPER_TRADE/frontend/src/pages/Portfolio.jsx
+    3:10  error    'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                 no-unused-vars
+  133:6   warning  React Hook useEffect has a missing dependency: 'fetchUserDataAndPortfolio'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  145:20  error    'error' is defined but never used                                                                                             no-unused-vars
+
+/Users/kavyajain/Desktop/MyProjects/PAPER_TRADE/frontend/src/pages/Profile.jsx
+   3:10  error    'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                     no-unused-vars
+  38:6   warning  React Hook useEffect has missing dependencies: 'fetchProfile' and 'navigate'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  82:14  error    'err' is defined but never used                                                                                                   no-unused-vars
+  92:14  error    '_' is defined but never used                                                                                                     no-unused-vars
+  92:17  error    Empty block statement                                                                                                             no-empty
+
+✖ 75 problems (68 errors, 7 warnings)
+
