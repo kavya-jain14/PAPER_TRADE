@@ -6,7 +6,7 @@
   border: none;
   border-radius: var(--radius-md);
   font-family: var(--font-sans);
-  font-size: var(--text-body);
+  font-size: var(--text-lg);
   font-weight: var(--weight-medium); /* Semibold mapping */
   cursor: pointer;
   display: flex;

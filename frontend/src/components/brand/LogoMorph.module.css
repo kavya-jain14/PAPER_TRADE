@@ -22,8 +22,8 @@
   position: absolute;
   
   /* Left offset: positioned in upper-left, offset from center */
-  left: clamp(72px, 8.5vw, 132px);
-  top: clamp(132px, 18vh, 196px);
+  left: clamp(57px, 7vw, 117px);
+  top: clamp(117px, 16vh, 181px);
   z-index: 4;
   pointer-events: none;
   user-select: none;

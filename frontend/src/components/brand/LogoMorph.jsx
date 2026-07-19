@@ -2,46 +2,26 @@ import React, { useEffect, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import styles from './LogoMorph.module.css';
 
-// ── Path Definitions ────────────────────────────────────────────────────────
-// All paths share the exact same command structure (M followed by 16 L's for frame, etc)
-// to ensure perfect vector interpolation in Framer Motion.
+// ── Strict Geometry Definitions ───────────────────────────────────────────────
+// viewBox="0 0 120 120"
+// Clean SVG groups, drawn with pathLength rather than distorted path interpolation.
 
-const paths = {
-  frame: {
-    logo: "M 29 15 L 71 15 L 78 18 L 82 22 L 85 29 L 85 71 L 82 78 L 78 82 L 71 85 L 29 85 L 22 82 L 18 78 L 15 71 L 15 29 L 18 22 L 22 18 L 29 15",
-    // Retracing S-curve
-    dollar: "M 75 25 L 55 25 L 35 35 L 35 45 L 50 55 L 65 65 L 65 75 L 45 85 L 25 85 L 45 85 L 65 75 L 65 65 L 50 55 L 35 45 L 35 35 L 55 25 L 75 25",
-    // Retracing L-axis
-    graph: "M 15 15 L 15 35 L 15 55 L 15 75 L 15 85 L 35 85 L 55 85 L 75 85 L 85 85 L 75 85 L 55 85 L 35 85 L 15 85 L 15 75 L 15 55 L 15 35 L 15 15"
-  },
-  bar: {
-    logo: "M 30 35 L 40 35 L 50 35 L 60 35 L 70 35",
-    // Vertical line through S
-    dollar: "M 50 12 L 50 30 L 50 50 L 50 70 L 50 88",
-    // First segment of rising line
-    graph: "M 15 85 L 25 70 L 35 75 L 45 55 L 45 55"
-  },
-  stem: {
-    logo: "M 42 35 L 42 43 L 42 51 L 42 59 L 42 68",
-    // Merges into the vertical line
-    dollar: "M 50 12 L 50 30 L 50 50 L 50 70 L 50 88",
-    // Second segment of rising line
-    graph: "M 45 55 L 55 65 L 65 40 L 65 40 L 65 40"
-  },
-  bowl: {
-    logo: "M 42 35 L 50 35 L 55 38 L 57 46 L 55 54 L 50 57 L 42 57",
-    // Merges into the vertical line
-    dollar: "M 50 12 L 50 30 L 50 50 L 50 70 L 50 88 L 50 50 L 50 12",
-    // Third segment of rising line
-    graph: "M 65 40 L 75 45 L 85 20 L 85 20 L 85 20 L 85 20 L 85 20"
-  }
+const states = {
+  logo: [
+    "M 39 25 L 81 25 L 88 28 L 92 32 L 95 39 L 95 81 L 92 88 L 88 92 L 81 95 L 39 95 L 32 92 L 28 88 L 25 81 L 25 39 L 28 32 L 32 28 Z", // frame
+    "M 40 45 L 80 45", // top bar
+    "M 52 45 L 52 78", // vertical stem
+    "M 52 45 L 60 45 L 65 48 L 67 56 L 65 64 L 60 67 L 52 67" // bowl
+  ],
+  dollar: [
+    "M 60 18 L 60 102", // central vertical stem
+    "M 82 36 C 82 18, 38 18, 38 36 C 38 60, 82 60, 82 84 C 82 102, 38 102, 38 84" // single perfect S-curve
+  ],
+  graph: [
+    "M 30 95 L 90 95", // horizontal baseline
+    "M 30 80 L 45 60 L 60 70 L 75 40 L 90 25" // rising market line
+  ]
 };
-
-const miniCandles = [
-  { path: "M 25 54 L 25 66", color: "var(--color-positive)" },
-  { path: "M 50 60 L 50 70", color: "var(--color-negative)" },
-  { path: "M 75 26 L 75 38", color: "var(--color-positive)" }
-];
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -94,42 +74,41 @@ export default function LogoMorph({ decorative = false }) {
     return () => { isMounted = false; };
   }, [prefersReducedMotion]);
 
-  // Transition definition
-  const baseTransition = {
-    duration: duration,
-    ease: [0.4, 0, 0.2, 1]
+  const isVisible = (stateName) => prefersReducedMotion ? stateName === 'logo' : activeVariant === stateName;
+
+  const getGroupProps = (stateName) => {
+    const visible = isVisible(stateName);
+    return {
+      initial: false,
+      animate: {
+        opacity: visible ? 1 : 0,
+        // Subtle directional translation down when hiding, up to 0 when appearing
+        y: visible ? 0 : 3, 
+      },
+      transition: {
+        // Short opacity overlap to avoid tangled silhouettes
+        opacity: { 
+          duration: duration > 0 ? duration * 0.25 : 0, 
+          ease: "linear",
+          delay: visible ? (duration > 0 ? duration * 0.1 : 0) : 0 
+        },
+        y: { duration: duration, ease: [0.4, 0, 0.2, 1] }
+      }
+    };
   };
 
-  const ghost1Transition = {
-    ...baseTransition,
-    delay: duration > 0 ? 0.05 : 0
+  const getPathProps = (stateName) => {
+    const visible = isVisible(stateName);
+    return {
+      initial: false,
+      animate: {
+        pathLength: visible ? 1 : 0,
+      },
+      transition: {
+        pathLength: { duration: duration, ease: [0.4, 0, 0.2, 1] },
+      }
+    };
   };
-
-  const ghost2Transition = {
-    ...baseTransition,
-    delay: duration > 0 ? 0.09 : 0
-  };
-
-  // Helper to render the 4 core paths of the mark
-  const renderPaths = (transitionObj, opacity = 1) => (
-    <motion.g 
-      opacity={opacity} 
-      stroke="var(--color-accent)" 
-      strokeWidth="5.5" 
-      strokeLinecap="round" 
-      strokeLinejoin="round" 
-      fill="none"
-    >
-      {Object.entries(paths).map(([key, variants]) => (
-        <motion.path
-          key={key}
-          initial={false}
-          animate={{ d: variants[activeVariant] }}
-          transition={transitionObj}
-        />
-      ))}
-    </motion.g>
-  );
 
   return (
     <div 
@@ -137,28 +116,27 @@ export default function LogoMorph({ decorative = false }) {
       aria-hidden={decorative ? "true" : undefined}
       focusable={decorative ? "false" : undefined}
     >
-      <svg viewBox="0 0 100 100" width="100%" height="100%">
-        
-        {/* Ghost Traces (Disabled in reduced motion) */}
-        {!prefersReducedMotion && renderPaths(ghost2Transition, 0.08)}
-        {!prefersReducedMotion && renderPaths(ghost1Transition, 0.16)}
-
-        {/* Primary Geometry */}
-        {renderPaths(baseTransition, 1)}
-
-        {/* Semantic Mini Candles for Graph Stage */}
-        <g strokeWidth="3" strokeLinecap="round">
-          {miniCandles.map((c, i) => (
-            <motion.path
-              key={i}
-              d={c.path}
-              stroke={c.color}
-              initial={false}
-              animate={{ opacity: activeVariant === 'graph' ? 1 : 0 }}
-              transition={{ duration: duration > 0 ? duration * 0.8 : 0 }}
-            />
-          ))}
-        </g>
+      <svg viewBox="0 0 120 120" width="100%" height="100%">
+        {Object.entries(states).map(([stateName, pathArray]) => (
+          <motion.g 
+            key={stateName}
+            {...getGroupProps(stateName)}
+            stroke="var(--color-accent)" 
+            strokeWidth="7" 
+            strokeLinecap="round" 
+            strokeLinejoin="round" 
+            fill="none"
+            style={{ vectorEffect: 'non-scaling-stroke' }}
+          >
+            {pathArray.map((d, i) => (
+              <motion.path 
+                key={i} 
+                d={d}
+                {...getPathProps(stateName)}
+              />
+            ))}
+          </motion.g>
+        ))}
       </svg>
     </div>
   );

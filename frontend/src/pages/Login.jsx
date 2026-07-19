@@ -323,7 +323,7 @@ export default function Login() {
                   alt="PaperTrade Logo" 
                   style={{ width: '30px', height: '30px' }} 
                 />
-                <h1 className={styles.logoText} style={{ margin: 0 }}>PAPERTRADE</h1>
+                <h1 className={styles.logoText} style={{ margin: 0 }}>PAPER TRADE</h1>
               </div>
               <p className={styles.subtitle}>Institutional Market Simulator</p>
             </div>
