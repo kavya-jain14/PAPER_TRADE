@@ -4,9 +4,6 @@
    All tokens live in @theme. Nothing is hardcoded anywhere else.
    ============================================================================= */
 
-/* 1. FONTS ------------------------------------------------------------------ */
-@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..24,300..400,0,0');
 
 /* 2. TAILWIND v4 ENGINE ----------------------------------------------------- */
@@ -15,50 +12,66 @@
 /* 3. DESIGN TOKENS ---------------------------------------------------------- */
 @theme {
 
-  /* ── TYPEFACES ────────────────────────────────────────────────────────── */
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+   /* ── TYPEFACES ────────────────────────────────────────────────────────── */
+   --font-sans: "General Sans", "Avenir Next", "Helvetica Neue", Arial, sans-serif;
+   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 
-  /* ── TYPOGRAPHY SCALE ─────────────────────────────────────────────────
+   /* ── TYPOGRAPHY SCALE ─────────────────────────────────────────────────
      Rule: Size alone does not create hierarchy. Weight + color + spacing do.
-     H1–H3: tracking-tight, medium weight — headings are confident, not heavy.
-     Body: regular weight, comfortable line-height — optimized for reading.
-     Label: uppercase, wide tracking — used for metadata and column headers.
   ─────────────────────────────────────────────────────────────────────── */
-  --text-h1:            48px;
-  --text-h1--font-weight:      500;
-  --text-h1--line-height:      1.1;
-  --text-h1--letter-spacing:  -0.025em;
+   --text-xs: 12px;
+   --text-sm: 14px;
+   --text-base: 16px;
+   --text-lg: 20px;
+   --text-xl: 24px;
+   
+   --weight-regular: 400;
+   --weight-medium: 500;
+   --weight-semibold: 600;
+   --weight-bold: 700;
 
-  --text-h2:            32px;
-  --text-h2--font-weight:      500;
-  --text-h2--line-height:      1.2;
-  --text-h2--letter-spacing:  -0.02em;
+   --tracking-heading: -0.025em;
+   --tracking-body: 0;
+   --tracking-metadata: 0.10em;
 
-  --text-h3:            24px;
-  --text-h3--font-weight:      500;
-  --text-h3--line-height:      1.3;
-  --text-h3--letter-spacing:  -0.015em;
+   --line-height-heading: 1.15;
+   --line-height-body: 1.55;
+   --line-height-control: 1.25;
 
-  --text-subtitle:      20px;
-  --text-subtitle--font-weight: 400;
-  --text-subtitle--line-height: 1.4;
-  --text-subtitle--letter-spacing: -0.01em;
+   --text-h1: 48px;
+   --text-h1--font-weight: var(--weight-medium);
+   --text-h1--line-height: var(--line-height-heading);
+   --text-h1--letter-spacing: var(--tracking-heading);
 
-  --text-body:          15px;
-  --text-body--font-weight:    400;
-  --text-body--line-height:    1.6;
+   --text-h2: 32px;
+   --text-h2--font-weight: var(--weight-medium);
+   --text-h2--line-height: var(--line-height-heading);
+   --text-h2--letter-spacing: var(--tracking-heading);
 
-  --text-caption:       13px;
-  --text-caption--font-weight: 400;
-  --text-caption--line-height: 1.5;
+   --text-h3: 24px;
+   --text-h3--font-weight: var(--weight-medium);
+   --text-h3--line-height: var(--line-height-heading);
+   --text-h3--letter-spacing: var(--tracking-heading);
 
-  --text-label:         11px;
-  --text-label--font-weight:   500;
-  --text-label--line-height:   1.4;
-  --text-label--letter-spacing: 0.06em;
+   --text-subtitle: 20px;
+   --text-subtitle--font-weight: var(--weight-regular);
+   --text-subtitle--line-height: var(--line-height-body);
+   --text-subtitle--letter-spacing: var(--tracking-body);
 
-  /* ── 8-POINT SPACING GRID ─────────────────────────────────────────────
+   --text-body: 15px;
+   --text-body--font-weight: var(--weight-regular);
+   --text-body--line-height: var(--line-height-body);
+
+   --text-caption: 13px;
+   --text-caption--font-weight: var(--weight-regular);
+   --text-caption--line-height: var(--line-height-body);
+
+   --text-label: 11px;
+   --text-label--font-weight: var(--weight-medium);
+   --text-label--line-height: var(--line-height-body);
+   --text-label--letter-spacing: var(--tracking-metadata);
+
+   /* ── 8-POINT SPACING GRID ─────────────────────────────────────────────
      All spacing values are multiples of 8px.
      0.5 = 4px   (micro gaps between inline elements)
      1   = 8px   (tight internal padding, icon gaps)
@@ -71,128 +84,163 @@
      10  = 80px  (hero-level spacing)
      12  = 96px
   ─────────────────────────────────────────────────────────────────────── */
-  --spacing-0-5:   4px;
-  --spacing-1:     8px;
-  --spacing-2:     16px;
-  --spacing-3:     24px;
-  --spacing-4:     32px;
-  --spacing-5:     40px;
-  --spacing-6:     48px;
-  --spacing-8:     64px;
-  --spacing-10:    80px;
-  --spacing-12:    96px;
+   --spacing-0-5: 4px;
+   --spacing-1: 8px;
+   --spacing-2: 16px;
+   --spacing-3: 24px;
+   --spacing-4: 32px;
+   --spacing-5: 40px;
+   --spacing-6: 48px;
+   --spacing-8: 64px;
+   --spacing-10: 80px;
+   --spacing-12: 96px;
 
-  /* ── BORDER RADIUS SCALE ──────────────────────────────────────────────
+   /* ── BORDER RADIUS SCALE ──────────────────────────────────────────────
      Minimal. Avoids the "bubbly AI template" look.
      sm   = checkboxes, small badges, tight chips
      md   = inputs, buttons, dropdowns
      lg   = cards, modals, panels
      full = avatars, pill badges
   ─────────────────────────────────────────────────────────────────────── */
-  --radius-sm:   4px;
-  --radius-md:   6px;
-  --radius-lg:   10px;
-  --radius-full: 9999px;
+   --radius-sm: 4px;
+   --radius-md: 6px;
+   --radius-lg: 10px;
+   --radius-full: 9999px;
 
-  /* ── COLOR TOKENS ─────────────────────────────────────────────────────
+   /* ── COLOR TOKENS ─────────────────────────────────────────────────────
      Monochromatic dark palette.
      Background layers form a clear depth hierarchy without glow effects.
   ─────────────────────────────────────────────────────────────────────── */
-  /* Backgrounds */
-  --color-bg:             #0C0C0C;   /* Deepest: app canvas */
-  --color-surface:        #141414;   /* Sidebar, primary panels */
-  --color-surface-raised: #1C1C1C;   /* Dropdowns, hover rows, elevated panels */
-  --color-surface-overlay:#242424;   /* Modals, floating containers */
+   /* Backgrounds */
+   --color-bg: #0B0907;
+   --color-surface: #12100D;
+   --color-surface-elevated: #181410;
+   --color-surface-raised: #1C1C1C;
+   --color-surface-overlay: #242424;
 
-  /* Borders */
-  --color-border:         #252525;   /* Default structural borders */
-  --color-border-strong:  #383838;   /* Hover borders, focus rings container */
+   /* Borders */
+   --color-border: rgba(244, 238, 230, 0.08);
+   --color-border-strong: rgba(244, 238, 230, 0.14);
 
-  /* Text */
-  --color-text-primary:   #EFEFEF;   /* Main content, headings */
-  --color-text-secondary: #8C8C8C;   /* Supporting info, placeholders */
-  --color-text-tertiary:  #4A4A4A;   /* Muted, disabled, timestamps */
+   /* Text */
+   --color-text-primary: #F4EEE6;
+   --color-text-secondary: #C0B5AA;
+   --color-text-muted: #92877D;
+   --color-text-tertiary: #655E57;
 
-  /* Accent — Pure white on dark background.
-     Reason: Highest possible contrast. Avoids branded color fatigue.
-     Used exclusively on primary CTA and focus indicators. */
-  --color-accent:            #FFFFFF;
-  --color-accent-fg:         #0C0C0C;
-  --color-accent-muted:      rgba(255, 255, 255, 0.08);
-  --color-accent-hover:      rgba(255, 255, 255, 0.92);
+   /* Honeyed Caramel Branding (Deepened, less golden) */
+   --brand-caramel-400: #D18D47;
+   --brand-caramel-500: #BC7430;
+   --brand-caramel-600: #9B5D23;
+   --brand-caramel-soft: rgba(188, 116, 48, 0.14);
 
-  /* Semantic — Financial data */
-  --color-positive:          #22C55E;    /* Profit, success, bull */
-  --color-positive-muted:    rgba(34, 197, 94, 0.08);
-  --color-positive-border:   rgba(34, 197, 94, 0.2);
+   /* Accent */
+   --color-accent: var(--brand-caramel-500);
+   --color-accent-fg: #0B0907;
+   --color-accent-muted: var(--brand-caramel-soft);
+   --color-accent-hover: var(--brand-caramel-400);
+   --color-accent-active: var(--brand-caramel-600);
+   --color-focus: var(--brand-caramel-500);
+   --color-button-text: #0B0907;
 
-  --color-negative:          #F43F5E;    /* Loss, danger, bear */
-  --color-negative-muted:    rgba(244, 63, 94, 0.08);
-  --color-negative-border:   rgba(244, 63, 94, 0.2);
+   /* Legacy Gold aliases mapped to Caramel */
+   --color-accent-gold: var(--brand-caramel-500);
+   --color-accent-gold-muted: var(--brand-caramel-soft);
+   --color-accent-gold-hover: var(--brand-caramel-400);
+   --color-accent-legacy: var(--brand-caramel-500);
 
-  --color-warning:           #F59E0B;    /* Caution states */
-  --color-warning-muted:     rgba(245, 158, 11, 0.08);
+   /* Semantic */
+   --color-positive: #5A9A78;
+   --color-positive-muted: rgba(90, 154, 120, 0.08);
+   --color-positive-border: rgba(90, 154, 120, 0.2);
 
-  /* ── ELEVATION & SHADOW SYSTEM ────────────────────────────────────────
+   --color-negative: #B96262;
+   --color-negative-muted: rgba(185, 98, 98, 0.08);
+   --color-negative-border: rgba(185, 98, 98, 0.2);
+
+   --color-warning: #C79A59;
+   --color-warning-muted: rgba(199, 154, 89, 0.08);
+
+   --color-information: #6F829A;
+
+   /* ── ELEVATION & SHADOW SYSTEM ────────────────────────────────────────
      Crisp, multi-layer shadows that read well on pure dark backgrounds.
      The 1px inset-top line mimics light hitting the top edge of a raised surface.
      Elevation-1: Buttons, interactive elements (subtle lift)
      Elevation-2: Dropdowns, popovers (clearly floating)
      Elevation-3: Modals, dialogs (maximum separation from page)
+     Card: Standard card shadow used via .shadow-card utility
   ─────────────────────────────────────────────────────────────────────── */
-  --shadow-1: inset 0 1px 0 rgba(255,255,255,0.05), 0 1px 3px rgba(0,0,0,0.5);
-  --shadow-2: inset 0 1px 0 rgba(255,255,255,0.04), 0 4px 16px rgba(0,0,0,0.6);
-  --shadow-3: inset 0 1px 0 rgba(255,255,255,0.03), 0 16px 48px rgba(0,0,0,0.7);
+   --shadow-1: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 1px 3px rgba(0, 0, 0, 0.5);
+   --shadow-2: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 4px 16px rgba(0, 0, 0, 0.6);
+   --shadow-3: inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 16px 48px rgba(0, 0, 0, 0.7);
+   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.03);
 
-  /* ── ICON SIZING ──────────────────────────────────────────────────────
+   /* ── ICON SIZING ──────────────────────────────────────────────────────
      sm  = inline with caption/label text
      md  = standard UI icon (buttons, nav items)
      lg  = prominent feature icons
   ─────────────────────────────────────────────────────────────────────── */
-  --icon-sm: 16px;
-  --icon-md: 20px;
-  --icon-lg: 24px;
+   --icon-sm: 16px;
+   --icon-md: 20px;
+   --icon-lg: 24px;
 
-  /* ── MOTION & ANIMATION ───────────────────────────────────────────────
+   /* ── MOTION & ANIMATION ───────────────────────────────────────────────
      Fast: color, opacity, border changes (immediate feedback)
      Normal: layout, position, size changes (perceptible but quick)
      Ease Swift: decelerates quickly → feels snappy and native, not floaty
      Ease Spring: for elements that settle (modals, drawers)
   ─────────────────────────────────────────────────────────────────────── */
-  --duration-fast:   100ms;
-  --duration-normal: 200ms;
-  --duration-slow:   350ms;
+   --duration-fast: 100ms;
+   --duration-normal: 200ms;
+   --duration-slow: 350ms;
 
-  --ease-swift:  cubic-bezier(0.2, 0, 0, 1);
-  --ease-spring: cubic-bezier(0.34, 1.2, 0.64, 1);
-  --ease-out:    cubic-bezier(0, 0, 0.2, 1);
+   --ease-swift: cubic-bezier(0.2, 0, 0, 1);
+   --ease-spring: cubic-bezier(0.34, 1.2, 0.64, 1);
+   --ease-out: cubic-bezier(0, 0, 0.2, 1);
 
-  /* Map to Tailwind defaults */
-  --default-transition-duration: var(--duration-fast);
-  --default-transition-timing-function: var(--ease-swift);
+   /* Map to Tailwind defaults */
+   --default-transition-duration: var(--duration-fast);
+   --default-transition-timing-function: var(--ease-swift);
 }
 
 /* =============================================================================
    4. BASE RESETS
    ============================================================================= */
-*, *::before, *::after {
-  box-sizing: border-box;
+*,
+*::before,
+*::after {
+   box-sizing: border-box;
 }
 
 html {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  font-feature-settings: "cv01", "cv02", "cv03", "cv04", "ss01";
-  text-rendering: optimizeLegibility;
+   -webkit-font-smoothing: antialiased;
+   -moz-osx-font-smoothing: grayscale;
+   font-feature-settings: "cv01", "cv02", "cv03", "cv04", "ss01";
+   text-rendering: optimizeLegibility;
+   font-synthesis: none;
 }
 
 body {
-  font-family: var(--font-sans);
-  font-size: var(--text-body);
-  line-height: 1.6;
-  background-color: var(--color-bg);
-  color: var(--color-text-primary);
-  margin: 0;
+   font-family: var(--font-sans);
+   font-size: var(--text-body);
+   line-height: var(--line-height-body);
+   background-color: var(--color-bg);
+   color: var(--color-text-primary);
+   margin: 0;
+}
+
+/* Global selection color */
+::selection {
+   background-color: var(--color-accent-gold-muted);
+   color: var(--color-text-primary);
+}
+
+/* Consistent focus ring — keyboard navigation */
+:focus-visible {
+   outline: 2px solid var(--color-border-strong);
+   outline-offset: 2px;
+   border-radius: var(--radius-md);
 }
 
 /* =============================================================================
@@ -201,43 +249,113 @@ body {
    ============================================================================= */
 
 /* Scrollbars — minimal, non-intrusive */
-::-webkit-scrollbar        { width: 4px; height: 4px; }
-::-webkit-scrollbar-track  { background: transparent; }
-::-webkit-scrollbar-thumb  { background: var(--color-border); border-radius: var(--radius-full); }
-::-webkit-scrollbar-thumb:hover { background: var(--color-border-strong); }
+::-webkit-scrollbar {
+   width: 4px;
+   height: 4px;
+}
+
+::-webkit-scrollbar-track {
+   background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+   background: var(--color-border);
+   border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+   background: var(--color-border-strong);
+}
 
 /* Autofill fix — prevents browser overriding our dark background */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus {
-  -webkit-box-shadow: 0 0 0 1000px var(--color-surface) inset !important;
-  -webkit-text-fill-color: var(--color-text-primary) !important;
-  caret-color: var(--color-text-primary) !important;
-  transition: background-color 5000s ease-in-out 0s !important;
+   -webkit-box-shadow: 0 0 0 1000px var(--color-surface) inset !important;
+   -webkit-text-fill-color: var(--color-text-primary) !important;
+   caret-color: var(--color-text-primary) !important;
+   transition: background-color 5000s ease-in-out 0s !important;
 }
 
 /* Remove number spinner arrows */
 input[type="number"]::-webkit-inner-spin-button,
-input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-input[type="number"] { -moz-appearance: textfield; }
+input[type="number"]::-webkit-outer-spin-button {
+   -webkit-appearance: none;
+   margin: 0;
+}
+
+input[type="number"] {
+   -moz-appearance: textfield;
+}
 
 /* =============================================================================
    6. TICKER ANIMATION
    ============================================================================= */
 @keyframes ticker {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
+   from {
+      transform: translateX(0);
+   }
+
+   to {
+      transform: translateX(-50%);
+   }
 }
-.animate-ticker { animation: ticker 30s linear infinite; }
+
+.animate-ticker {
+   animation: ticker 30s linear infinite;
+}
 
 /* =============================================================================
-   7. SKELETON PULSE
+   7. PRICE FLASH — directional flash when live data updates
+   ============================================================================= */
+@keyframes flash-positive {
+   0% {
+      background-color: rgba(34, 197, 94, 0.20);
+   }
+
+   100% {
+      background-color: transparent;
+   }
+}
+
+@keyframes flash-negative {
+   0% {
+      background-color: rgba(244, 63, 94, 0.20);
+   }
+
+   100% {
+      background-color: transparent;
+   }
+}
+
+.flash-positive {
+   animation: flash-positive 400ms var(--ease-out) forwards;
+}
+
+.flash-negative {
+   animation: flash-negative 400ms var(--ease-out) forwards;
+}
+
+/* =============================================================================
+   8. SKELETON PULSE
    ============================================================================= */
 @keyframes skeleton-pulse {
-  0%, 100% { opacity: 0.4; }
-  50%       { opacity: 0.8; }
+
+   0%,
+   100% {
+      opacity: 0.4;
+   }
+
+   50% {
+      opacity: 0.8;
+   }
 }
-.skeleton { animation: skeleton-pulse 1.5s ease-in-out infinite; background-color: var(--color-surface-raised); border-radius: var(--radius-md); }
+
+.skeleton {
+   animation: skeleton-pulse 1.5s ease-in-out infinite;
+   background-color: var(--color-surface-raised);
+   border-radius: var(--radius-md);
+}
 
 /* =============================================================================
    8. SEMANTIC TYPOGRAPHY UTILITIES
@@ -246,32 +364,166 @@ input[type="number"] { -moz-appearance: textfield; }
    ============================================================================= */
 
 /* Headings — for page titles and section headers */
-.type-h1 { font-size: var(--text-h1); font-weight: var(--text-h1--font-weight); line-height: var(--text-h1--line-height); letter-spacing: var(--text-h1--letter-spacing); color: var(--color-text-primary); }
-.type-h2 { font-size: var(--text-h2); font-weight: var(--text-h2--font-weight); line-height: var(--text-h2--line-height); letter-spacing: var(--text-h2--letter-spacing); color: var(--color-text-primary); }
-.type-h3 { font-size: var(--text-h3); font-weight: var(--text-h3--font-weight); line-height: var(--text-h3--line-height); letter-spacing: var(--text-h3--letter-spacing); color: var(--color-text-primary); }
+.type-h1 {
+   font-size: var(--text-h1);
+   font-weight: var(--text-h1--font-weight);
+   line-height: var(--text-h1--line-height);
+   letter-spacing: var(--text-h1--letter-spacing);
+   color: var(--color-text-primary);
+}
+
+.type-h2 {
+   font-size: var(--text-h2);
+   font-weight: var(--text-h2--font-weight);
+   line-height: var(--text-h2--line-height);
+   letter-spacing: var(--text-h2--letter-spacing);
+   color: var(--color-text-primary);
+}
+
+.type-h3 {
+   font-size: var(--text-h3);
+   font-weight: var(--text-h3--font-weight);
+   line-height: var(--text-h3--line-height);
+   letter-spacing: var(--text-h3--letter-spacing);
+   color: var(--color-text-primary);
+}
 
 /* Subtitle — section introductions, card titles */
-.type-subtitle { font-size: var(--text-subtitle); font-weight: var(--text-subtitle--font-weight); line-height: var(--text-subtitle--line-height); letter-spacing: var(--text-subtitle--letter-spacing); color: var(--color-text-primary); }
+.type-subtitle {
+   font-size: var(--text-subtitle);
+   font-weight: var(--text-subtitle--font-weight);
+   line-height: var(--text-subtitle--line-height);
+   letter-spacing: var(--text-subtitle--letter-spacing);
+   color: var(--color-text-primary);
+}
 
 /* Body — primary reading text */
-.type-body { font-size: var(--text-body); font-weight: var(--text-body--font-weight); line-height: var(--text-body--line-height); color: var(--color-text-primary); }
-.type-body-secondary { font-size: var(--text-body); font-weight: var(--text-body--font-weight); line-height: var(--text-body--line-height); color: var(--color-text-secondary); }
+.type-body {
+   font-size: var(--text-body);
+   font-weight: var(--text-body--font-weight);
+   line-height: var(--text-body--line-height);
+   color: var(--color-text-primary);
+}
+
+.type-body-secondary {
+   font-size: var(--text-body);
+   font-weight: var(--text-body--font-weight);
+   line-height: var(--text-body--line-height);
+   color: var(--color-text-secondary);
+}
 
 /* Caption — supporting information, dates, metadata */
-.type-caption { font-size: var(--text-caption); font-weight: var(--text-caption--font-weight); line-height: var(--text-caption--line-height); color: var(--color-text-secondary); }
-.type-caption-muted { font-size: var(--text-caption); font-weight: var(--text-caption--font-weight); line-height: var(--text-caption--line-height); color: var(--color-text-tertiary); }
+.type-caption {
+   font-size: var(--text-caption);
+   font-weight: var(--text-caption--font-weight);
+   line-height: var(--text-caption--line-height);
+   color: var(--color-text-secondary);
+}
+
+.type-caption-muted {
+   font-size: var(--text-caption);
+   font-weight: var(--text-caption--font-weight);
+   line-height: var(--text-caption--line-height);
+   color: var(--color-text-tertiary);
+}
 
 /* Label — column headers, UI metadata, uppercase tags */
-.type-label { font-size: var(--text-label); font-weight: var(--text-label--font-weight); line-height: var(--text-label--line-height); letter-spacing: var(--text-label--letter-spacing); color: var(--color-text-tertiary); text-transform: uppercase; }
-.type-label-body { font-size: var(--text-label); font-weight: var(--text-label--font-weight); line-height: var(--text-label--line-height); color: var(--color-text-secondary); }
+.type-label {
+   font-size: var(--text-label);
+   font-weight: var(--text-label--font-weight);
+   line-height: var(--text-label--line-height);
+   letter-spacing: var(--text-label--letter-spacing);
+   color: var(--color-text-tertiary);
+   text-transform: uppercase;
+}
+
+.type-label-body {
+   font-size: var(--text-label);
+   font-weight: var(--text-label--font-weight);
+   line-height: var(--text-label--line-height);
+   color: var(--color-text-secondary);
+}
 
 /* Data — financial numbers (monospaced for tabular alignment) */
-.type-data-xl { font-family: var(--font-mono); font-size: var(--text-h2); font-weight: 500; letter-spacing: -0.02em; color: var(--color-text-primary); }
-.type-data-lg { font-family: var(--font-mono); font-size: var(--text-h3); font-weight: 500; letter-spacing: -0.01em; color: var(--color-text-primary); }
-.type-data-md { font-family: var(--font-mono); font-size: var(--text-body); font-weight: 500; color: var(--color-text-primary); }
-.type-data-sm { font-family: var(--font-mono); font-size: var(--text-caption); font-weight: 400; color: var(--color-text-secondary); }
+.type-data-xl {
+   font-family: var(--font-mono);
+   font-size: var(--text-h2);
+   font-weight: 500;
+   letter-spacing: -0.02em;
+   color: var(--color-text-primary);
+}
+
+.type-data-lg {
+   font-family: var(--font-mono);
+   font-size: var(--text-h3);
+   font-weight: 500;
+   letter-spacing: -0.01em;
+   color: var(--color-text-primary);
+}
+
+.type-data-md {
+   font-family: var(--font-mono);
+   font-size: var(--text-body);
+   font-weight: 500;
+   color: var(--color-text-primary);
+}
+
+.type-data-sm {
+   font-family: var(--font-mono);
+   font-size: var(--text-caption);
+   font-weight: 400;
+   color: var(--color-text-secondary);
+}
 
 /* Numeric modifiers — apply on top of .type-data-* */
-.type-positive { color: var(--color-positive) !important; }
-.type-negative { color: var(--color-negative) !important; }
-.type-muted    { color: var(--color-text-tertiary) !important; }
+.type-positive {
+   color: var(--color-positive) !important;
+}
+
+.type-negative {
+   color: var(--color-negative) !important;
+}
+
+.type-muted {
+   color: var(--color-text-tertiary) !important;
+}
+
+/* =============================================================================
+   10. UTILITY EXTENSIONS
+   ============================================================================= */
+
+/* Unified card shadow — replaces ad-hoc shadow-sm usage */
+.shadow-card {
+   box-shadow: var(--shadow-card);
+}
+
+/* Gold accent utilities */
+.text-accent-gold {
+   color: var(--color-accent-gold);
+}
+
+.bg-accent-gold {
+   background-color: var(--color-accent-gold);
+}
+
+.bg-accent-gold-muted {
+   background-color: var(--color-accent-gold-muted);
+}
+
+.border-accent-gold {
+   border-color: var(--color-accent-gold);
+}
+
+/* Transition shorthands using design tokens */
+.transition-fast {
+   transition: all var(--duration-fast) var(--ease-swift);
+}
+
+.transition-normal {
+   transition: all var(--duration-normal) var(--ease-swift);
+}
+
+.transition-border {
+   transition: border-color var(--duration-fast) var(--ease-swift),
+      color var(--duration-fast) var(--ease-swift);
+}
