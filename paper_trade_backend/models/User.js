@@ -10,6 +10,10 @@ const UserSchema = new mongoose.Schema({
   refreshToken:   { type: String, default: '' },    // Hashed refresh token
   virtualBalance: { type: Number, default: 1000000 },
   date:           { type: Date, default: Date.now },
+  resetToken:     String,
+  expireToken:    Date
 });
+
+UserSchema.index({ virtualBalance: -1 });
 
 module.exports = mongoose.model('user', UserSchema);

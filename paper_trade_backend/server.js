@@ -82,10 +82,16 @@ const tradeLimiter = rateLimit({
 const authRoutes      = require('./routes/auth');
 const tradeRoutes     = require('./routes/trade');
 const syntheticRoutes = require('./routes/syntheticRoutes');
+const replayRoutes    = require('./routes/replay');
+const analyticsRoutes = require('./routes/analytics');
+const leaderboardRoutes = require('./routes/leaderboard');
 
 app.use('/api/auth',      authLimiter, authRoutes);
 app.use('/api/trade',     tradeLimiter, tradeRoutes);
 app.use('/api/synthetic', syntheticRoutes);
+app.use('/api/replay',    replayRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/leaderboard', leaderboardRoutes);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 🗄️  DATABASE

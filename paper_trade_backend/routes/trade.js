@@ -4,6 +4,7 @@ const User = require('../models/User');
 const Transaction = require('../models/Transaction');
 const fetchuser = require('../middleware/fetchuser');
 const brain = require('../engine/marketBrain');
+const aiCoach = require('../engine/aiCoach');
 const YahooFinance = require('yahoo-finance2').default;
 
 const yahooFinance = new YahooFinance({
@@ -69,7 +70,12 @@ router.post('/buy', fetchuser, async (req, res) => {
     });
     await newTxn.save();
 
-    res.json({ success: true, message: 'Buy Order Executed!', balance: user.virtualBalance });
+    // -- AI COACH INTERCEPTION --
+    const recentTrades = await Transaction.find({ userId: uid }).sort({ createdAt: -1 }).limit(10);
+    const bias = brain.getBiasSummary(symbol.trim().toUpperCase());
+    const aiFeedback = aiCoach.evaluateTrade(symbol.trim().toUpperCase(), 'BUY', qtyNumber, priceNumber, bias, recentTrades);
+
+    res.json({ success: true, message: 'Buy Order Executed!', balance: user.virtualBalance, aiFeedback });
   } catch (error) {
     console.error('Buy Error:', error);
     res.status(500).json({ message: 'Internal Server Error' });
@@ -125,7 +131,12 @@ router.post('/sell', fetchuser, async (req, res) => {
     });
     await newTxn.save();
 
-    res.json({ success: true, message: 'Sell Order Executed!', balance: user.virtualBalance });
+    // -- AI COACH INTERCEPTION --
+    const recentTrades = await Transaction.find({ userId: uid }).sort({ createdAt: -1 }).limit(10);
+    const bias = brain.getBiasSummary(symClean);
+    const aiFeedback = aiCoach.evaluateTrade(symClean, 'SELL', qtyNumber, priceNumber, bias, recentTrades);
+
+    res.json({ success: true, message: 'Sell Order Executed!', balance: user.virtualBalance, aiFeedback });
   } catch (error) {
     console.error('Sell Error:', error);
     res.status(500).json({ message: 'Internal Server Error' });
@@ -330,9 +341,20 @@ router.get('/chart/:symbol', async (req, res) => {
     else if (symbol === 'NIFTY BANK') yfSymbol = '^NSEBANK';
     else if (!symbol.includes('.NS') && !symbol.includes('^')) yfSymbol = `${symbol}.NS`;
 
+    const interval = req.query.interval || '15m';
+    
+    let period1Time = Date.now() - 7 * 24 * 60 * 60 * 1000; // default 7 days
+    if (interval === '1m') {
+      period1Time = Date.now() - 7 * 24 * 60 * 60 * 1000; 
+    } else if (['2m', '5m', '15m', '30m', '1h'].includes(interval)) {
+      period1Time = Date.now() - 59 * 24 * 60 * 60 * 1000; // max 60 days
+    } else if (['1d', '1wk', '1mo'].includes(interval)) {
+      period1Time = Date.now() - 5 * 365 * 24 * 60 * 60 * 1000; // 5 years for daily+
+    }
+
     const queryOptions = {
-      period1: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-      interval: '15m',
+      period1: new Date(period1Time),
+      interval: interval,
     };
 
     // ✅ FIX: Timeout wrapper — Yahoo Finance can hang indefinitely off-hours
@@ -353,10 +375,15 @@ router.get('/chart/:symbol', async (req, res) => {
     }
 
     const chartData = result.quotes
-      .filter(candle => candle.close !== null && candle.close !== undefined)
-      .map(candle => ({
-        time: Math.floor(new Date(candle.date).getTime() / 1000),
-        value: Number(candle.close.toFixed(2)),
+      .filter(c => c.close !== null && c.close !== undefined)
+      .map(c => ({
+        time: Math.floor(new Date(c.date).getTime() / 1000),
+        value: Number(c.close.toFixed(2)), // Fallback for legacy LineSeries
+        open: Number(c.open?.toFixed(2) || c.close.toFixed(2)),
+        high: Number(c.high?.toFixed(2) || c.close.toFixed(2)),
+        low: Number(c.low?.toFixed(2) || c.close.toFixed(2)),
+        close: Number(c.close.toFixed(2)),
+        volume: c.volume || 0
       }));
 
     res.json(chartData);
