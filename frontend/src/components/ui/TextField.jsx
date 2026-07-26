@@ -13,9 +13,11 @@ const TextField = ({
   capsLockAware = false,
   required = false,
   disabled = false,
+  autoComplete,
 }) => {
   const [capsLockActive, setCapsLockActive] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  const errorId = `${name}-error`;
 
   useEffect(() => {
     if (!capsLockAware) return;
@@ -61,13 +63,16 @@ const TextField = ({
           placeholder={placeholder}
           required={required}
           disabled={disabled}
+          autoComplete={autoComplete}
+          aria-invalid={!!error}
+          aria-describedby={error ? errorId : undefined}
           className={`${styles.input} ${error ? styles.error : ''} ${type === 'password' ? styles.inputPassword : ''}`}
         />
         {capsLockAware && isFocused && capsLockActive && (
           <span className={styles.capsLockHint}>Caps Lock</span>
         )}
       </div>
-      {error && <div className={styles.errorText}>{error}</div>}
+      {error && <div id={errorId} className={styles.errorText}>{error}</div>}
     </div>
   );
 };

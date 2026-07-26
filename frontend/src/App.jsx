@@ -80,6 +80,7 @@ function AnimatedRoutes() {
         <Routes location={location} key={location.pathname}>
           <Route path="/"          element={<Navigate to="/login" replace />} />
           <Route path="/login"     element={<Login />} />
+          <Route path="/register"  element={<Login />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/markets"   element={<Markets />} />
           <Route path="/portfolio" element={<Portfolio />} />

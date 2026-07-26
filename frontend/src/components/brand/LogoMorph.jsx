@@ -37,35 +37,35 @@ export default function LogoMorph({ decorative = false }) {
 
     const runSequence = async () => {
       while (isMounted) {
-        // Logo hold (1.20s)
-        await new Promise(r => setTimeout(r, 1200));
-        
-        // Logo -> Dollar (0.65s)
+        // Logo hold (1.50s)
+        await new Promise(r => setTimeout(r, 1500));
+
+        // Logo -> Dollar (0.80s)
         if (!isMounted) break;
-        setDuration(0.65);
+        setDuration(0.80);
         setActiveVariant('dollar');
-        await new Promise(r => setTimeout(r, 650));
+        await new Promise(r => setTimeout(r, 800));
 
-        // Dollar hold (0.55s)
-        await new Promise(r => setTimeout(r, 550));
+        // Dollar hold (0.70s)
+        await new Promise(r => setTimeout(r, 700));
 
-        // Dollar -> Graph (0.85s)
+        // Dollar -> Graph (1.00s)
         if (!isMounted) break;
-        setDuration(0.85);
+        setDuration(1.00);
         setActiveVariant('graph');
-        await new Promise(r => setTimeout(r, 850));
+        await new Promise(r => setTimeout(r, 1000));
 
-        // Graph hold (0.60s)
-        await new Promise(r => setTimeout(r, 600));
+        // Graph hold (0.80s)
+        await new Promise(r => setTimeout(r, 800));
 
-        // Graph -> Logo (0.85s)
+        // Graph -> Logo (1.00s)
         if (!isMounted) break;
-        setDuration(0.85);
+        setDuration(1.00);
         setActiveVariant('logo');
-        await new Promise(r => setTimeout(r, 850));
+        await new Promise(r => setTimeout(r, 1000));
 
-        // Logo rest (4.80s)
-        await new Promise(r => setTimeout(r, 4800));
+        // Logo rest (6.00s)
+        await new Promise(r => setTimeout(r, 6000));
       }
     };
 
@@ -83,14 +83,14 @@ export default function LogoMorph({ decorative = false }) {
       animate: {
         opacity: visible ? 1 : 0,
         // Subtle directional translation down when hiding, up to 0 when appearing
-        y: visible ? 0 : 3, 
+        y: visible ? 0 : 3,
       },
       transition: {
         // Short opacity overlap to avoid tangled silhouettes
-        opacity: { 
-          duration: duration > 0 ? duration * 0.25 : 0, 
+        opacity: {
+          duration: duration > 0 ? duration * 0.25 : 0,
           ease: "linear",
-          delay: visible ? (duration > 0 ? duration * 0.1 : 0) : 0 
+          delay: visible ? (duration > 0 ? duration * 0.1 : 0) : 0
         },
         y: { duration: duration, ease: [0.4, 0, 0.2, 1] }
       }
@@ -111,30 +111,32 @@ export default function LogoMorph({ decorative = false }) {
   };
 
   return (
-    <div 
+    <div
       className={styles.logoMorph}
       aria-hidden={decorative ? "true" : undefined}
       focusable={decorative ? "false" : undefined}
     >
       <svg viewBox="0 0 120 120" width="100%" height="100%">
         {Object.entries(states).map(([stateName, pathArray]) => (
-          <motion.g 
+          <motion.g
             key={stateName}
             {...getGroupProps(stateName)}
-            stroke="var(--color-accent)" 
-            strokeWidth="7" 
-            strokeLinecap="round" 
-            strokeLinejoin="round" 
+            stroke="var(--color-accent)"
+            strokeWidth="7"
+            strokeLinecap="round"
+            strokeLinejoin="round"
             fill="none"
             style={{ vectorEffect: 'non-scaling-stroke' }}
           >
-            {pathArray.map((d, i) => (
-              <motion.path 
-                key={i} 
-                d={d}
-                {...getPathProps(stateName)}
-              />
-            ))}
+            <g className={styles[`state-${stateName}`]}>
+              {pathArray.map((d, i) => (
+                <motion.path
+                  key={i}
+                  d={d}
+                  {...getPathProps(stateName)}
+                />
+              ))}
+            </g>
           </motion.g>
         ))}
       </svg>

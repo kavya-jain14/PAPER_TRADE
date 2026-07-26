@@ -6,6 +6,7 @@ const PrimaryButton = ({
   onClick,
   type = 'button',
   state = 'idle', // 'idle' | 'loading' | 'success' | 'disabled'
+  loadingLabel,
 }) => {
   const isDisabled = state === 'loading' || state === 'success' || state === 'disabled';
   
@@ -17,7 +18,7 @@ const PrimaryButton = ({
       disabled={isDisabled}
     >
       {state === 'loading' && <div className={styles.spinner} />}
-      {state === 'loading' ? 'Authenticating...' : children}
+      {state === 'loading' ? (loadingLabel || 'Loading...') : children}
     </button>
   );
 };

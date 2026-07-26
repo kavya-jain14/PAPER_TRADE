@@ -470,3 +470,12 @@
   outline: 1px solid var(--color-accent);
   outline-offset: 3px;
 }
+.successBanner {
+  background-color: var(--color-positive);
+  color: #fff;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  margin-bottom: 16px;
+  font-size: 14px;
+  font-weight: 500;
+}
