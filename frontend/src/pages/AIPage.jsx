@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { AppShell } from '../components/AppShell';
 import useMarketStatus from '../hooks/useMarketStatus';
@@ -18,7 +18,7 @@ export default function AIPage() {
   const navigate = useNavigate();
   const [userName, setUserName] = useState('');
   const [avatar, setAvatar] = useState('');
-  const isMarketOpen = useMarketStatus();
+  const marketStatus = useMarketStatus();
   const [messages, setMessages] = useState([
     { role: 'ai', content: "Hello! I'm your AI Trading Assistant powered by Market Brain. Ask me anything about markets, stocks, strategies, or how to use this platform." }
   ]);
@@ -79,8 +79,8 @@ export default function AIPage() {
   };
 
   return (
-    <AppShell userName={userName} isMarketOpen={isMarketOpen} avatar={avatar}>
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-1 flex flex-col min-w-0 h-full">
+    <AppShell userName={userName} marketStatus={marketStatus} avatar={avatar}>
+      <Motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-1 flex flex-col min-w-0 h-full">
         
         {/* Page layout: header + chat window filling height */}
         <div className="flex flex-col h-full max-w-[900px] mx-auto w-full p-4 md:p-8 pb-4 gap-4">
@@ -88,13 +88,13 @@ export default function AIPage() {
           {/* Header */}
           <header className="flex items-end justify-between shrink-0 pb-4 border-b border-border">
             <div>
-              <motion.h1 initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="type-h2 mb-1">
+              <Motion.h1 initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="type-h2 mb-1">
                 Market Brain
-              </motion.h1>
-              <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="flex items-center gap-2">
+              </Motion.h1>
+              <Motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="flex items-center gap-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-positive animate-pulse" />
                 <p className="type-caption uppercase tracking-widest">AI Assistant Online</p>
-              </motion.div>
+              </Motion.div>
             </div>
             <div className="flex items-center gap-2 px-3 py-1.5 bg-accent/10 border border-accent/20 rounded-full">
               <span className="material-symbols-outlined text-accent" style={{fontSize: '14px'}}>smart_toy</span>
@@ -108,7 +108,7 @@ export default function AIPage() {
             {/* Messages */}
             <div ref={scrollRef} className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 space-y-4">
               {messages.map((msg, i) => (
-                <motion.div
+                <Motion.div
                   key={i}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -130,7 +130,7 @@ export default function AIPage() {
                     )}
                     {msg.content}
                   </div>
-                </motion.div>
+                </Motion.div>
               ))}
 
               {/* Typing indicator */}
@@ -190,7 +190,7 @@ export default function AIPage() {
 
           </div>
         </div>
-      </motion.div>
+      </Motion.div>
     </AppShell>
   );
 }

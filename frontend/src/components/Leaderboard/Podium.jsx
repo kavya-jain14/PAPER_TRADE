@@ -1,12 +1,12 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 
 const PodiumPosition = ({ user, rank, heightClass, colorClass, iconClass, delay }) => {
   if (!user) return <div className="flex-1" />;
 
   return (
     <div className="flex-1 flex flex-col items-center justify-end h-[300px]">
-      <motion.div 
+      <Motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay, duration: 0.5, type: 'spring' }}
@@ -21,11 +21,11 @@ const PodiumPosition = ({ user, rank, heightClass, colorClass, iconClass, delay 
           {user.name}
         </div>
         <div className="font-mono text-positive text-sm">
-          ${user.balance.toLocaleString()}
+          {Number.isFinite(user.equity) ? `₹${user.equity.toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : '—'}
         </div>
-      </motion.div>
+      </Motion.div>
 
-      <motion.div 
+      <Motion.div
         initial={{ height: 0 }}
         animate={{ height: 'auto' }}
         transition={{ delay: delay + 0.2, duration: 0.8, type: 'spring' }}
@@ -35,7 +35,7 @@ const PodiumPosition = ({ user, rank, heightClass, colorClass, iconClass, delay 
         <div className="h-full w-full flex items-start justify-center pt-4">
           <span className="text-4xl font-extrabold text-white/50">{rank}</span>
         </div>
-      </motion.div>
+      </Motion.div>
     </div>
   );
 };
@@ -48,29 +48,29 @@ export default function Podium({ topUsers }) {
 
   return (
     <div className="flex items-end justify-center gap-2 md:gap-6 max-w-3xl mx-auto mt-12 mb-16 px-4">
-      <PodiumPosition 
-        user={second} 
-        rank={2} 
-        heightClass="h32 md:h-40" 
-        colorClass="bg-slate-400" 
+      <PodiumPosition
+        user={second}
+        rank={2}
+        heightClass="h32 md:h-40"
+        colorClass="bg-slate-400"
         iconClass="bg-slate-400"
-        delay={0.4} 
+        delay={0.4}
       />
-      <PodiumPosition 
-        user={first} 
-        rank={1} 
-        heightClass="h-40 md:h-56" 
-        colorClass="bg-accent-gold" 
+      <PodiumPosition
+        user={first}
+        rank={1}
+        heightClass="h-40 md:h-56"
+        colorClass="bg-accent-gold"
         iconClass="bg-accent-gold"
-        delay={0.2} 
+        delay={0.2}
       />
-      <PodiumPosition 
-        user={third} 
-        rank={3} 
-        heightClass="h-28 md:h-32" 
-        colorClass="bg-amber-700" 
+      <PodiumPosition
+        user={third}
+        rank={3}
+        heightClass="h-28 md:h-32"
+        colorClass="bg-amber-700"
         iconClass="bg-amber-700"
-        delay={0.6} 
+        delay={0.6}
       />
     </div>
   );

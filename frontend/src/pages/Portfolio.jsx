@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import {
   ResponsiveContainer,
@@ -87,7 +87,7 @@ function Portfolio() {
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
   const { metrics, loading: analyticsLoading } = useAnalytics(token);
-  const isMarketOpen = useMarketStatus();
+  const marketStatus = useMarketStatus();
 
   const fetchUserDataAndPortfolio = useCallback(async () => {
     try {
@@ -160,21 +160,21 @@ function Portfolio() {
   }).sort((a, b) => b.pnl - a.pnl);
 
   return (
-    <AppShell userName={userName} isMarketOpen={isMarketOpen} avatar={avatar}>
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="flex-1 flex flex-col min-w-0 relative h-full">
+    <AppShell userName={userName} marketStatus={marketStatus} avatar={avatar}>
+      <Motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="flex-1 flex flex-col min-w-0 relative h-full">
         <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10 pb-32">
           <div className="max-w-[1400px] mx-auto space-y-8">
             
             {/* Header */}
             <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-4 border-b border-border">
               <div>
-                <motion.h1 initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="type-h2 mb-1">
+                <Motion.h1 initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="type-h2 mb-1">
                   Portfolio
-                </motion.h1>
-                <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="flex items-center gap-2">
-                  <div className={`w-1.5 h-1.5 rounded-full ${isMarketOpen ? 'bg-positive animate-pulse' : 'bg-text-tertiary'}`} />
-                  <p className="type-caption uppercase tracking-widest">{isMarketOpen ? 'Live Prices' : 'AI Synthetic Mode'}</p>
-                </motion.div>
+                </Motion.h1>
+                <Motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="flex items-center gap-2">
+                  <div className={`w-1.5 h-1.5 rounded-full ${marketStatus === 'LIVE' ? 'bg-positive animate-pulse' : marketStatus === 'SIMULATED' ? 'bg-accent' : 'bg-text-tertiary'}`} />
+                  <p className="type-caption uppercase tracking-widest">{marketStatus === 'LIVE' ? 'Live Prices' : marketStatus === 'SIMULATED' ? 'AI Synthetic Mode' : 'Checking Status'}</p>
+                </Motion.div>
               </div>
               <button onClick={handleReset} className="flex items-center gap-1.5 type-caption text-negative/70 hover:text-negative transition-colors bg-negative/5 hover:bg-negative/10 px-3 py-1.5 rounded-lg border border-negative/20">
                 <span className="material-symbols-outlined" style={{fontSize:'16px'}}>restart_alt</span> Reset Account
@@ -187,7 +187,7 @@ function Portfolio() {
             <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
               
               {/* Holdings Table */}
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="xl:col-span-7 flex flex-col">
+              <Motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="xl:col-span-7 flex flex-col">
                 <div className="bg-surface border border-border rounded-lg shadow-1 overflow-hidden flex flex-col">
                   
                   {/* Table header */}
@@ -269,10 +269,10 @@ function Portfolio() {
                     )}
                   </div>
                 </div>
-              </motion.div>
+              </Motion.div>
 
               {/* Portfolio Insights */}
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="xl:col-span-5 flex flex-col gap-6">
+              <Motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="xl:col-span-5 flex flex-col gap-6">
                 
                 {/* P&L Summary Card */}
                 <div className={`rounded-lg p-5 border shadow-1 relative overflow-hidden ${isOverallGreen ? 'bg-positive-muted border-positive/20' : 'bg-negative-muted border-negative/20'}`}>
@@ -334,11 +334,11 @@ function Portfolio() {
                   </button>
                 </div>
 
-              </motion.div>
+              </Motion.div>
             </div>
           </div>
         </div>
-      </motion.div>
+      </Motion.div>
 
       <AnimatePresence>
          {selectedAsset && (

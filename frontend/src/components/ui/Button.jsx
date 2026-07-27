@@ -14,7 +14,7 @@
  *   icon → square, icon-only buttons
  */
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 
 export const Button = React.forwardRef(({
   className = '',
@@ -50,7 +50,7 @@ export const Button = React.forwardRef(({
   };
 
   return (
-    <motion.button
+    <Motion.button
       ref={ref}
       whileTap={{ scale: disabled || isLoading ? 1 : 0.97 }}
       transition={{ duration: 0.1 }}
@@ -66,7 +66,7 @@ export const Button = React.forwardRef(({
         />
       )}
       {children}
-    </motion.button>
+    </Motion.button>
   );
 });
 Button.displayName = 'Button';

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
 import { AppShell } from '../components/AppShell';
 import useMarketStatus from '../hooks/useMarketStatus';
 import { patternsData } from '../data/patterns';
@@ -40,7 +40,6 @@ const SvgChartWidget = ({ pattern }) => {
   }, [pattern]);
 
   useEffect(() => {
-    setVisibleCount(0);
     const interval = setInterval(() => {
       setVisibleCount(prev => {
         if (prev < data.length) return prev + 1;
@@ -137,7 +136,7 @@ const SvgChartWidget = ({ pattern }) => {
 
 
 function Academy() {
-  const isMarketOpen = useMarketStatus();
+  const marketStatus = useMarketStatus();
   const [selectedPattern, setSelectedPattern] = useState(null);
   
   const [searchTerm, setSearchTerm] = useState('');
@@ -155,18 +154,18 @@ function Academy() {
 
 
   return (
-    <AppShell isMarketOpen={isMarketOpen}>
+    <AppShell marketStatus={marketStatus}>
       <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 pb-24 relative">
           <div className="max-w-[1400px] mx-auto space-y-6 relative z-10">
           
           <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-4 border-b border-border">
             <div>
-              <motion.h1 initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="type-h2 mb-1">
+              <Motion.h1 initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="type-h2 mb-1">
                 Academy
-              </motion.h1>
-              <motion.p initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="type-caption-muted">
+              </Motion.h1>
+              <Motion.p initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="type-caption-muted">
                 Master technical analysis
-              </motion.p>
+              </Motion.p>
             </div>
             
             <div className="relative">
@@ -199,7 +198,7 @@ function Academy() {
                 <div className="col-span-full text-center py-16 type-caption-muted">No patterns found matching your criteria.</div>
              ) : (
                  filteredPatterns.map((item) => (
-                    <motion.div initial={{opacity:0, scale: 0.97}} animate={{opacity:1, scale:1}} exit={{opacity:0, scale:0.97}} key={item.id} className="bg-surface border border-border rounded-lg overflow-hidden shadow-1 flex flex-col group hover:border-border-strong transition-all duration-200">
+                    <Motion.div initial={{opacity:0, scale: 0.97}} animate={{opacity:1, scale:1}} exit={{opacity:0, scale:0.97}} key={item.id} className="bg-surface border border-border rounded-lg overflow-hidden shadow-1 flex flex-col group hover:border-border-strong transition-all duration-200">
                        <div className="h-44 bg-surface-raised border-b border-border flex items-center justify-center p-6 relative overflow-hidden">
                           <div className="absolute inset-0 bg-gradient-to-t from-surface to-transparent opacity-60"></div>
                           <div className="w-24 h-24 relative z-10 group-hover:scale-110 transition-transform duration-500">
@@ -223,7 +222,7 @@ function Academy() {
                              Study Pattern
                           </button>
                        </div>
-                    </motion.div>
+                    </Motion.div>
                  ))
              )}
              </AnimatePresence>
@@ -235,7 +234,7 @@ function Academy() {
       <AnimatePresence>
         {selectedPattern && (
           <div className="fixed inset-0 bg-[#000000]/80 flex items-center justify-center z-50 p-4 backdrop-blur-xl">
-            <motion.div initial={{scale:0.95, opacity: 0}} animate={{scale:1, opacity: 1}} exit={{scale:0.95, opacity: 0}} transition={{ duration: 0.2 }}
+            <Motion.div initial={{scale:0.95, opacity: 0}} animate={{scale:1, opacity: 1}} exit={{scale:0.95, opacity: 0}} transition={{ duration: 0.2 }}
               className="bg-surface-raised border border-border rounded-[32px] w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col shadow-3"
             >
               <div className="p-8 border-b border-border flex justify-between items-center relative">
@@ -261,7 +260,7 @@ function Academy() {
                 <div className="space-y-6">
                    
                    <div className="h-72 w-full">
-                     <SvgChartWidget pattern={selectedPattern} />
+                     <SvgChartWidget key={selectedPattern.id || selectedPattern.title} pattern={selectedPattern} />
                    </div>
 
                    <div className="p-6 bg-bg rounded-[24px] border border-border border-l-4 border-l-[#D4A574]">
@@ -311,7 +310,7 @@ function Academy() {
                 </button>
               </div>
               </div>
-            </motion.div>
+            </Motion.div>
           </div>
         )}
       </AnimatePresence>

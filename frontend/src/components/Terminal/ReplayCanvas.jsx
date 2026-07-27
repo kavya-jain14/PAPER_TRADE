@@ -1,12 +1,12 @@
 import React, { useRef, useEffect, memo } from 'react';
-import { createChart } from 'lightweight-charts';
+import { createChart, CandlestickSeries, HistogramSeries } from 'lightweight-charts';
 import useReplayData from '../../hooks/useReplayData';
 import ReplayControlBar from './ReplayControlBar';
 
 /**
  * ReplayCanvas — Visualization component for Replay Mode.
  */
-const ReplayCanvas = memo(({ symbol, interval, targetDate, onPriceUpdate }) => {
+const ReplayCanvas = memo(({ symbol, interval, targetDate, token, onPriceUpdate }) => {
   const containerRef = useRef(null);
   const chartRef = useRef(null);
   const seriesRef = useRef(null);
@@ -40,13 +40,13 @@ const ReplayCanvas = memo(({ symbol, interval, targetDate, onPriceUpdate }) => {
       rightPriceScale: { borderColor: 'var(--color-border)' },
     });
 
-    const series = chart.addCandlestickSeries({
+    const series = chart.addSeries(CandlestickSeries, {
       upColor: 'var(--color-positive)', downColor: 'var(--color-negative)',
       borderUpColor: 'var(--color-positive)', borderDownColor: 'var(--color-negative)',
       wickUpColor: 'var(--color-positive)', wickDownColor: 'var(--color-negative)',
     });
 
-    const volumeSeries = chart.addHistogramSeries({
+    const volumeSeries = chart.addSeries(HistogramSeries, {
       color: 'var(--color-text-tertiary)', priceFormat: { type: 'volume' }, priceScaleId: '',
     });
     volumeSeries.priceScale().applyOptions({ scaleMargins: { top: 0.8, bottom: 0 } });
@@ -104,7 +104,7 @@ const ReplayCanvas = memo(({ symbol, interval, targetDate, onPriceUpdate }) => {
   const {
     loading, isPlaying, togglePlay, stepForward, 
     speedMultiplier, setSpeed, progress, currentPrice
-  } = useReplayData(symbol, targetDate, interval, handleInit, handleTick);
+  } = useReplayData(symbol, targetDate, interval, token, handleInit, handleTick);
 
   // Sync price to parent
   useEffect(() => {

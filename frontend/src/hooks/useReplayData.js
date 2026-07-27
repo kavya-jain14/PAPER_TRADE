@@ -14,7 +14,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
  * @param {function} onInit - Callback fired to load initial chart history
  * @param {function} onTick - Callback fired when a replay candle is pushed
  */
-export default function useReplayData(symbol, targetDate, interval, onInit, onTick) {
+export default function useReplayData(symbol, targetDate, interval, token, onInit, onTick) {
   const [loading, setLoading] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
   const [speedMultiplier, setSpeedMultiplier] = useState(1); // 1x, 3x, 10x
@@ -37,7 +37,7 @@ export default function useReplayData(symbol, targetDate, interval, onInit, onTi
   // 1. Fetch Data Chunk
   useEffect(() => {
     if (!symbol || !targetDate) return;
-    
+
     let isMounted = true;
     setLoading(true);
     setIsPlaying(false);
@@ -50,20 +50,27 @@ export default function useReplayData(symbol, targetDate, interval, onInit, onTi
         url.searchParams.append('date', targetDate);
         url.searchParams.append('interval', interval);
 
-        const res = await fetch(url.toString());
+        const res = await fetch(url.toString(), {
+          headers: { 'auth-token': token }
+        });
+
+        if (res.status === 401) {
+          throw new Error('Authentication failed (401). Please log in again.');
+        }
+
         const data = await res.json();
 
         if (!res.ok) throw new Error(data.message || 'Failed to load replay data');
 
         if (isMounted) {
           bufferRef.current = data.replayBuffer;
-          
+
           if (data.initialState.length > 0) {
             onInitRef.current(data.initialState);
             const lastCandle = data.initialState[data.initialState.length - 1];
             setCurrentPrice(lastCandle.close);
           }
-          
+
           setLoading(false);
           toast.success(`Replay loaded: ${data.replayBuffer.length} bars ahead.`);
         }
@@ -81,7 +88,7 @@ export default function useReplayData(symbol, targetDate, interval, onInit, onTi
       isMounted = false;
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [symbol, targetDate, interval]);
+  }, [symbol, targetDate, interval, token]);
 
   // 2. Playback Engine
   const pushNextCandle = useCallback(() => {
@@ -102,7 +109,7 @@ export default function useReplayData(symbol, targetDate, interval, onInit, onTi
 
     currentIndexRef.current = idx + 1;
     setProgress(Math.round(((idx + 1) / buffer.length) * 100));
-    
+
     return true; // Successfully pushed
   }, []);
 
@@ -114,7 +121,7 @@ export default function useReplayData(symbol, targetDate, interval, onInit, onTi
       // Base interval is 1000ms (1 second) for 1x speed.
       // 3x = 333ms, 10x = 100ms
       const tickInterval = 1000 / speedMultiplier;
-      
+
       timerRef.current = setInterval(() => {
         const hasMore = pushNextCandle();
         if (!hasMore) {

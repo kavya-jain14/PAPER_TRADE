@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, useInView } from 'framer-motion';
+import { motion as Motion, useInView } from 'framer-motion';
 import { AppShell } from '../components/AppShell';
+import useMarketStatus from '../hooks/useMarketStatus';
 
 // ── SVG: Scales of Justice for Terms
 const LadyJusticeSVG = ({ progress = 0 }) => (
@@ -69,14 +70,14 @@ const AnimatedSection = ({ children, delay = 0 }) => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: '-80px' });
   return (
-    <motion.div
+    <Motion.div
       ref={ref}
       initial={{ opacity: 0, y: 40 }}
       animate={isInView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay }}
     >
       {children}
-    </motion.div>
+    </Motion.div>
   );
 };
 
@@ -189,7 +190,7 @@ export default function Legal() {
   const [iconVal, setIconVal] = useState(0);
   const [userName, setUserName] = useState('');
   const [avatar, setAvatar] = useState('');
-  const [isMarketOpen, setIsMarketOpen] = useState(false);
+  const marketStatus = useMarketStatus();
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -204,15 +205,6 @@ export default function Legal() {
           }
         }).catch(() => {});
     }
-    const checkMarket = () => {
-      const ist = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
-      const day = ist.getDay();
-      const mins = ist.getHours() * 60 + ist.getMinutes();
-      setIsMarketOpen(day >= 1 && day <= 5 && mins >= 555 && mins < 930);
-    };
-    checkMarket();
-    const iv = setInterval(checkMarket, 60000);
-    return () => clearInterval(iv);
   }, []);
 
   useEffect(() => {
@@ -241,7 +233,7 @@ export default function Legal() {
   };
 
   return (
-    <AppShell userName={userName} isMarketOpen={isMarketOpen} avatar={avatar}>
+    <AppShell userName={userName} marketStatus={marketStatus} avatar={avatar}>
       <div className="flex-1 overflow-y-auto custom-scrollbar relative">
 
         {/* ── HERO SECTION ── */}
@@ -249,7 +241,7 @@ export default function Legal() {
           <div className={`absolute inset-0 pointer-events-none ${accentClasses.glow}`} />
 
           {/* Animated Icon */}
-          <motion.div
+          <Motion.div
             key={activeTab}
             initial={{ scale: 0.6, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -260,9 +252,9 @@ export default function Legal() {
               ? <PrivacyShieldSVG progress={iconVal} />
               : <LadyJusticeSVG progress={iconVal} />
             }
-          </motion.div>
+          </Motion.div>
 
-          <motion.h1
+          <Motion.h1
             key={`h-${activeTab}`}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -270,9 +262,9 @@ export default function Legal() {
             className="text-5xl lg:text-[56px] font-light text-text-primary text-center tracking-tight"
           >
             {activeTab === 'privacy' ? 'Privacy Policy' : 'Terms of Use'}
-          </motion.h1>
+          </Motion.h1>
 
-          <motion.div
+          <Motion.div
             key={`meta-${activeTab}`}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -282,7 +274,7 @@ export default function Legal() {
             <span className="text-text-secondary text-xs font-semibold">Last Updated: {LAST_UPDATED}</span>
             <span className="w-1 h-1 rounded-full bg-border" />
             <span className="text-text-secondary text-xs font-semibold">Version {VERSION}</span>
-          </motion.div>
+          </Motion.div>
 
           {/* Tab Toggle */}
           <div className="flex gap-3 mt-10">

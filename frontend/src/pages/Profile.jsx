@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { AppShell } from '../components/AppShell';
+import useMarketStatus from '../hooks/useMarketStatus';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
@@ -12,7 +13,7 @@ export default function Profile() {
   const [bio,         setBio]         = useState('');
   const [avatar,      setAvatar]      = useState('');
   const [balance,     setBalance]     = useState(0);
-  const [isMarketOpen,setIsMarketOpen]= useState(false);
+  const marketStatus = useMarketStatus();
   const [isEditing,   setIsEditing]   = useState(false);
   const [editName,    setEditName]    = useState('');
   const [editBio,     setEditBio]     = useState('');
@@ -21,16 +22,7 @@ export default function Profile() {
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
 
-  useEffect(() => {
-    const checkMarket = () => {
-      const ist = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
-      const mins = ist.getHours() * 60 + ist.getMinutes();
-      setIsMarketOpen(ist.getDay() >= 1 && ist.getDay() <= 5 && mins >= 555 && mins < 930);
-    };
-    checkMarket();
-    const iv = setInterval(checkMarket, 60000);
-    return () => clearInterval(iv);
-  }, []);
+
 
   useEffect(() => {
     if (!token) { navigate('/login'); return; }
@@ -98,20 +90,20 @@ export default function Profile() {
   const initials = (userName || 'T').charAt(0).toUpperCase();
 
   return (
-    <AppShell userName={userName} isMarketOpen={isMarketOpen} avatar={avatar}>
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="flex-1 flex flex-col min-w-0 relative h-full">
+    <AppShell userName={userName} marketStatus={marketStatus} avatar={avatar}>
+      <Motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="flex-1 flex flex-col min-w-0 relative h-full">
         <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10 pb-32">
           <div className="max-w-[1000px] mx-auto space-y-8">
 
             {/* Header */}
             <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-4 border-b border-border">
               <div>
-                <motion.h1 initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="type-h2 mb-1">
+                <Motion.h1 initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="type-h2 mb-1">
                   Profile
-                </motion.h1>
-                <motion.p initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="type-caption-muted">
+                </Motion.h1>
+                <Motion.p initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="type-caption-muted">
                   Manage your account details
-                </motion.p>
+                </Motion.p>
               </div>
               <button onClick={handleLogout} className="flex items-center gap-1.5 type-caption text-negative/70 hover:text-negative transition-colors bg-negative/5 hover:bg-negative/10 px-3 py-1.5 rounded-lg border border-negative/20">
                 <span className="material-symbols-outlined" style={{fontSize:'16px'}}>logout</span> Sign Out
@@ -122,7 +114,7 @@ export default function Profile() {
             <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
 
               {/* Profile Card */}
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="xl:col-span-8 bg-surface border border-border rounded-lg p-6 shadow-1">
+              <Motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="xl:col-span-8 bg-surface border border-border rounded-lg p-6 shadow-1">
                 <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
                   
                   {/* Avatar */}
@@ -194,10 +186,10 @@ export default function Profile() {
                     )}
                   </div>
                 </div>
-              </motion.div>
+              </Motion.div>
 
               {/* Stats Sidebar */}
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="xl:col-span-4 flex flex-col gap-4">
+              <Motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="xl:col-span-4 flex flex-col gap-4">
                 {[
                   { label: 'Available Balance', value: `₹${balance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, icon: 'account_balance_wallet', iconColor: 'text-positive' },
                   { label: 'Account Type', value: 'Paper Trader', icon: 'school', iconColor: 'text-accent' },
@@ -225,18 +217,18 @@ export default function Profile() {
                     <div className="flex justify-between items-center">
                       <p className="type-caption-muted">Market Mode</p>
                       <div className="flex items-center gap-1.5">
-                        <div className={`w-1.5 h-1.5 rounded-full ${isMarketOpen ? 'bg-positive animate-pulse' : 'bg-text-tertiary'}`} />
-                        <p className="type-caption text-text-secondary">{isMarketOpen ? 'Live' : 'Synthetic'}</p>
+                        <div className={`w-1.5 h-1.5 rounded-full ${marketStatus === 'LIVE' ? 'bg-positive animate-pulse' : marketStatus === 'SIMULATED' ? 'bg-accent' : 'bg-text-tertiary'}`} />
+                        <p className="type-caption text-text-secondary">{marketStatus === 'LIVE' ? 'Live' : marketStatus === 'SIMULATED' ? 'Synthetic' : 'Checking'}</p>
                       </div>
                     </div>
                   </div>
                 </div>
-              </motion.div>
+              </Motion.div>
 
             </div>
           </div>
         </div>
-      </motion.div>
+      </Motion.div>
     </AppShell>
   );
 }

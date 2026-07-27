@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
 
 const TOP_STOCKS = [
   'RELIANCE','TCS','HDFCBANK','ICICIBANK','INFY',
@@ -30,7 +30,11 @@ export default function CommandPalette() {
     const handleKeyDown = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
-        setIsOpen(prev => !prev);
+        if (!isOpen) {
+          setQuery('');
+          setSelectedIndex(0);
+        }
+        setIsOpen(!isOpen);
       }
       if (e.key === 'Escape' && isOpen) {
         setIsOpen(false);
@@ -42,8 +46,7 @@ export default function CommandPalette() {
 
   useEffect(() => {
     if (isOpen) {
-      setQuery('');
-      setSelectedIndex(0);
+      // Focus element after the animation frames
       setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [isOpen]);
@@ -67,9 +70,7 @@ export default function CommandPalette() {
 
   const results = searchResults();
 
-  useEffect(() => {
-    setSelectedIndex(0);
-  }, [query]);
+
 
   const handleSelect = (result) => {
     setIsOpen(false);
@@ -103,7 +104,7 @@ export default function CommandPalette() {
   return (
     <AnimatePresence>
       {isOpen && (
-        <motion.div
+        <Motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -111,7 +112,7 @@ export default function CommandPalette() {
           style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)' }}
           onClick={() => setIsOpen(false)}
         >
-          <motion.div
+          <Motion.div
             initial={{ opacity: 0, scale: 0.95, y: -20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -10 }}
@@ -131,7 +132,10 @@ export default function CommandPalette() {
                 ref={inputRef}
                 type="text"
                 value={query}
-                onChange={e => setQuery(e.target.value)}
+                onChange={e => {
+                  setQuery(e.target.value);
+                  setSelectedIndex(0);
+                }}
                 onKeyDown={handleKeyDown}
                 placeholder="Search stocks, indices, or navigation..."
                 className="flex-1 bg-transparent border-none outline-none type-h3 placeholder:text-text-tertiary"
@@ -194,8 +198,8 @@ export default function CommandPalette() {
                 </div>
               )}
             </div>
-          </motion.div>
-        </motion.div>
+          </Motion.div>
+        </Motion.div>
       )}
     </AnimatePresence>
   );

@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 
 const container = {
   hidden: { opacity: 0 },
@@ -18,7 +18,7 @@ export default function LeaderboardList({ users }) {
   if (!users || users.length === 0) return null;
 
   return (
-    <motion.div 
+    <Motion.div
       variants={container}
       initial="hidden"
       animate="show"
@@ -30,13 +30,13 @@ export default function LeaderboardList({ users }) {
             <tr className="bg-surface-raised border-b border-border">
               <th className="py-4 px-6 type-caption-muted uppercase tracking-wider w-20 text-center">Rank</th>
               <th className="py-4 px-6 type-caption-muted uppercase tracking-wider">Trader</th>
-              <th className="py-4 px-6 type-caption-muted uppercase tracking-wider text-right">Balance</th>
+              <th className="py-4 px-6 type-caption-muted uppercase tracking-wider text-right">Equity</th>
             </tr>
           </thead>
           <tbody>
             {users.map((user) => (
-              <motion.tr 
-                key={user.id} 
+              <Motion.tr
+                key={user.id}
                 variants={item}
                 className={`border-b border-border/50 last:border-0 hover:bg-surface-hover transition-colors ${
                   user.isCurrentUser ? 'bg-accent/5' : ''
@@ -44,7 +44,7 @@ export default function LeaderboardList({ users }) {
               >
                 <td className="py-4 px-6 text-center">
                   <span className={`font-mono font-bold ${user.isCurrentUser ? 'text-accent' : 'text-text-tertiary'}`}>
-                    #{user.rank}
+                    {user.unrankedReason ? '—' : `#${user.rank}`}
                   </span>
                 </td>
                 <td className="py-4 px-6">
@@ -64,14 +64,14 @@ export default function LeaderboardList({ users }) {
                 </td>
                 <td className="py-4 px-6 text-right">
                   <span className="font-mono text-positive font-medium">
-                    ${user.balance.toLocaleString()}
+                    {Number.isFinite(user.equity) ? `₹${user.equity.toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : '—'}
                   </span>
                 </td>
-              </motion.tr>
+              </Motion.tr>
             ))}
           </tbody>
         </table>
       </div>
-    </motion.div>
+    </Motion.div>
   );
 }

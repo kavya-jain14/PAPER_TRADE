@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
 import { AppShell } from '../components/AppShell';
 import TradeModal from '../components/TradeModal';
 import useMarketStatus from '../hooks/useMarketStatus';
@@ -74,13 +74,14 @@ function Markets() {
   });
 
   const navigate = useNavigate();
-  const isMarketOpen = useMarketStatus();
+  const marketStatus = useMarketStatus();
   const token = localStorage.getItem('token');
 
-  const fetchUserData = useCallback(async () => {
+  const fetchUserData = useCallback(async (signal) => {
     try {
       const response = await fetch(`${API_URL}/api/auth/getuser`, {
-        method: "GET", headers: { "Content-Type": "application/json", "auth-token": token }
+        method: "GET", headers: { "Content-Type": "application/json", "auth-token": token },
+        signal
       });
       const data = await response.json();
       if (response.ok) {
@@ -91,19 +92,23 @@ function Markets() {
 
       try {
         const portRes = await fetch(`${API_URL}/api/trade/portfolio`, {
-          headers: { "Content-Type": "application/json", "auth-token": token }
+          headers: { "Content-Type": "application/json", "auth-token": token },
+          signal
         });
         if (portRes.ok) {
           const portData = await portRes.json();
           setHoldings(portData || []);
         }
       } catch { /* ignore */ }
-    } catch (error) { console.error(error); }
+    } catch (error) { if (error.name !== 'AbortError') console.error(error); }
   }, [token]);
 
   useEffect(() => {
     if (!token) { navigate('/login'); return; }
-    fetchUserData();
+    const controller = new AbortController();
+    const init = async () => { await fetchUserData(controller.signal); };
+    init();
+    return () => { controller.abort(); };
   }, [token, navigate, fetchUserData]);
 
 
@@ -201,21 +206,21 @@ function Markets() {
   })).sort((a, b) => b.avgChange - a.avgChange);
 
   return (
-    <AppShell userName={userName} isMarketOpen={isMarketOpen} avatar={avatar}>
-      <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="flex-1 flex flex-col min-w-0 h-full relative overflow-hidden">
+    <AppShell userName={userName} marketStatus={marketStatus} avatar={avatar}>
+      <Motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="flex-1 flex flex-col min-w-0 h-full relative overflow-hidden">
         <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 pb-24">
           <div className="max-w-[1400px] mx-auto space-y-6">
             
             {/* Header */}
             <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-4 border-b border-border">
               <div>
-                <motion.h1 initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="type-h2 mb-1">
+                <Motion.h1 initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="type-h2 mb-1">
                   Markets
-                </motion.h1>
-                <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="flex items-center gap-2">
-                  <div className={`w-1.5 h-1.5 rounded-full ${isMarketOpen ? 'bg-positive animate-pulse' : 'bg-negative'}`} />
-                  <p className="type-caption uppercase tracking-widest">{isMarketOpen ? 'Live Market Data' : 'AI Synthetic Mode'}</p>
-                </motion.div>
+                </Motion.h1>
+                <Motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="flex items-center gap-2">
+                  <div className={`w-1.5 h-1.5 rounded-full ${marketStatus === 'LIVE' ? 'bg-positive animate-pulse' : marketStatus === 'SIMULATED' ? 'bg-accent' : 'bg-text-tertiary'}`} />
+                  <p className="type-caption uppercase tracking-widest">{marketStatus === 'LIVE' ? 'Live Market Data' : marketStatus === 'SIMULATED' ? 'AI Synthetic Mode' : 'Checking Status'}</p>
+                </Motion.div>
               </div>
             </header>
 
@@ -225,7 +230,7 @@ function Markets() {
                 const data = marketPrices[idx] || {};
                 const isUp = (data.change || 0) >= 0;
                 return (
-                  <motion.div initial={{opacity:0, y: 10}} animate={{opacity:1, y:0}} transition={{delay: 0.2 + (i * 0.05)}} key={idx} onClick={() => setSelectedAsset(idx)} className="bg-surface border border-border rounded-lg p-4 shadow-1 cursor-pointer hover:border-border-strong transition-colors group flex items-center justify-between">
+                  <Motion.div initial={{opacity:0, y: 10}} animate={{opacity:1, y:0}} transition={{delay: 0.2 + (i * 0.05)}} key={idx} onClick={() => setSelectedAsset(idx)} className="bg-surface border border-border rounded-lg p-4 shadow-1 cursor-pointer hover:border-border-strong transition-colors group flex items-center justify-between">
                     <div>
                       <p className="type-label text-text-secondary group-hover:text-text-primary transition-colors">{idx}</p>
                       <p className="type-data-lg mt-1 text-text-primary">₹{(data.price || 0).toLocaleString('en-IN')}</p>
@@ -238,7 +243,7 @@ function Markets() {
                          <Sparkline data={priceHistory[idx] || []} color={isUp ? '#22C55E' : '#F43F5E'} width={60} height={20} />
                       </div>
                     </div>
-                  </motion.div>
+                  </Motion.div>
                 )
               })}
             </div>
@@ -399,7 +404,7 @@ function Markets() {
             </div>
           </div>
         </div>
-      </motion.div>
+      </Motion.div>
 
       <AnimatePresence>
          {selectedAsset && (

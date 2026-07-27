@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useImperativeHandle, forwardRef, memo } from 'react';
-import { createChart } from 'lightweight-charts';
+import { createChart, CandlestickSeries, HistogramSeries } from 'lightweight-charts';
 import useChartData from '../../hooks/useChartData';
 
 /**
@@ -43,7 +43,7 @@ const ChartCanvas = memo(forwardRef(({ symbol, interval }, ref) => {
       },
     });
 
-    const series = chart.addCandlestickSeries({
+    const series = chart.addSeries(CandlestickSeries, {
       upColor: 'var(--color-positive)',
       downColor: 'var(--color-negative)',
       borderUpColor: 'var(--color-positive)',
@@ -52,7 +52,7 @@ const ChartCanvas = memo(forwardRef(({ symbol, interval }, ref) => {
       wickDownColor: 'var(--color-negative)',
     });
 
-    const volumeSeries = chart.addHistogramSeries({
+    const volumeSeries = chart.addSeries(HistogramSeries, {
       color: 'var(--color-text-tertiary)',
       priceFormat: { type: 'volume' },
       priceScaleId: '', // set as an overlay
@@ -99,23 +99,31 @@ const ChartCanvas = memo(forwardRef(({ symbol, interval }, ref) => {
   };
 
   // Fetch data
-  const { history, loading, error } = useChartData(symbol, interval, handleTick);
+  const { history, loading, error, marketMode } = useChartData(symbol, interval, handleTick);
 
   // Apply historical data when loaded
   useEffect(() => {
-    if (!history.length || !seriesRef.current) return;
-    
+    if (!seriesRef.current || !volumeSeriesRef.current) return;
+
+    if (history.length === 0) {
+      seriesRef.current.setData([]);
+      volumeSeriesRef.current.setData([]);
+      return;
+    }
+
     seriesRef.current.setData(history);
-    
+
     const volData = history.map(c => ({
       time: c.time,
       value: c.volume,
       color: c.close >= c.open ? 'rgba(34, 197, 94, 0.4)' : 'rgba(244, 63, 94, 0.4)',
     }));
     volumeSeriesRef.current.setData(volData);
-    
+
     chartRef.current.timeScale().fitContent();
   }, [history]);
+
+
 
   // Expose chart instance to parent for drawing tools
   useImperativeHandle(ref, () => ({
@@ -133,7 +141,12 @@ const ChartCanvas = memo(forwardRef(({ symbol, interval }, ref) => {
 
   return (
     <div className="w-full h-full relative" style={{ background: 'var(--color-bg)' }}>
-      {loading && (
+      {marketMode === 'UNKNOWN' ? (
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-bg/80 backdrop-blur-sm">
+          <span className="material-symbols-outlined text-text-tertiary mb-2 text-2xl">schedule</span>
+          <p className="type-label text-text-tertiary">Checking market status…</p>
+        </div>
+      ) : loading && (
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm">
           <div className="w-8 h-8 rounded-full border-2 border-border-strong border-t-accent animate-spin mb-3"></div>
           <p className="type-label">Loading {interval} data...</p>

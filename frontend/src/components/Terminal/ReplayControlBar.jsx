@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
 
 /**
  * ReplayControlBar
@@ -41,7 +41,7 @@ export default function ReplayControlBar({
   return (
     <AnimatePresence>
       {active && (
-        <motion.div
+        <Motion.div
           initial={{ y: 100, opacity: 0, scale: 0.95 }}
           animate={{ y: 0, opacity: 1, scale: 1 }}
           exit={{ y: 100, opacity: 0, scale: 0.95 }}
@@ -106,7 +106,7 @@ export default function ReplayControlBar({
               Exit Replay
             </button>
           </div>
-        </motion.div>
+        </Motion.div>
       )}
     </AnimatePresence>
   );

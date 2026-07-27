@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { AppShell } from '../components/AppShell';
 import useMarketStatus from '../hooks/useMarketStatus';
@@ -14,7 +14,7 @@ function History() {
   const [avatar, setAvatar] = useState('');
   const [tradeHistory, setTradeHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const isMarketOpen = useMarketStatus();
+  const marketStatus = useMarketStatus();
   const [activeFilter, setActiveFilter] = useState('All');
   
   const navigate = useNavigate();
@@ -99,21 +99,21 @@ function History() {
   });
 
   return (
-    <AppShell userName={userName} isMarketOpen={isMarketOpen} avatar={avatar}>
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="flex-1 flex flex-col min-w-0 relative h-full">
+    <AppShell userName={userName} marketStatus={marketStatus} avatar={avatar}>
+      <Motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="flex-1 flex flex-col min-w-0 relative h-full">
         <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10 pb-32">
           <div className="max-w-[1400px] mx-auto space-y-8">
             
             {/* Header */}
             <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-4 border-b border-border">
               <div>
-                <motion.h1 initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="type-h2 mb-1">
+                <Motion.h1 initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="type-h2 mb-1">
                   Trade Ledger
-                </motion.h1>
-                <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="flex items-center gap-2">
-                  <div className={`w-1.5 h-1.5 rounded-full ${isMarketOpen ? 'bg-positive animate-pulse' : 'bg-text-tertiary'}`} />
-                  <p className="type-caption uppercase tracking-widest">{isMarketOpen ? 'Live Market' : 'AI Synthetic Mode'}</p>
-                </motion.div>
+                </Motion.h1>
+                <Motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="flex items-center gap-2">
+                  <div className={`w-1.5 h-1.5 rounded-full ${marketStatus === 'LIVE' ? 'bg-positive animate-pulse' : marketStatus === 'SIMULATED' ? 'bg-accent' : 'bg-text-tertiary'}`} />
+                  <p className="type-caption uppercase tracking-widest">{marketStatus === 'LIVE' ? 'Live Market' : marketStatus === 'SIMULATED' ? 'AI Synthetic Mode' : 'Checking Status'}</p>
+                </Motion.div>
               </div>
               <button onClick={fetchUserDataAndHistory} className="flex items-center gap-1.5 type-caption text-text-secondary hover:text-text-primary transition-colors bg-surface-raised px-3 py-1.5 rounded-lg border border-border">
                 <span className="material-symbols-outlined" style={{fontSize:'16px'}}>refresh</span> Refresh
@@ -122,21 +122,21 @@ function History() {
 
             {/* Metric Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <motion.div initial={{opacity:0, y: 10}} animate={{opacity:1, y:0}} transition={{delay: 0.1}} className="bg-surface-raised border border-border rounded-lg p-5 shadow-1">
+              <Motion.div initial={{opacity:0, y: 10}} animate={{opacity:1, y:0}} transition={{delay: 0.1}} className="bg-surface-raised border border-border rounded-lg p-5 shadow-1">
                 <p className="type-label mb-2">Total Executions</p>
                 <p className="type-data-xl">{totalTrades}</p>
-              </motion.div>
-              <motion.div initial={{opacity:0, y: 10}} animate={{opacity:1, y:0}} transition={{delay: 0.15}} className="bg-surface-raised border border-border rounded-lg p-5 shadow-1">
+              </Motion.div>
+              <Motion.div initial={{opacity:0, y: 10}} animate={{opacity:1, y:0}} transition={{delay: 0.15}} className="bg-surface-raised border border-border rounded-lg p-5 shadow-1">
                 <p className="type-label mb-2">Win Rate (Closed)</p>
                 <p className="type-data-xl">{winRate}{winRate !== '—' ? '%' : ''}</p>
                 <p className="type-caption-muted mt-1">{profitableSells} of {sellTrades.length} sells profitable</p>
-              </motion.div>
-              <motion.div initial={{opacity:0, y: 10}} animate={{opacity:1, y:0}} transition={{delay: 0.2}} className={`rounded-lg p-5 border shadow-1 ${isOverallGreen ? 'bg-positive-muted border-positive/20' : 'bg-negative-muted border-negative/20'}`}>
+              </Motion.div>
+              <Motion.div initial={{opacity:0, y: 10}} animate={{opacity:1, y:0}} transition={{delay: 0.2}} className={`rounded-lg p-5 border shadow-1 ${isOverallGreen ? 'bg-positive-muted border-positive/20' : 'bg-negative-muted border-negative/20'}`}>
                 <p className={`type-label mb-2 ${isOverallGreen ? 'type-positive' : 'type-negative'}`}>Realized P&L</p>
                 <p className={`type-data-xl ${isOverallGreen ? 'type-positive' : 'type-negative'}`}>
                   {isOverallGreen ? '+' : ''}₹{totalRealizedPnL.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                 </p>
-              </motion.div>
+              </Motion.div>
             </div>
 
             {/* Filter Pills + Execution Feed */}
@@ -198,7 +198,7 @@ function History() {
                       const total = trade.quantity * trade.pricePerShare;
 
                       return (
-                        <motion.div
+                        <Motion.div
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           transition={{ delay: Math.min(i * 0.03, 0.3) }}
@@ -241,7 +241,7 @@ function History() {
                               </>
                             )}
                           </div>
-                        </motion.div>
+                        </Motion.div>
                       );
                     })}
                   </div>
@@ -251,7 +251,7 @@ function History() {
 
           </div>
         </div>
-      </motion.div>
+      </Motion.div>
     </AppShell>
   );
 }

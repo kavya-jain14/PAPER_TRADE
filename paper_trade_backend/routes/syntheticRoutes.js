@@ -2,14 +2,12 @@ const express    = require('express');
 const router     = express.Router();
 const brain      = require('../engine/marketBrain');
 const fetchuser  = require('../middleware/fetchuser');
+const { SUPPORTED_SYMBOLS } = require('../utils/validators');
 
 // Note: CORS is handled globally in server.js — no need to apply it per-router
 
-const ALL_SYMBOLS = [
-  'RELIANCE','TCS','HDFCBANK','ICICIBANK','INFY',
-  'ITC','SBIN','BHARTIARTL','LT','AXISBANK',
-  'NIFTY 50','SENSEX','NIFTY BANK',
-];
+// Use the shared SUPPORTED_SYMBOLS set so every supported stock is seeded
+const ALL_SYMBOLS = [...SUPPORTED_SYMBOLS];
 
 // ✅ Seed all symbols ONCE at startup — not per request
 const seedAll = async () => {

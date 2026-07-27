@@ -72,7 +72,7 @@ export function MobileBottomNav() {
 }
 
 /* ── Desktop sidebar ──────────────────────────────────────────────────────── */
-function Sidebar({ userName = '', isMarketOpen = false, avatar = '' }) {
+function Sidebar({ userName = '', marketStatus = 'UNKNOWN', avatar = '' }) {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -173,12 +173,12 @@ function Sidebar({ userName = '', isMarketOpen = false, avatar = '' }) {
         {/* Market status */}
         <div className="flex items-center gap-2">
           <span
-            className={`w-1.5 h-1.5 rounded-full ${isMarketOpen ? 'animate-pulse' : ''}`}
-            style={{ background: isMarketOpen ? 'var(--color-positive)' : 'var(--color-text-tertiary)' }}
+            className={`w-1.5 h-1.5 rounded-full ${marketStatus === 'LIVE' ? 'animate-pulse' : ''}`}
+            style={{ background: marketStatus === 'LIVE' ? 'var(--color-positive)' : marketStatus === 'SIMULATED' ? 'var(--color-accent)' : 'var(--color-text-tertiary)' }}
             aria-hidden="true"
           />
           <span style={{ fontSize: 'var(--text-label)', color: 'var(--color-text-tertiary)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-            {isMarketOpen ? 'Market Open' : 'Market Closed'}
+            {marketStatus === 'LIVE' ? 'Market Open' : marketStatus === 'SIMULATED' ? 'Simulated' : 'Checking status...'}
           </span>
         </div>
 

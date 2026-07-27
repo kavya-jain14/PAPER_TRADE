@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
 
 export default function AICoachCard({ aiFeedback, onClose }) {
   if (!aiFeedback) return null;
@@ -13,7 +13,7 @@ export default function AICoachCard({ aiFeedback, onClose }) {
 
   return (
     <AnimatePresence>
-      <motion.div
+      <Motion.div
         initial={{ opacity: 0, y: -20, height: 0 }}
         animate={{ opacity: 1, y: 0, height: 'auto' }}
         exit={{ opacity: 0, height: 0 }}
@@ -73,7 +73,7 @@ export default function AICoachCard({ aiFeedback, onClose }) {
           )}
 
         </div>
-      </motion.div>
+      </Motion.div>
     </AnimatePresence>
   );
 }

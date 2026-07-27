@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
 import SmartChart from '../components/SmartChart';
 import { AppShell } from '../components/AppShell';
 import useMarketStatus from '../hooks/useMarketStatus';
@@ -40,12 +40,13 @@ function Dashboard() {
 
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
-  const isMarketOpen = useMarketStatus();
+  const marketStatus = useMarketStatus();
 
-  const fetchUserData = useCallback(async () => {
+  const fetchUserData = useCallback(async (signal) => {
     try {
       const response = await fetch(`${API_URL}/api/auth/getuser`, {
-        method: "GET", headers: { "Content-Type": "application/json", "auth-token": token }
+        method: "GET", headers: { "Content-Type": "application/json", "auth-token": token },
+        signal
       });
       const data = await response.json();
       if (response.ok) {
@@ -57,7 +58,8 @@ function Dashboard() {
       
       try {
         const portRes = await fetch(`${API_URL}/api/trade/portfolio`, {
-          headers: { "Content-Type": "application/json", "auth-token": token }
+          headers: { "Content-Type": "application/json", "auth-token": token },
+          signal
         });
         if (portRes.ok) {
           const portData = await portRes.json();
@@ -67,7 +69,8 @@ function Dashboard() {
 
       try {
         const histRes = await fetch(`${API_URL}/api/trade/history`, {
-          headers: { "Content-Type": "application/json", "auth-token": token }
+          headers: { "Content-Type": "application/json", "auth-token": token },
+          signal
         });
         if (histRes.ok) {
           const rawHistData = await histRes.json();
@@ -101,12 +104,15 @@ function Dashboard() {
           setTradeHistory(enriched.reverse());
         }
       } catch { /* ignore */ }
-    } catch (error) { console.error(error); }
+    } catch (error) { if (error.name !== 'AbortError') console.error(error); }
   }, [token]);
 
   useEffect(() => {
     if (!token) { navigate('/login'); return; }
-    fetchUserData();
+    const controller = new AbortController();
+    const init = async () => { await fetchUserData(controller.signal); };
+    init();
+    return () => { controller.abort(); };
   }, [token, navigate, fetchUserData]);
 
   useEffect(() => {
@@ -192,53 +198,53 @@ function Dashboard() {
   const mainChartIsGreen = (mainChartData.change || 0) >= 0;
 
   return (
-    <AppShell userName={userName} isMarketOpen={isMarketOpen} avatar={avatar}>
+    <AppShell userName={userName} marketStatus={marketStatus} avatar={avatar}>
       <div className="flex-1 flex flex-col min-w-0 relative h-full">
         <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10 pb-32">
           <div className="max-w-[1400px] mx-auto space-y-8">
             
             {/* HERO & QUICK ACTIONS */}
             <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-border">
-              <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+              <Motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
                 <h1 className="type-h2 mb-2">{greeting}, {userName}.</h1>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className={`w-1.5 h-1.5 rounded-full ${isMarketOpen ? 'bg-positive animate-pulse' : 'bg-text-tertiary'}`} />
-                  <span className="type-caption uppercase tracking-widest">{isMarketOpen ? 'Market is Open' : 'AI Synthetic Mode'}</span>
+                  <span className={`w-1.5 h-1.5 rounded-full ${marketStatus === 'LIVE' ? 'bg-positive animate-pulse' : marketStatus === 'SIMULATED' ? 'bg-accent' : 'bg-text-tertiary'}`} />
+                  <span className="type-caption uppercase tracking-widest">{marketStatus === 'LIVE' ? 'Market is Open' : marketStatus === 'SIMULATED' ? 'AI Synthetic Mode' : 'Checking Status'}</span>
                 </div>
-              </motion.div>
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }} className="flex gap-3">
+              </Motion.div>
+              <Motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }} className="flex gap-3">
                 <button onClick={() => navigate('/portfolio')} className="px-4 py-2 bg-surface-raised hover:bg-border border border-border rounded-lg type-label-body text-text-primary transition-colors flex items-center gap-2">
                   <span className="material-symbols-outlined" style={{fontSize: '16px'}}>account_balance_wallet</span> Deposit
                 </button>
                 <button onClick={() => navigate('/markets')} className="px-4 py-2 bg-text-primary hover:bg-accent-hover text-bg border border-transparent rounded-lg type-label-body transition-colors flex items-center gap-2">
                   <span className="material-symbols-outlined" style={{fontSize: '16px'}}>add</span> Trade
                 </button>
-              </motion.div>
+              </Motion.div>
             </header>
 
             {/* BALANCE CARDS */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <motion.div initial={{opacity:0, y: 10}} animate={{opacity:1, y:0}} transition={{delay: 0.1}} className="bg-surface-raised border border-border rounded-lg p-5 shadow-1">
+              <Motion.div initial={{opacity:0, y: 10}} animate={{opacity:1, y:0}} transition={{delay: 0.1}} className="bg-surface-raised border border-border rounded-lg p-5 shadow-1">
                 <p className="type-label mb-2">Total Value</p>
                 <p className="type-data-xl">₹{portfolioValue.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
-              </motion.div>
-              <motion.div initial={{opacity:0, y: 10}} animate={{opacity:1, y:0}} transition={{delay: 0.15}} className="bg-surface-raised border border-border rounded-lg p-5 shadow-1">
+              </Motion.div>
+              <Motion.div initial={{opacity:0, y: 10}} animate={{opacity:1, y:0}} transition={{delay: 0.15}} className="bg-surface-raised border border-border rounded-lg p-5 shadow-1">
                 <p className="type-label mb-2">Available Margin</p>
                 <p className="type-data-lg text-text-primary mt-1">₹{balance.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
-              </motion.div>
-              <motion.div initial={{opacity:0, y: 10}} animate={{opacity:1, y:0}} transition={{delay: 0.2}} className="bg-surface-raised border border-border rounded-lg p-5 shadow-1">
+              </Motion.div>
+              <Motion.div initial={{opacity:0, y: 10}} animate={{opacity:1, y:0}} transition={{delay: 0.2}} className="bg-surface-raised border border-border rounded-lg p-5 shadow-1">
                 <p className="type-label mb-2">Today's P&L (Unrealized)</p>
                 <p className={`type-data-lg mt-1 ${todaysPnL >= 0 ? 'type-positive' : 'type-negative'}`}>
                   {todaysPnL >= 0 ? '+' : ''}₹{todaysPnL.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                 </p>
-              </motion.div>
-              <motion.div initial={{opacity:0, y: 10}} animate={{opacity:1, y:0}} transition={{delay: 0.25}} className="bg-surface-raised border border-border rounded-lg p-5 shadow-1 relative overflow-hidden group">
+              </Motion.div>
+              <Motion.div initial={{opacity:0, y: 10}} animate={{opacity:1, y:0}} transition={{delay: 0.25}} className="bg-surface-raised border border-border rounded-lg p-5 shadow-1 relative overflow-hidden group">
                 <p className="type-label mb-2">Win Rate</p>
                 <p className="type-data-lg text-text-primary mt-1">{winRate}% <span className="type-data-sm text-text-tertiary font-normal tracking-normal ml-1">of {sellTrades.length} closed</span></p>
                 <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                   <span className="material-symbols-outlined" style={{fontSize: '48px'}}>sports_score</span>
                 </div>
-              </motion.div>
+              </Motion.div>
             </div>
 
             {/* MAIN GRID */}
@@ -253,19 +259,19 @@ function Dashboard() {
                     const data = marketPrices[idx] || {};
                     const isUp = (data.change || 0) >= 0;
                     return (
-                      <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay: 0.3 + (i*0.05)}} key={idx} onClick={() => setSelectedAsset(idx)} className="bg-surface border border-border rounded-lg p-3 flex flex-col cursor-pointer hover:border-border-strong transition-colors">
+                      <Motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay: 0.3 + (i*0.05)}} key={idx} onClick={() => setSelectedAsset(idx)} className="bg-surface border border-border rounded-lg p-3 flex flex-col cursor-pointer hover:border-border-strong transition-colors">
                         <p className="type-label text-text-secondary">{idx}</p>
                         <div className="flex items-baseline justify-between mt-1">
                           <p className="type-data-md">{(data.price || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</p>
                           <p className={`type-caption ${isUp ? 'type-positive' : 'type-negative'}`}>{isUp ? '+' : ''}{(data.change || 0).toFixed(2)}%</p>
                         </div>
-                      </motion.div>
+                      </Motion.div>
                     )
                   })}
                 </div>
 
                 {/* Main Chart */}
-                <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay: 0.4}} className="bg-surface border border-border rounded-lg shadow-1 overflow-hidden flex flex-col">
+                <Motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay: 0.4}} className="bg-surface border border-border rounded-lg shadow-1 overflow-hidden flex flex-col">
                   <div className="p-4 border-b border-border flex items-center justify-between bg-surface-raised/50">
                     <div>
                       <h2 className="type-subtitle">{mainChartAsset}</h2>
@@ -281,10 +287,10 @@ function Dashboard() {
                   <div className="h-[380px] w-full">
                     <SmartChart symbol={mainChartAsset} currentPrice={mainChartData.price} isGreen={mainChartIsGreen} />
                   </div>
-                </motion.div>
+                </Motion.div>
 
                 {/* Recent Trades Feed */}
-                <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay: 0.5}}>
+                <Motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay: 0.5}}>
                   <div className="flex items-center justify-between mb-4">
                     <p className="type-label">Recent Executions</p>
                     <button onClick={() => navigate('/history')} className="text-xs font-bold text-text-secondary hover:text-text-primary transition-colors flex items-center gap-1">
@@ -325,7 +331,7 @@ function Dashboard() {
                       </div>
                     )}
                   </div>
-                </motion.div>
+                </Motion.div>
 
               </div>
 
@@ -333,7 +339,7 @@ function Dashboard() {
               <div className="xl:col-span-4 flex flex-col gap-8">
                 
                 {/* Market Sentiment */}
-                <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay: 0.4}} className="bg-surface border border-border rounded-lg p-5 shadow-1">
+                <Motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay: 0.4}} className="bg-surface border border-border rounded-lg p-5 shadow-1">
                   <p className="type-label mb-4">Market Sentiment</p>
                   <div className="flex items-end justify-between mb-2">
                     <p className={`text-2xl font-black tracking-tight ${sentimentColor}`}>{sentimentLabel}</p>
@@ -344,10 +350,10 @@ function Dashboard() {
                     <div className="h-full bg-positive transition-all duration-1000" style={{ width: `${(advancing / TOP_STOCKS.length) * 100}%` }}></div>
                     <div className="h-full bg-negative transition-all duration-1000" style={{ width: `${(declining / TOP_STOCKS.length) * 100}%` }}></div>
                   </div>
-                </motion.div>
+                </Motion.div>
 
                 {/* Watchlist */}
-                <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay: 0.5}} className="bg-surface border border-border rounded-lg shadow-1 flex flex-col">
+                <Motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay: 0.5}} className="bg-surface border border-border rounded-lg shadow-1 flex flex-col">
                   <div className="p-4 border-b border-border flex items-center justify-between">
                     <p className="type-label">Watchlist</p>
                     <button className="text-text-tertiary hover:text-text-primary transition-colors"><span className="material-symbols-outlined" style={{fontSize: '18px'}}>add</span></button>
@@ -373,10 +379,10 @@ function Dashboard() {
                     })}
 
                   </div>
-                </motion.div>
+                </Motion.div>
 
                 {/* Open Positions */}
-                <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay: 0.6}} className="bg-surface border border-border rounded-lg shadow-1 flex flex-col">
+                <Motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay: 0.6}} className="bg-surface border border-border rounded-lg shadow-1 flex flex-col">
                   <div className="p-4 border-b border-border flex items-center justify-between">
                     <p className="type-label">Open Positions</p>
                     <button onClick={() => navigate('/portfolio')} className="text-text-tertiary hover:text-text-primary transition-colors"><span className="material-symbols-outlined" style={{fontSize: '18px'}}>open_in_new</span></button>
@@ -407,10 +413,10 @@ function Dashboard() {
                       })
                     )}
                   </div>
-                </motion.div>
+                </Motion.div>
 
                 {/* News Panel */}
-                <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay: 0.7}}>
+                <Motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay: 0.7}}>
                   <p className="type-label mb-3">Top Stories</p>
                   <div className="space-y-3">
                     {MOCK_NEWS.map(news => (
@@ -423,7 +429,7 @@ function Dashboard() {
                       </div>
                     ))}
                   </div>
-                </motion.div>
+                </Motion.div>
 
               </div>
             </div>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion as Motion, useReducedMotion } from 'framer-motion';
 import styles from './LogoMorph.module.css';
 
 // ── Strict Geometry Definitions ───────────────────────────────────────────────
@@ -118,7 +118,7 @@ export default function LogoMorph({ decorative = false }) {
     >
       <svg viewBox="0 0 120 120" width="100%" height="100%">
         {Object.entries(states).map(([stateName, pathArray]) => (
-          <motion.g
+          <Motion.g
             key={stateName}
             {...getGroupProps(stateName)}
             stroke="var(--color-accent)"
@@ -130,14 +130,14 @@ export default function LogoMorph({ decorative = false }) {
           >
             <g className={styles[`state-${stateName}`]}>
               {pathArray.map((d, i) => (
-                <motion.path
+                <Motion.path
                   key={i}
                   d={d}
                   {...getPathProps(stateName)}
                 />
               ))}
             </g>
-          </motion.g>
+          </Motion.g>
         ))}
       </svg>
     </div>

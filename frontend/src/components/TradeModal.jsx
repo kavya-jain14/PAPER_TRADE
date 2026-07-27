@@ -15,7 +15,7 @@
  *   onSuccess   — called after successful order (parent refreshes data)
  */
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import SmartChart, { CandlestickModal } from './SmartChart';
 import { Button, Input } from './ui';
@@ -81,7 +81,7 @@ export default function TradeModal({ symbol, marketData, balance, token, ownedQt
         role="dialog"
         aria-label={`Trade ${symbol}`}
       >
-        <motion.div
+        <Motion.div
           initial={{ opacity: 0, y: 32 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 24 }}
@@ -251,7 +251,7 @@ export default function TradeModal({ symbol, marketData, balance, token, ownedQt
               </div>
             </form>
           </div>
-        </motion.div>
+        </Motion.div>
       </div>
     </>
   );

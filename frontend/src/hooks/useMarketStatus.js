@@ -1,24 +1,47 @@
 import { useState, useEffect } from 'react';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+
 export default function useMarketStatus() {
-  const [isMarketOpen, setIsMarketOpen] = useState(false);
+  const [marketStatus, setMarketStatus] = useState('UNKNOWN');
 
   useEffect(() => {
-    const checkStatus = () => {
-      // Create a date object in IST timezone
-      const istTime = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
-      const day = istTime.getDay();
-      const timeInMinutes = istTime.getHours() * 60 + istTime.getMinutes();
-      
-      // Market is open Monday (1) to Friday (5) from 09:15 to 15:30 (555 to 930 mins)
-      const isOpen = day >= 1 && day <= 5 && timeInMinutes >= 555 && timeInMinutes < 930;
-      setIsMarketOpen(isOpen);
+    let isMounted = true;
+    let abortController = new AbortController();
+    let timeoutId = null;
+
+    const fetchStatus = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/synthetic/status`, { signal: abortController.signal });
+        if (!res.ok) {
+          if (isMounted) setMarketStatus('UNKNOWN');
+          return;
+        }
+        const data = await res.json();
+        if (typeof data.marketOpen === 'boolean') {
+          if (isMounted) setMarketStatus(data.marketOpen ? 'LIVE' : 'SIMULATED');
+        } else {
+          if (isMounted) setMarketStatus('UNKNOWN');
+        }
+      } catch (err) {
+        if (err.name !== 'AbortError' && isMounted) {
+          setMarketStatus('UNKNOWN');
+        }
+      } finally {
+        if (isMounted && !abortController.signal.aborted) {
+          timeoutId = setTimeout(fetchStatus, 30000);
+        }
+      }
     };
 
-    checkStatus();
-    const interval = setInterval(checkStatus, 60000);
-    return () => clearInterval(interval);
+    fetchStatus();
+
+    return () => {
+      isMounted = false;
+      abortController.abort();
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, []);
 
-  return isMarketOpen;
+  return marketStatus;
 }

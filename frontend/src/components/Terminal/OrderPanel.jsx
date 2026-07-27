@@ -7,12 +7,12 @@ import AICoachCard from './AICoachCard';
  * OrderPanel — The trade execution sidebar for the Pro Terminal.
  * Implements the Staff-level design system tokens.
  */
-export default function OrderPanel({ symbol, price, balance, ownedQty, token, isReplayMode = false }) {
+export default function OrderPanel({ symbol, quote, balance, ownedQty, token, isReplayMode = false, onSuccess }) {
   const {
     qty, setQty, side, setSide,
     estCost, afterBal, maxBuy, handleExecute,
-    aiFeedback, setAiFeedback
-  } = useTradeExecution(symbol, price, balance, ownedQty, token, null, isReplayMode);
+    aiFeedback, setAiFeedback, priceInvalid, price
+  } = useTradeExecution(symbol, quote, balance, ownedQty, token, onSuccess, isReplayMode);
 
   return (
     <div className="w-full h-full flex flex-col" style={{ background: 'var(--color-surface)' }}>
@@ -35,6 +35,7 @@ export default function OrderPanel({ symbol, price, balance, ownedQty, token, is
           {['BUY', 'SELL'].map(s => (
             <button
               key={s}
+              type="button"
               onClick={() => setSide(s)}
               className="flex-1 py-1.5 rounded transition-all type-label"
               style={{
@@ -88,6 +89,7 @@ export default function OrderPanel({ symbol, price, balance, ownedQty, token, is
               step="1"
               className="font-mono text-right"
               style={{ height: '48px', fontSize: 'var(--text-subtitle)' }}
+              disabled={priceInvalid}
             />
           </div>
 
@@ -95,7 +97,9 @@ export default function OrderPanel({ symbol, price, balance, ownedQty, token, is
           <div className="rounded-md p-3" style={{ background: 'var(--color-bg)', border: '1px solid var(--color-border)' }}>
             <div className="flex justify-between items-baseline mb-2">
               <span className="type-label">Market Price</span>
-              <span className="type-data-md">₹{price.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+              <span className="type-data-md">
+                {priceInvalid ? 'Unavailable' : `₹${price.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`}
+              </span>
             </div>
             <div className="flex justify-between items-baseline pt-2" style={{ borderTop: '1px solid var(--color-border-strong)' }}>
               <span className="type-label text-text-primary">Required Margin</span>
@@ -104,7 +108,7 @@ export default function OrderPanel({ symbol, price, balance, ownedQty, token, is
           </div>
 
           {/* Post-Trade Balance */}
-          {Number(qty) > 0 && (
+          {Number(qty) > 0 && !priceInvalid && (
             <div className="flex justify-between items-baseline px-1">
               <span className="type-caption-muted">Balance After</span>
               <span className={`type-data-sm ${afterBal < 0 ? 'type-negative' : 'type-positive'}`}>
@@ -118,13 +122,16 @@ export default function OrderPanel({ symbol, price, balance, ownedQty, token, is
             type="submit"
             size="lg"
             className="w-full h-12 shadow-1"
+            disabled={priceInvalid || (Number(qty) <= 0)}
             style={{ 
-              background: side === 'BUY' ? 'var(--color-positive)' : 'var(--color-negative)',
-              color: '#000',
-              fontWeight: 600
+              background: priceInvalid ? 'var(--color-surface-raised)' : side === 'BUY' ? 'var(--color-positive)' : 'var(--color-negative)',
+              color: priceInvalid ? 'var(--color-text-tertiary)' : '#000',
+              fontWeight: 600,
+              cursor: priceInvalid ? 'not-allowed' : 'pointer',
+              opacity: priceInvalid ? 0.5 : 1
             }}
           >
-            {side === 'BUY' ? 'Place Buy Order' : 'Place Sell Order'}
+            {priceInvalid ? 'Quote unavailable' : side === 'BUY' ? 'Place Buy Order' : 'Place Sell Order'}
           </Button>
 
           {/* AI Coach Feedback Drawer */}
