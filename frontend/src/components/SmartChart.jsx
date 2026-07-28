@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { createChart, AreaSeries, CandlestickSeries } from 'lightweight-charts';
 import useMarketStatus from '../hooks/useMarketStatus';
 
@@ -394,6 +394,11 @@ const SmartChart = ({ symbol, currentPrice, isGreen, mini = false }) => {
   const colorRef = useRef({ lineColor, topColor });
   colorRef.current = { lineColor, topColor };
 
+  const currentPriceRef = useRef(currentPrice);
+  useLayoutEffect(() => {
+    currentPriceRef.current = currentPrice;
+  }, [currentPrice]);
+
   // Close any open SSE stream
   const closeStream = useCallback(() => {
     if (sseRef.current) { sseRef.current.close(); sseRef.current = null; }
@@ -534,7 +539,7 @@ const SmartChart = ({ symbol, currentPrice, isGreen, mini = false }) => {
                 }
                 if (payload.type === 'CANDLE' && payload.symbol === symbol && seriesRef.current) {
                   const cTime = normalizeTime(payload.candle.time);
-                  const cVal  = Number(payload.candle.close);
+                  const cVal  = currentPriceRef.current != null ? Number(currentPriceRef.current) : Number(payload.candle.close);
                   if (cTime > lastTimeRef.current) {
                     lastTimeRef.current = cTime;
                     try { seriesRef.current.update({ time: cTime, value: cVal }); } catch { /* ignore */ }
@@ -581,25 +586,22 @@ const SmartChart = ({ symbol, currentPrice, isGreen, mini = false }) => {
     }
   }, [lineColor, topColor]);
 
-  // Apply live price tick in REAL mode (arrives from parent polling)
-  useEffect(() => {
+  // Apply authoritative price tick (arrives from parent polling)
+  useLayoutEffect(() => {
     if (marketStatus === 'UNKNOWN') return;
     if (!seriesRef.current || !currentPrice) return;
-    if (marketStatus === 'LIVE' || mini) {
-      try {
-        const raw = Math.floor(Date.now() / 1000);
-        const t = Math.floor(raw / 5) * 5;
-        if (t > lastTimeRef.current) {
-          lastTimeRef.current = t;
-          seriesRef.current.update({ time: t, value: Number(currentPrice) });
-        } else if (t === lastTimeRef.current) {
-          seriesRef.current.update({ time: lastTimeRef.current, value: Number(currentPrice) });
-        }
-      } catch (err) {
-        if (import.meta.env.DEV) console.warn('Chart update skipped:', err.message);
-      }
+    try {
+      const raw = Math.floor(Date.now() / 1000);
+      const t = Math.floor(raw / 5) * 5;
+
+      // If time moved forward, extend line. Otherwise, overwrite last valid point.
+      const targetTime = t > lastTimeRef.current ? t : lastTimeRef.current;
+      lastTimeRef.current = targetTime;
+      seriesRef.current.update({ time: targetTime, value: Number(currentPrice) });
+    } catch (err) {
+      if (import.meta.env.DEV) console.warn('Chart update skipped:', err.message);
     }
-  }, [currentPrice, marketStatus, mini]);
+  }, [currentPrice, marketStatus]);
 
   return (
     <div className="w-full h-full relative">

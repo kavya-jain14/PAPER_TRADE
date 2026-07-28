@@ -14,6 +14,7 @@ const Profile        = React.lazy(() => import('./pages/Profile'));
 const Legal          = React.lazy(() => import('./pages/Legal'));
 const ProTerminal    = React.lazy(() => import('./pages/ProTerminal'));
 const Leaderboard    = React.lazy(() => import('./pages/Leaderboard'));
+const AIPage         = React.lazy(() => import('./pages/AIPage'));
 const CommandPalette = React.lazy(() => import('./components/CommandPalette'));
 
 // ── Global Error Boundary ──────────────────────────────────────────────────────
@@ -89,6 +90,7 @@ function AnimatedRoutes() {
           <Route path="/profile"   element={<Profile />} />
           <Route path="/legal"     element={<Legal />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
+          <Route path="/ai"        element={<AIPage />} />
           
           {/* New Phase 12 Pro Terminal */}
           <Route path="/terminal/:symbol" element={<ProTerminal />} />
