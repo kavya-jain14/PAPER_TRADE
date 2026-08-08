@@ -1,7 +1,7 @@
 import React from 'react';
 import useTradeExecution from '../../hooks/useTradeExecution';
 import { Button, Input } from '../ui';
-import AICoachCard from './AICoachCard';
+import TradeReviewCard from './TradeReviewCard';
 
 /**
  * OrderPanel — The trade execution sidebar for the Pro Terminal.
@@ -16,9 +16,8 @@ export default function OrderPanel({ symbol, quote, balance, ownedQty, token, is
 
   return (
     <div className="w-full h-full flex flex-col" style={{ background: 'var(--color-surface)' }}>
-      {/* ── HEADER ───────────────────────────────────────────────────────── */}
       <div className="p-4" style={{ borderBottom: '1px solid var(--color-border)' }}>
-        <h2 className="type-subtitle mb-1">Order Execution</h2>
+        <h2 className="type-subtitle mb-1">Market order</h2>
         <p className="type-caption-muted flex justify-between">
           <span>Available Margin</span>
           <span className="type-data-sm">₹{balance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
@@ -27,7 +26,6 @@ export default function OrderPanel({ symbol, quote, balance, ownedQty, token, is
 
       {/* ── SCROLLABLE FORM ─────────────────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-        {/* Toggle BUY/SELL */}
         <div 
           className="flex p-1 rounded-md mb-6 transition-fast"
           style={{ background: 'var(--color-bg)', border: '1px solid var(--color-border)' }}
@@ -53,18 +51,7 @@ export default function OrderPanel({ symbol, quote, balance, ownedQty, token, is
 
         <form onSubmit={handleExecute} className="space-y-5">
           
-          {/* Order Type (Mocked for now as Market) */}
-          <div>
-            <label className="type-label block mb-2">Order Type</label>
-            <div className="flex gap-2">
-              <button type="button" className="flex-1 py-1.5 rounded type-caption border-accent-gold text-accent-gold bg-accent-gold-muted border transition-fast">
-                Market
-              </button>
-              <button type="button" className="flex-1 py-1.5 rounded type-caption text-text-tertiary border border-border hover:border-border-strong transition-fast" title="Limit orders coming soon">
-                Limit
-              </button>
-            </div>
-          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: 10, borderBottom: '1px solid var(--color-border)' }}><span className="type-label">Execution</span><span className="type-caption">Server-resolved · {quote?.priceMode || '—'}</span></div>
 
           {/* Quantity */}
           <div>
@@ -134,8 +121,8 @@ export default function OrderPanel({ symbol, quote, balance, ownedQty, token, is
             {priceInvalid ? 'Quote unavailable' : side === 'BUY' ? 'Place Buy Order' : 'Place Sell Order'}
           </Button>
 
-          {/* AI Coach Feedback Drawer */}
-          <AICoachCard aiFeedback={aiFeedback} onClose={() => setAiFeedback(null)} />
+          {/* Post-trade rules feedback */}
+          <TradeReviewCard feedback={aiFeedback} onClose={() => setAiFeedback(null)} />
 
         </form>
       </div>

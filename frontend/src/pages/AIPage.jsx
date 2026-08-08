@@ -1,196 +1,95 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { motion as Motion } from 'framer-motion';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppShell } from '../components/AppShell';
-import useMarketStatus from '../hooks/useMarketStatus';
+import { PageHeader, Panel } from '../components/workspace/Workspace';
+import { useMarketSession } from '../hooks/useMarketStatus';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
-
-const SUGGESTED_PROMPTS = [
-  "What is NIFTY 50?",
-  "Explain P&L for beginners",
-  "Best sectors to watch in 2025?",
-  "What is a stop-loss order?",
-  "How does paper trading work?",
+const PROMPTS = [
+  'How does the NSE trading session work?',
+  'Explain paper trading for a beginner',
+  'What is a stop-loss?',
+  'Show the current signal for RELIANCE',
 ];
 
 export default function AIPage() {
   const navigate = useNavigate();
-  const [userName, setUserName] = useState('');
-  const [avatar, setAvatar] = useState('');
-  const marketStatus = useMarketStatus();
-  const [messages, setMessages] = useState([
-    { role: 'ai', content: "Hello! I'm your AI Trading Assistant powered by Market Brain. Ask me anything about markets, stocks, strategies, or how to use this platform." }
-  ]);
-  const [input, setInput] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const scrollRef = useRef(null);
-  const inputRef = useRef(null);
   const token = localStorage.getItem('token');
+  const session = useMarketSession();
+  const transcriptRef = useRef(null);
+  const [user, setUser] = useState({ name: '', avatar: '' });
+  const [messages, setMessages] = useState([{ role: 'desk', content: 'Ask a market concept or request a tracked-symbol signal. Signals are educational outputs from the platform rule engine.' }]);
+  const [input, setInput] = useState('');
+  const [pending, setPending] = useState(false);
 
   useEffect(() => {
     if (!token) { navigate('/login'); return; }
-    const fetchUser = async () => {
-      try {
-        const res = await fetch(`${API_URL}/api/auth/getuser`, { headers: { 'auth-token': token } });
-        const data = await res.json();
-        if (res.ok) {
-          setUserName(data.name ? data.name.split(' ')[0] : 'Trader');
-          setAvatar(data.avatar || '');
-        }
-      } catch { /* ignore */ }
-    };
-    fetchUser();
-  }, [token, navigate]);
+    const controller = new AbortController();
+    fetch(`${API_URL}/api/auth/getuser`, { headers: { 'auth-token': token }, signal: controller.signal })
+      .then((response) => response.ok ? response.json() : null)
+      .then((data) => data && setUser({ name: data.name?.split(' ')[0] || 'Trader', avatar: data.avatar || '' }))
+      .catch(() => {});
+    return () => controller.abort();
+  }, [navigate, token]);
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages, isTyping]);
+    if (transcriptRef.current) transcriptRef.current.scrollTop = transcriptRef.current.scrollHeight;
+  }, [messages, pending]);
 
-  const handleSend = async (e, overrideText) => {
-    if (e) e.preventDefault();
-    const text = (overrideText || input).trim();
-    if (!text || isTyping) return;
-
-    setMessages(prev => [...prev, { role: 'user', content: text }]);
+  const send = async (event, suggested) => {
+    event?.preventDefault();
+    const message = (suggested || input).trim();
+    if (!message || pending) return;
+    setMessages((items) => [...items, { role: 'user', content: message }]);
     setInput('');
-    setIsTyping(true);
-
+    setPending(true);
     try {
-      const res = await fetch(`${API_URL}/api/synthetic/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text })
+      const response = await fetch(`${API_URL}/api/synthetic/chat`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message }),
       });
-      const data = await res.json();
-      setMessages(prev => [...prev, { role: 'ai', content: data.reply }]);
-    } catch {
-      setMessages(prev => [...prev, { role: 'ai', content: 'Connection to Market Brain lost. Please try again.' }]);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Market desk unavailable');
+      setMessages((items) => [...items, { role: 'desk', content: data.reply }]);
+    } catch (error) {
+      setMessages((items) => [...items, { role: 'desk', content: error.message || 'The market desk could not respond. Try again shortly.' }]);
     } finally {
-      setIsTyping(false);
-      inputRef.current?.focus();
+      setPending(false);
     }
-  };
-
-  const handlePromptClick = (prompt) => {
-    handleSend(null, prompt);
   };
 
   return (
-    <AppShell userName={userName} marketStatus={marketStatus} avatar={avatar}>
-      <Motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-1 flex flex-col min-w-0 h-full">
-        
-        {/* Page layout: header + chat window filling height */}
-        <div className="flex flex-col h-full max-w-[900px] mx-auto w-full p-4 md:p-8 pb-4 gap-4">
-          
-          {/* Header */}
-          <header className="flex items-end justify-between shrink-0 pb-4 border-b border-border">
-            <div>
-              <Motion.h1 initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="type-h2 mb-1">
-                Market Brain
-              </Motion.h1>
-              <Motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-positive animate-pulse" />
-                <p className="type-caption uppercase tracking-widest">AI Assistant Online</p>
-              </Motion.div>
-            </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-accent/10 border border-accent/20 rounded-full">
-              <span className="material-symbols-outlined text-accent" style={{fontSize: '14px'}}>smart_toy</span>
-              <span className="type-caption text-accent font-medium">Powered by AI</span>
-            </div>
-          </header>
+    <AppShell userName={user.name} marketStatus={session.mode} avatar={user.avatar}>
+      <main className="workspace-page">
+        <div className="workspace-page__inner" style={{ maxWidth: 1120 }}>
+          <PageHeader title="Market desk" description="Plain-language market guidance and rule-based tracked-symbol signals." session={session} />
 
-          {/* Chat Window */}
-          <div className="flex-1 bg-surface border border-border rounded-lg overflow-hidden flex flex-col shadow-1 min-h-0">
-            
-            {/* Messages */}
-            <div ref={scrollRef} className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 space-y-4">
-              {messages.map((msg, i) => (
-                <Motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  {msg.role === 'ai' && (
-                    <div className="w-7 h-7 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0 mr-2 mt-0.5">
-                      <span className="material-symbols-outlined text-accent" style={{fontSize: '14px'}}>smart_toy</span>
-                    </div>
-                  )}
-                  <div className={`max-w-[80%] md:max-w-[70%] px-4 py-3 rounded-lg text-sm leading-relaxed ${
-                    msg.role === 'user'
-                      ? 'bg-accent text-bg rounded-br-sm font-medium'
-                      : 'bg-surface-raised border border-border text-text-primary rounded-bl-sm'
-                  }`}>
-                    {msg.role === 'ai' && (
-                      <p className="type-caption text-accent mb-1.5">Market Brain</p>
-                    )}
-                    {msg.content}
-                  </div>
-                </Motion.div>
-              ))}
-
-              {/* Typing indicator */}
-              {isTyping && (
-                <div className="flex justify-start">
-                  <div className="w-7 h-7 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0 mr-2 mt-0.5">
-                    <span className="material-symbols-outlined text-accent" style={{fontSize: '14px'}}>smart_toy</span>
-                  </div>
-                  <div className="bg-surface-raised border border-border rounded-lg rounded-bl-sm px-4 py-3 flex gap-1.5 items-center">
-                    <span className="w-1.5 h-1.5 bg-accent rounded-full animate-bounce" />
-                    <span className="w-1.5 h-1.5 bg-accent rounded-full animate-bounce [animation-delay:-0.15s]" />
-                    <span className="w-1.5 h-1.5 bg-accent rounded-full animate-bounce [animation-delay:-0.3s]" />
-                  </div>
-                </div>
-              )}
-
-              {/* Suggested prompts (shown only at start) */}
-              {messages.length === 1 && !isTyping && (
-                <div className="pt-2">
-                  <p className="type-caption-muted mb-3 text-center">Suggested questions</p>
-                  <div className="flex flex-wrap gap-2 justify-center">
-                    {SUGGESTED_PROMPTS.map((prompt, i) => (
-                      <button
-                        key={i}
-                        onClick={() => handlePromptClick(prompt)}
-                        className="px-3 py-1.5 bg-surface-raised hover:bg-border border border-border rounded-full type-caption text-text-secondary hover:text-text-primary transition-colors"
-                      >
-                        {prompt}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Input Bar */}
-            <div className="shrink-0 p-4 border-t border-border bg-surface-raised/40">
-              <form onSubmit={handleSend} className="flex items-center gap-3">
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder="Ask about markets, stocks, or strategies..."
-                  className="flex-1 bg-surface border border-border rounded-lg px-4 py-2.5 type-body text-text-primary placeholder-text-tertiary outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors"
-                />
-                <button
-                  type="submit"
-                  disabled={!input.trim() || isTyping}
-                  className="w-10 h-10 flex items-center justify-center bg-accent hover:opacity-90 text-bg rounded-lg transition-all disabled:opacity-30 shrink-0"
-                >
-                  <span className="material-symbols-outlined" style={{fontSize: '18px'}}>send</span>
-                </button>
+          <div className="workspace-grid workspace-grid--two">
+            <Panel title="Briefing transcript" meta="Educational only · not financial advice">
+              <div ref={transcriptRef} style={{ height: 'min(54vh, 560px)', minHeight: 360, overflowY: 'auto' }}>
+                {messages.map((message, index) => <div key={`${message.role}-${index}`} style={{ display: 'grid', gridTemplateColumns: '88px minmax(0, 1fr)', gap: 16, padding: '14px 16px', borderBottom: '1px solid var(--color-border)', background: message.role === 'user' ? 'rgba(244,238,230,0.012)' : 'transparent' }}><span className="type-label" style={{ color: message.role === 'user' ? 'var(--color-text-muted)' : 'var(--color-accent)' }}>{message.role === 'user' ? 'You' : 'Market desk'}</span><p style={{ margin: 0, color: 'var(--color-text-secondary)', fontSize: 'var(--text-body)', lineHeight: 1.65, whiteSpace: 'pre-wrap' }}>{message.content}</p></div>)}
+                {pending && <div style={{ padding: '14px 16px', color: 'var(--color-text-tertiary)', fontSize: 'var(--text-caption)' }}>Market desk is checking the request…</div>}
+              </div>
+              <form onSubmit={send} style={{ display: 'flex', gap: 8, padding: 12, borderTop: '1px solid var(--color-border)' }}>
+                <input className="desk-input" style={{ flex: 1 }} value={input} onChange={(event) => setInput(event.target.value)} placeholder="Ask a market question" maxLength={300} aria-label="Market question" />
+                <button className="desk-button desk-button--primary" type="submit" disabled={!input.trim() || pending}>Send</button>
               </form>
-              <p className="type-caption-muted text-center mt-2">AI analysis is simulated and does not constitute financial advice.</p>
-            </div>
+            </Panel>
 
+            <div style={{ display: 'grid', alignContent: 'start', gap: 16 }}>
+              <Panel title="Start with a question">
+                <div style={{ display: 'grid' }}>{PROMPTS.map((prompt) => <button key={prompt} type="button" onClick={(event) => send(event, prompt)} style={{ padding: '12px 16px', border: 0, borderBottom: '1px solid var(--color-border)', background: 'transparent', color: 'var(--color-text-secondary)', textAlign: 'left', font: 'inherit', fontSize: 'var(--text-caption)', cursor: 'pointer' }}>{prompt}</button>)}</div>
+              </Panel>
+              <Panel title="How to read a signal">
+                <dl style={{ margin: 0, padding: 16, display: 'grid', gap: 14 }}>
+                  <div><dt className="type-label">Regime</dt><dd className="type-caption" style={{ margin: '3px 0 0' }}>Trend classification from recent candles.</dd></div>
+                  <div><dt className="type-label">RSI</dt><dd className="type-caption" style={{ margin: '3px 0 0' }}>Momentum measure; context matters more than a single threshold.</dd></div>
+                  <div><dt className="type-label">Probability</dt><dd className="type-caption" style={{ margin: '3px 0 0' }}>A model score, not a guarantee or expected return.</dd></div>
+                </dl>
+              </Panel>
+            </div>
           </div>
         </div>
-      </Motion.div>
+      </main>
     </AppShell>
   );
 }

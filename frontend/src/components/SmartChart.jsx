@@ -287,7 +287,7 @@ export const CandlestickModal = ({ symbol, onClose }) => {
             <div>
               <h2 className="text-xl font-black text-text-primary tracking-tight">{symbol}</h2>
               <p className="text-[10px] text-text-secondary uppercase tracking-widest font-semibold mt-0.5">
-                Candlestick Chart · {marketStatus === 'UNKNOWN' ? '—' : marketStatus === 'LIVE' ? 'Live Market' : 'AI Synthetic'} · 5m Candles
+                Candlestick Chart · {marketStatus === 'UNKNOWN' ? '—' : marketStatus === 'LIVE' ? 'Live Market' : 'Simulation'} · 5m Candles
               </p>
             </div>
             {/* Status badges */}
@@ -361,8 +361,8 @@ export const CandlestickModal = ({ symbol, onClose }) => {
             {marketStatus === 'UNKNOWN'
               ? 'Checking market status…'
               : marketStatus === 'LIVE'
-              ? '🟢 Live NSE data via Yahoo Finance · Refreshes every 5 seconds'
-              : '🟣 AI synthetic engine · Powered by MarketBrain pattern recognition · Educational use only'}
+              ? 'Live NSE quote mode · Refreshes every 5 seconds'
+              : 'Generated simulation data · Educational use only'}
           </p>
           <p className="text-[10px] text-text-primary/20 font-mono">Click anywhere outside to close</p>
         </div>
@@ -372,7 +372,7 @@ export const CandlestickModal = ({ symbol, onClose }) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 📈  SMART CHART — Area/line chart with AI bias overlay (mini & full)
+// SMART CHART — Area/line chart with rule-engine bias overlay (mini & full)
 // ─────────────────────────────────────────────────────────────────────────────
 const SmartChart = ({ symbol, currentPrice, isGreen, mini = false }) => {
   const containerRef = useRef(null);
@@ -620,7 +620,7 @@ const SmartChart = ({ symbol, currentPrice, isGreen, mini = false }) => {
           <div className="flex flex-col items-center gap-3">
             <div className="w-6 h-6 border-2 border-[#FFFFFF] border-t-transparent rounded-full animate-spin" />
             <p className="text-[10px] text-text-secondary uppercase tracking-widest font-bold">
-              {marketStatus === 'LIVE' ? 'Loading Market Data...' : 'AI Engine Analyzing Patterns...'}
+              {marketStatus === 'LIVE' ? 'Loading market data...' : 'Loading simulation data...'}
             </p>
           </div>
         </div>

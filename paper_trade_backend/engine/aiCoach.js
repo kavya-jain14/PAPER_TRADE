@@ -34,53 +34,57 @@ class AICoach {
       };
     }
 
-    const { regime, rsi, bullishProbability } = biasSummary;
+    const { regime = 'SIDEWAYS', rsi, bullishProbability = 50 } = biasSummary;
+    const isBullishRegime = regime.includes('BULLISH');
+    const isBearishRegime = regime.includes('BEARISH');
 
     // 2. Trend Alignment
     if (side === 'BUY') {
-      if (regime === 'BULLISH' || regime === 'STRONG_BULL') {
+      if (isBullishRegime) {
         score += 25;
-        insights.push(`✓ Trading with the trend (${regime.toLowerCase().replace('_', ' ')}).`);
-      } else if (regime === 'BEARISH' || regime === 'STRONG_BEAR') {
+        insights.push(`Execution aligns with the ${regime.toLowerCase().replaceAll('_', ' ')} regime.`);
+      } else if (isBearishRegime) {
         score -= 20;
-        warnings.push(`⚠ Counter-trend trade! Market regime is ${regime}.`);
+        warnings.push(`Buy is counter-trend while the detected regime is ${regime}.`);
       } else {
         score += 5;
-        insights.push('✓ Market is sideways; breakout potential.');
+        insights.push('The regime is sideways; direction needs price confirmation.');
       }
     } else { // SELL
-      if (regime === 'BEARISH' || regime === 'STRONG_BEAR') {
+      if (isBearishRegime) {
         score += 25;
-        insights.push(`✓ Trading with the trend (${regime.toLowerCase().replace('_', ' ')}).`);
-      } else if (regime === 'BULLISH' || regime === 'STRONG_BULL') {
+        insights.push(`Execution aligns with the ${regime.toLowerCase().replaceAll('_', ' ')} regime.`);
+      } else if (isBullishRegime) {
         score -= 20;
-        warnings.push(`⚠ Exiting/Shorting during a ${regime} regime.`);
+        warnings.push(`Sell is counter-trend while the detected regime is ${regime}.`);
       } else {
         score += 5;
       }
     }
 
     // 3. RSI Analysis (Momentum)
-    const currentRSI = rsi[rsi.length - 1] || 50;
+    const currentRSI = Array.isArray(rsi)
+      ? Number(rsi[rsi.length - 1]) || 50
+      : Number(rsi) || 50;
     
     if (side === 'BUY') {
       if (currentRSI < 30) {
         score += 15;
-        insights.push(`✓ Good value entry (RSI Oversold at ${Math.round(currentRSI)}).`);
+        insights.push(`RSI is oversold at ${Math.round(currentRSI)}; confirm the reversal before relying on it.`);
       } else if (currentRSI > 70) {
         score -= 15;
-        warnings.push(`⚠ FOMO Risk? RSI is Overbought (${Math.round(currentRSI)}). Entry might be late.`);
+        warnings.push(`RSI is overbought at ${Math.round(currentRSI)}; the entry may be extended.`);
       } else {
         score += 10;
-        insights.push(`✓ Healthy momentum (RSI ${Math.round(currentRSI)}).`);
+        insights.push(`RSI is neutral at ${Math.round(currentRSI)}.`);
       }
     } else { // SELL
       if (currentRSI > 70) {
         score += 15;
-        insights.push(`✓ Excellent exit timing (RSI Overbought at ${Math.round(currentRSI)}).`);
+        insights.push(`RSI is overbought at ${Math.round(currentRSI)}.`);
       } else if (currentRSI < 30) {
         score -= 15;
-        warnings.push(`⚠ Panic selling? RSI is Oversold (${Math.round(currentRSI)}).`);
+        warnings.push(`RSI is oversold at ${Math.round(currentRSI)}; review whether the exit is reactive.`);
       } else {
         score += 10;
       }
@@ -96,7 +100,7 @@ class AICoach {
 
     if (recentSameSymbol.length >= 3) {
       score -= 25;
-      warnings.push(`🚨 Overtrading Alert: You have traded ${symbol} ${recentSameSymbol.length + 1} times in 30 minutes. Focus on high-conviction setups!`);
+      warnings.push(`Overtrading risk: ${symbol} has been traded ${recentSameSymbol.length + 1} times in 30 minutes.`);
     }
 
     // Clamp score
@@ -107,16 +111,16 @@ class AICoach {
     let risk = 'Low';
     
     if (score >= 80) {
-      verdict = 'High-probability execution';
+      verdict = 'Aligned with the detected conditions';
       risk = 'Low';
     } else if (score >= 60) {
-      verdict = 'Solid trade with minor risks';
+      verdict = 'Mostly aligned; review the stated risks';
       risk = 'Medium';
     } else if (score >= 40) {
-      verdict = 'Marginal setup; requires strict stop-loss';
+      verdict = 'Mixed conditions; define a clear invalidation';
       risk = 'High';
     } else {
-      verdict = 'Low-probability gamble';
+      verdict = 'Counter to several detected conditions';
       risk = 'Extreme';
     }
 

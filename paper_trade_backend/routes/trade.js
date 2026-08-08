@@ -68,6 +68,8 @@ router.post('/buy', fetchuser, async (req, res) => {
         quantity: qtyNumber,
         pricePerShare: priceNumber,
         totalAmount: totalCost,
+        priceMode: resolved.mode,
+        quoteAsOf: resolved.asOf ? new Date(resolved.asOf) : new Date(),
       });
       await newTxn.save({ session });
 
@@ -82,6 +84,8 @@ router.post('/buy', fetchuser, async (req, res) => {
         balance: user.virtualBalance,
         executedPrice: priceNumber,
         priceMode: resolved.mode,
+        quoteAsOf: resolved.asOf,
+        quoteSource: resolved.source,
         aiFeedback
       };
     });
@@ -156,6 +160,8 @@ router.post('/sell', fetchuser, async (req, res) => {
         quantity: qtyNumber,
         pricePerShare: priceNumber,
         totalAmount: earnings,
+        priceMode: resolved.mode,
+        quoteAsOf: resolved.asOf ? new Date(resolved.asOf) : new Date(),
       });
       await newTxn.save({ session });
 
@@ -170,6 +176,8 @@ router.post('/sell', fetchuser, async (req, res) => {
         balance: user.virtualBalance,
         executedPrice: priceNumber,
         priceMode: resolved.mode,
+        quoteAsOf: resolved.asOf,
+        quoteSource: resolved.source,
         aiFeedback
       };
     });

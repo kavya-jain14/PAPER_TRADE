@@ -79,7 +79,7 @@ export default function Login() {
 
   // Explicit Form Values
   const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(() => localStorage.getItem('paper_trade_remembered_email') || '');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
@@ -88,12 +88,8 @@ export default function Login() {
   const [serverError, setServerError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [rememberEmail, setRememberEmail] = useState(() => Boolean(localStorage.getItem('paper_trade_remembered_email')));
 
-  // Rate Limiting (Login only)
-  const [loginAttempts, setLoginAttempts] = useState(0);
-  const [countdown, setCountdown] = useState(0);
-
-  const countdownRef = useRef(null);
   const utcClockRef = useRef(null);
 
   useEffect(() => {
@@ -134,15 +130,6 @@ export default function Login() {
     const clockTimer = setInterval(updateClock, 1000);
     return () => clearInterval(clockTimer);
   }, []);
-
-  useEffect(() => {
-    if (countdown > 0) {
-      countdownRef.current = setTimeout(() => setCountdown(c => c - 1), 1000);
-    } else if (countdown === 0 && countdownRef.current) {
-      setLoginAttempts(0);
-    }
-    return () => clearTimeout(countdownRef.current);
-  }, [countdown]);
 
   const handleRegister = async () => {
     const errors = {};
@@ -206,11 +193,6 @@ export default function Login() {
       return;
     }
 
-    if (loginAttempts >= 3) {
-      setCountdown(47);
-      return;
-    }
-
     setIsSubmitting(true);
     setServerError(null);
     setSuccessMessage(null);
@@ -228,17 +210,17 @@ export default function Login() {
       const data = await response.json();
 
       if (response.ok && (data.authtoken || data.token)) {
+        if (rememberEmail) localStorage.setItem('paper_trade_remembered_email', email.trim().toLowerCase());
+        else localStorage.removeItem('paper_trade_remembered_email');
         localStorage.setItem('token', data.authtoken || data.token);
-        // Brief artificial delay to show success state on button
-        setTimeout(() => { navigate('/dashboard'); }, 500);
+        navigate('/dashboard');
       } else {
         const errorMsg = data.error || data.message || "Invalid request";
-        setLoginAttempts(prev => prev + 1);
 
         if (errorMsg.toLowerCase().includes('locked')) {
           setServerError('Account locked. Contact Support');
         } else if (errorMsg.toLowerCase().includes('rate') || response.status === 429) {
-          setCountdown(47);
+          setServerError('Too many attempts. Try again shortly.');
         } else {
           setServerError('Invalid email or password');
         }
@@ -272,7 +254,7 @@ export default function Login() {
       const data = await res.json();
       if (data.success || data.authtoken) {
         localStorage.setItem('token', data.authtoken || data.token);
-        setTimeout(() => { navigate('/dashboard'); }, 500);
+        navigate('/dashboard');
       } else {
         setServerError('Invalid email or password');
         setIsSubmitting(false);
@@ -281,12 +263,6 @@ export default function Login() {
       setServerError('Network / server failure');
       setIsSubmitting(false);
     }
-  };
-
-  const formatCountdown = (seconds) => {
-    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
-    const s = (seconds % 60).toString().padStart(2, '0');
-    return `${m}:${s}`;
   };
 
   // Chart geometry
@@ -454,25 +430,21 @@ export default function Login() {
                 <div className={styles.supportingActions} style={{ marginTop: 0 }}>
                   <label className={styles.customCheckboxLabel}>
                     <div className={styles.checkboxWrapper}>
-                      <input type="checkbox" className={styles.nativeCheckbox} />
+                      <input type="checkbox" className={styles.nativeCheckbox} checked={rememberEmail} onChange={(event) => setRememberEmail(event.target.checked)} />
                       <div className={styles.customCheckbox}></div>
                     </div>
-                    Remember me
+                    Remember email
                   </label>
-                  <button type="button" className={styles.link}>Forgot password?</button>
                 </div>
               )}
 
               <div style={{ marginTop: '8px' }}>
                 <PrimaryButton
                   type="submit"
-                  state={countdown > 0 ? 'disabled' : (isSubmitting ? 'loading' : 'idle')}
+                  state={isSubmitting ? 'loading' : 'idle'}
                   loadingLabel={mode === 'register' ? 'Creating account...' : 'Authenticating...'}
                 >
-                  {countdown > 0
-                    ? <span style={{ fontFamily: 'var(--font-mono)' }}>Try again in {formatCountdown(countdown)}</span>
-                    : (mode === 'register' ? 'Create account' : 'Authenticate')
-                  }
+                  {mode === 'register' ? 'Create account' : 'Authenticate'}
                 </PrimaryButton>
               </div>
             </form>

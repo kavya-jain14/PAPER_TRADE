@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useImperativeHandle, forwardRef, memo } from 'react';
+import React, { useRef, useEffect, useLayoutEffect, useImperativeHandle, forwardRef, memo } from 'react';
 import { createChart, CandlestickSeries, HistogramSeries } from 'lightweight-charts';
 import useChartData from '../../hooks/useChartData';
 
@@ -7,11 +7,12 @@ import useChartData from '../../hooks/useChartData';
  * Uses `React.memo` to prevent React re-renders when parent state changes.
  * Updates are handled imperatively via lightweight-charts API.
  */
-const ChartCanvas = memo(forwardRef(({ symbol, interval }, ref) => {
+const ChartCanvas = memo(forwardRef(({ symbol, interval, quote }, ref) => {
   const containerRef = useRef(null);
   const chartRef = useRef(null);
   const seriesRef = useRef(null);
   const volumeSeriesRef = useRef(null);
+  const lastCandleRef = useRef(null);
 
   // Initialize Chart
   useEffect(() => {
@@ -22,38 +23,38 @@ const ChartCanvas = memo(forwardRef(({ symbol, interval }, ref) => {
       height: containerRef.current.clientHeight,
       layout: {
         background: { type: 'solid', color: 'transparent' }, // Inherits CSS background
-        textColor: 'var(--color-text-secondary)',
-        fontFamily: 'var(--font-mono)',
+        textColor: '#92877D',
+        fontFamily: 'IBM Plex Mono, monospace',
         fontSize: 12,
       },
       grid: {
-        vertLines: { color: 'var(--color-border)' },
-        horzLines: { color: 'var(--color-border)' },
+        vertLines: { color: 'rgba(244, 238, 230, 0.06)' },
+        horzLines: { color: 'rgba(244, 238, 230, 0.06)' },
       },
       timeScale: {
-        borderColor: 'var(--color-border)',
+        borderColor: 'rgba(244, 238, 230, 0.10)',
         timeVisible: true,
       },
       crosshair: {
-        horzLine: { labelBackgroundColor: 'var(--color-surface-raised)' },
-        vertLine: { labelBackgroundColor: 'var(--color-surface-raised)' },
+        horzLine: { labelBackgroundColor: '#1C1C1C' },
+        vertLine: { labelBackgroundColor: '#1C1C1C' },
       },
       rightPriceScale: {
-        borderColor: 'var(--color-border)',
+        borderColor: 'rgba(244, 238, 230, 0.10)',
       },
     });
 
     const series = chart.addSeries(CandlestickSeries, {
-      upColor: 'var(--color-positive)',
-      downColor: 'var(--color-negative)',
-      borderUpColor: 'var(--color-positive)',
-      borderDownColor: 'var(--color-negative)',
-      wickUpColor: 'var(--color-positive)',
-      wickDownColor: 'var(--color-negative)',
+      upColor: '#5A9A78',
+      downColor: '#B96262',
+      borderUpColor: '#5A9A78',
+      borderDownColor: '#B96262',
+      wickUpColor: '#5A9A78',
+      wickDownColor: '#B96262',
     });
 
     const volumeSeries = chart.addSeries(HistogramSeries, {
-      color: 'var(--color-text-tertiary)',
+      color: '#655E57',
       priceFormat: { type: 'volume' },
       priceScaleId: '', // set as an overlay
     });
@@ -89,6 +90,7 @@ const ChartCanvas = memo(forwardRef(({ symbol, interval }, ref) => {
   // Handle Live Ticks imperatively (bypasses React state)
   const handleTick = (candle) => {
     if (seriesRef.current && volumeSeriesRef.current) {
+      lastCandleRef.current = candle;
       seriesRef.current.update(candle);
       volumeSeriesRef.current.update({
         time: candle.time,
@@ -106,12 +108,14 @@ const ChartCanvas = memo(forwardRef(({ symbol, interval }, ref) => {
     if (!seriesRef.current || !volumeSeriesRef.current) return;
 
     if (history.length === 0) {
+      lastCandleRef.current = null;
       seriesRef.current.setData([]);
       volumeSeriesRef.current.setData([]);
       return;
     }
 
     seriesRef.current.setData(history);
+    lastCandleRef.current = history[history.length - 1];
 
     const volData = history.map(c => ({
       time: c.time,
@@ -122,6 +126,22 @@ const ChartCanvas = memo(forwardRef(({ symbol, interval }, ref) => {
 
     chartRef.current.timeScale().fitContent();
   }, [history]);
+
+  // The executable quote is authoritative for the chart endpoint. This keeps
+  // the last candle and order ticket from showing different prices.
+  useLayoutEffect(() => {
+    const last = lastCandleRef.current;
+    const price = Number(quote?.price);
+    if (!last || !seriesRef.current || !Number.isFinite(price) || price <= 0) return;
+    const next = {
+      ...last,
+      close: price,
+      high: Math.max(Number(last.high), price),
+      low: Math.min(Number(last.low), price),
+    };
+    lastCandleRef.current = next;
+    try { seriesRef.current.update(next); } catch { /* wait for the next chart load */ }
+  }, [quote]);
 
 
 

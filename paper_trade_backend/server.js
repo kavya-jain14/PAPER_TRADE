@@ -97,8 +97,15 @@ app.use(express.json({ limit: '500kb' })); // cap body size to prevent DoS
 // 🚦  RATE LIMITERS
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Global limiter disabled for debugging
-// const globalLimiter = rateLimit({ ... });
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 600,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Request limit reached. Please retry shortly.' },
+});
+
+app.use('/api', globalLimiter);
 
 // Auth limiter: 10 requests per 15 minutes per IP (prevents brute force)
 const authLimiter = rateLimit({
@@ -175,43 +182,7 @@ app.use((err, req, res, next) => { // eslint-disable-line no-unused-vars
   res.status(status).json({ success: false, error: message });
 });
 
-app.get('/', (req, res) => res.json({ status: 'Paper Trade API is running 🚀', version: '2.0' }));
+app.get('/', (req, res) => res.json({ status: 'Paper Trade API is running', version: '2.1' }));
 
-const PORT = process.env.PORT || 5005;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ⏰  CRON JOB / KEEP-ALIVE
-// ─────────────────────────────────────────────────────────────────────────────
-// Prevent server from sleeping on free hosting (Render, Heroku, etc.)
-setInterval(() => {
-  const serverUrl = process.env.SERVER_URL || `http://localhost:${PORT}`;
-  console.log(`⏰ Sending keep-alive ping to ${serverUrl}...`);
-
-  // Use global fetch if available (Node 18+)
-  if (typeof fetch !== 'undefined') {
-    fetch(serverUrl)
-      .then(res => console.log(`⏰ Keep-alive ping successful. Status: ${res.status}`))
-      .catch(err => console.error(`⏰ Keep-alive ping failed:`, err.message));
-  } else {
-    // Fallback for older Node versions
-    const client = serverUrl.startsWith('https') ? require('https') : require('http');
-    client.get(serverUrl, (res) => {
-      console.log(`⏰ Keep-alive ping successful. Status: ${res.statusCode}`);
-    }).on('error', (err) => {
-      console.error(`⏰ Keep-alive ping failed:`, err.message);
-    });
-  }
-}, 14 * 60 * 1000); // 14 minutes
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ❌  PREVENT APP CRASHES (Global Error Handlers)
-// ─────────────────────────────────────────────────────────────────────────────
-// Catches unhandled errors and prevents the Node.js process from exiting
-process.on('uncaughtException', (err) => {
-  console.error('🚨 [CRASH AVERTED] Uncaught Exception:', err);
-});
-
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('🚨 [CRASH AVERTED] Unhandled Rejection at:', promise, 'reason:', reason);
-});
+const PORT = process.env.PORT || 5001;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

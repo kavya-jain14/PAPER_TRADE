@@ -751,9 +751,7 @@ function Dashboard() {
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                   }}>
                     <p style={LABEL}>Watchlist</p>
-                    <button type="button" style={{ fontSize: 'var(--text-label)', color: 'var(--color-text-muted)', background: 'none', border: 'none', cursor: 'pointer' }}>
-                      Manage
-                    </button>
+                    <span style={{ fontSize: 'var(--text-label)', color: 'var(--color-text-muted)' }}>Tap to trade</span>
                   </div>
                   <div>
                     {watchlist.slice(0, 5).map((sym) => {

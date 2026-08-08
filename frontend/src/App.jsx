@@ -45,7 +45,7 @@ class ErrorBoundary extends React.Component {
             width: 48, height: 48, borderRadius: 'var(--radius-lg)', background: 'var(--color-surface-raised)',
             border: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 20, color: 'var(--color-text-secondary)',
-          }}>⚠</div>
+          }}>!</div>
           <div style={{ textAlign: 'center', maxWidth: 340 }}>
             <h1 style={{ fontSize: 'var(--text-h3)', fontWeight: 500, margin: '0 0 8px', color: 'var(--color-text-primary)' }}>
               Something went wrong

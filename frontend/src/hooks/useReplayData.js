@@ -97,7 +97,7 @@ export default function useReplayData(symbol, targetDate, interval, token, onIni
 
     if (idx >= buffer.length) {
       setIsPlaying(false);
-      toast('Replay reached current day.', { icon: '🏁' });
+      toast('Replay reached the end of the loaded range.');
       return false; // Reached end
     }
 

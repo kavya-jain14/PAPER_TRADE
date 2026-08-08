@@ -18,6 +18,13 @@ let staleSnapshotCache = { timestamp: 0, data: null, priceMode: null };
 // Per-symbol quote cache used only by resolveMarkPrices (never by execution).
 const liveQuoteCache = new Map();
 
+function quoteTimestamp(value) {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) return value.getTime();
+  if (Number.isFinite(value)) return value > 1000000000000 ? value : value * 1000;
+  const parsed = new Date(value).getTime();
+  return Number.isNaN(parsed) ? Date.now() : parsed;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // resolveExecutionPrice — strict, no-cache, no-fallback.
 // Called BEFORE a MongoDB transaction is opened.
@@ -33,19 +40,20 @@ async function resolveExecutionPrice(canonicalSymbol) {
         new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 8000))
       ]);
       const p = Number(q?.regularMarketPrice?.toFixed(2)) || 0;
-      if (p > 0) return { price: p, mode: 'LIVE', asOf: Date.now() };
-      return { price: 0, mode: 'LIVE', asOf: Date.now() };   // strict fail — no synthetic fallback
+      const asOf = quoteTimestamp(q?.regularMarketTime);
+      if (p > 0) return { price: p, mode: 'LIVE', asOf, source: 'YAHOO_FINANCE' };
+      return { price: 0, mode: 'LIVE', asOf, source: 'YAHOO_FINANCE' };   // strict fail — no synthetic fallback
     } catch {
       return { price: 0, mode: 'LIVE' };   // strict fail — do not fallback
     }
   } else {
     // Market closed — use latest synthetic candle close
-    const history = brain.getSyntheticHistory(canonicalSymbol);
+    const history = await brain.ensureSyntheticHistory(canonicalSymbol);
     if (history && history.length > 0) {
       const p = Number(history[history.length - 1].close.toFixed(2)) || 0;
-      if (p > 0) return { price: p, mode: 'SIMULATED', asOf: Date.now() };
+      if (p > 0) return { price: p, mode: 'SIMULATED', asOf: Date.now(), source: 'MARKET_BRAIN' };
     }
-    return { price: 0, mode: 'SIMULATED', asOf: Date.now() };
+    return { price: 0, mode: 'SIMULATED', asOf: Date.now(), source: 'MARKET_BRAIN' };
   }
 }
 
@@ -59,9 +67,11 @@ async function resolveExecutionPrice(canonicalSymbol) {
 async function resolveMarkPrices(canonicalSymbols) {
   const isMarketOpenNow = brain.isMarketOpen();
   const results = {};
+  const uniqueSymbols = [...new Set(canonicalSymbols)];
 
   if (!isMarketOpenNow) {
-    canonicalSymbols.forEach(sym => {
+    await Promise.allSettled(uniqueSymbols.map(sym => brain.ensureSyntheticHistory(sym)));
+    uniqueSymbols.forEach(sym => {
       const history = brain.getSyntheticHistory(sym);
       if (history && history.length > 0) {
         let p = 0, c = 0, h = 0, l = 0;
@@ -73,7 +83,7 @@ async function resolveMarkPrices(canonicalSymbols) {
         if (seedPrice && seedPrice > 0) {
           c = parseFloat((((p - seedPrice) / seedPrice) * 100).toFixed(2));
         }
-        results[sym] = { price: p, change: c, high: h, low: l, priceMode: 'SIMULATED', asOf: Date.now() };
+        results[sym] = { price: p, change: c, high: h, low: l, priceMode: 'SIMULATED', asOf: Date.now(), source: 'MARKET_BRAIN' };
       } else {
         results[sym] = null; // Strict requirement: return null if missing
       }
@@ -86,7 +96,6 @@ async function resolveMarkPrices(canonicalSymbols) {
   const now = Date.now();
   const toFetch = [];
 
-  const uniqueSymbols = [...new Set(canonicalSymbols)];
   for (const sym of uniqueSymbols) {
     const cached = liveQuoteCache.get(sym);
     // Only serve cached value if it is within LIVE_QUOTE_MAX_AGE_MS
@@ -112,7 +121,15 @@ async function resolveMarkPrices(canonicalSymbols) {
         const h = q?.regularMarketDayHigh || 0;
         const l = q?.regularMarketDayLow || 0;
 
-        const data = { price: p, change: c, high: h, low: l, priceMode: 'LIVE', asOf: Date.now() };
+        const data = {
+          price: p,
+          change: c,
+          high: h,
+          low: l,
+          priceMode: 'LIVE',
+          asOf: quoteTimestamp(q?.regularMarketTime),
+          source: 'YAHOO_FINANCE',
+        };
         if (p > 0) {
           liveQuoteCache.set(sym, { timestamp: Date.now(), data });
           results[sym] = data;

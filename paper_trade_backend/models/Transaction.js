@@ -29,7 +29,13 @@ const transactionSchema = new mongoose.Schema({
     totalAmount: { 
         type: Number, 
         required: true 
-    }
+    },
+    priceMode: {
+        type: String,
+        enum: ['LIVE', 'SIMULATED', 'REPLAY'],
+        default: 'SIMULATED'
+    },
+    quoteAsOf: { type: Date }
 }, { timestamps: true });
 
-module.exports = mongoose.model('Transaction', transactionSchema);      
+module.exports = mongoose.model('Transaction', transactionSchema);

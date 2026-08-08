@@ -6,7 +6,7 @@ import ReplayControlBar from './ReplayControlBar';
 /**
  * ReplayCanvas — Visualization component for Replay Mode.
  */
-const ReplayCanvas = memo(({ symbol, interval, targetDate, token, onPriceUpdate }) => {
+const ReplayCanvas = memo(({ symbol, interval, targetDate, token, onPriceUpdate, onExit }) => {
   const containerRef = useRef(null);
   const chartRef = useRef(null);
   const seriesRef = useRef(null);
@@ -21,33 +21,33 @@ const ReplayCanvas = memo(({ symbol, interval, targetDate, token, onPriceUpdate 
       height: containerRef.current.clientHeight,
       layout: {
         background: { type: 'solid', color: 'transparent' },
-        textColor: 'var(--color-text-secondary)',
-        fontFamily: 'var(--font-mono)',
+        textColor: '#92877D',
+        fontFamily: 'IBM Plex Mono, monospace',
         fontSize: 12,
       },
       grid: {
-        vertLines: { color: 'var(--color-border)' },
-        horzLines: { color: 'var(--color-border)' },
+        vertLines: { color: 'rgba(244, 238, 230, 0.06)' },
+        horzLines: { color: 'rgba(244, 238, 230, 0.06)' },
       },
       timeScale: {
-        borderColor: 'var(--color-border)',
+        borderColor: 'rgba(244, 238, 230, 0.10)',
         timeVisible: true,
       },
       crosshair: {
-        horzLine: { labelBackgroundColor: 'var(--color-surface-raised)' },
-        vertLine: { labelBackgroundColor: 'var(--color-surface-raised)' },
+        horzLine: { labelBackgroundColor: '#1C1C1C' },
+        vertLine: { labelBackgroundColor: '#1C1C1C' },
       },
-      rightPriceScale: { borderColor: 'var(--color-border)' },
+      rightPriceScale: { borderColor: 'rgba(244, 238, 230, 0.10)' },
     });
 
     const series = chart.addSeries(CandlestickSeries, {
-      upColor: 'var(--color-positive)', downColor: 'var(--color-negative)',
-      borderUpColor: 'var(--color-positive)', borderDownColor: 'var(--color-negative)',
-      wickUpColor: 'var(--color-positive)', wickDownColor: 'var(--color-negative)',
+      upColor: '#5A9A78', downColor: '#B96262',
+      borderUpColor: '#5A9A78', borderDownColor: '#B96262',
+      wickUpColor: '#5A9A78', wickDownColor: '#B96262',
     });
 
     const volumeSeries = chart.addSeries(HistogramSeries, {
-      color: 'var(--color-text-tertiary)', priceFormat: { type: 'volume' }, priceScaleId: '',
+      color: '#655E57', priceFormat: { type: 'volume' }, priceScaleId: '',
     });
     volumeSeries.priceScale().applyOptions({ scaleMargins: { top: 0.8, bottom: 0 } });
 
@@ -132,7 +132,7 @@ const ReplayCanvas = memo(({ symbol, interval, targetDate, token, onPriceUpdate 
         speedMultiplier={speedMultiplier}
         setSpeed={setSpeed}
         progress={progress}
-        onExit={() => window.location.reload()} // Simple exit for now
+        onExit={onExit}
       />
     </div>
   );

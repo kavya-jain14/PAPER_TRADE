@@ -13,8 +13,10 @@ const ROUTES = [
   { path: '/dashboard', label: 'Dashboard', icon: 'grid_view' },
   { path: '/markets',   label: 'Markets',   icon: 'monitoring' },
   { path: '/portfolio', label: 'Portfolio', icon: 'pie_chart' },
-  { path: '/academy',   label: 'Academy',   icon: 'school' },
-  { path: '/history',   label: 'History',   icon: 'history' },
+  { path: '/academy',   label: 'Study',     icon: 'school' },
+  { path: '/history',   label: 'Ledger',    icon: 'history' },
+  { path: '/leaderboard', label: 'Rankings', icon: 'social_leaderboard' },
+  { path: '/ai',        label: 'Market Desk', icon: 'forum' },
   { path: '/profile',   label: 'Profile',   icon: 'person' },
 ];
 
@@ -77,12 +79,7 @@ export default function CommandPalette() {
     if (result.type === 'route') {
       navigate(result.data.path);
     } else {
-      // Navigate to markets page where they can trade the specific stock
-      navigate('/markets');
-      // Adding a small delay to let the page load, then dispatch event to open trade modal
-      setTimeout(() => {
-        window.dispatchEvent(new CustomEvent('open-trade-modal', { detail: result.data }));
-      }, 300);
+      navigate(INDICES.includes(result.data) ? '/markets' : `/terminal/${encodeURIComponent(result.data)}`);
     }
   };
 

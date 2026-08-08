@@ -1,4 +1,5 @@
 const YahooFinance = require('yahoo-finance2').default;
+const { getMarketSession } = require('../services/marketSession');
 
 // 🚀 FIX: V3 Initialization to prevent backend crashes
 const yahooFinance = new YahooFinance({
@@ -253,8 +254,10 @@ class MarketBrain {
     this.cache            = {};
     this.syntheticHistory = {};
     this.clients          = {};
-    this.macroEvents      = {}; // Active macro events per symbol: { remainingCandles, bullImpact, event }
+    this.macroEvents      = {}; // Labelled simulation shocks; never presented as real news.
     this.seedPrices       = {}; // Track seed prices per symbol for % change calculation
+    this.simulationKeys   = {}; // Prevent stale anchors across pre/post-market sessions
+    this.ticker           = null;
   }
 
   // ─── Macro Event System ───────────────────────────────────────────────────
@@ -271,22 +274,9 @@ class MarketBrain {
     if (Math.random() > 0.015) return;    // ~1.5% chance per candle
 
     const events = [
-      // ── Original events ──────────────────────────────────────────────
-      { name: 'FII_SELLOFF',        bullImpact: -20, candles: 8,  label: 'FII Sell-Off: Institutional outflow detected'         },
-      { name: 'FII_BUYING',         bullImpact: +18, candles: 8,  label: 'FII Buying: Institutions accumulating aggressively'   },
-      { name: 'EARNINGS_BEAT',      bullImpact: +22, candles: 12, label: 'Earnings Beat: Revenue and PAT above estimates'       },
-      { name: 'EARNINGS_MISS',      bullImpact: -22, candles: 10, label: 'Earnings Miss: Management lowers guidance'            },
-      { name: 'RBI_RATE_CUT',       bullImpact: +15, candles: 10, label: 'RBI Surprise Rate Cut: Liquidity boost'               },
-      { name: 'RBI_RATE_HIKE',      bullImpact: -15, candles: 8,  label: 'RBI Rate Hike: Tightening liquidity'                  },
-      { name: 'GLOBAL_RALLY',       bullImpact: +12, candles: 6,  label: 'Global Markets Rally: Risk-on sentiment'              },
-      { name: 'GLOBAL_SELLOFF',     bullImpact: -18, candles: 8,  label: 'Global Risk-Off: Panic selling spreads'               },
-      { name: 'PROMOTER_BUY',       bullImpact: +10, candles: 5,  label: 'Promoter Buying: Insider confidence signal'           },
-      // ── 5 new macro events ───────────────────────────────────────────
-      { name: 'SEBI_ACTION',        bullImpact: -25, candles: 6,  label: 'SEBI Enforcement Action: Regulatory crackdown feared' },
-      { name: 'UNION_BUDGET',       bullImpact: +20, candles: 15, label: 'Union Budget: Pro-growth capex measures announced'    },
-      { name: 'UPPER_CIRCUIT',      bullImpact: +30, candles: 4,  label: 'Upper Circuit Hit: Demand exceeds supply limit'       },
-      { name: 'BLOCK_DEAL',         bullImpact: -12, candles: 5,  label: 'Large Block Deal: Institutional stake sale detected'  },
-      { name: 'DIVIDEND_EX_DATE',   bullImpact: -8,  candles: 3,  label: 'Ex-Dividend Date: Price adjustment expected'          },
+      { name: 'SIM_DEMAND_IMBALANCE', bullImpact: 16, candles: 8, label: 'Simulation scenario: positive demand imbalance' },
+      { name: 'SIM_SUPPLY_IMBALANCE', bullImpact: -16, candles: 8, label: 'Simulation scenario: negative supply imbalance' },
+      { name: 'SIM_VOLATILITY_UP', bullImpact: 8, candles: 5, label: 'Simulation scenario: volatility expansion' },
     ];
 
     const ev = events[Math.floor(Math.random() * events.length)];
@@ -299,18 +289,18 @@ class MarketBrain {
     clients.forEach(res => { try { res.write(`data: ${JSON.stringify(eventData)}\n\n`); } catch (_) {} });
   }
 
-  isMarketOpen() {
-    const ist = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
-    const day = ist.getDay();
-    if (day === 0 || day === 6) return false;
-    const totalMins = ist.getHours() * 60 + ist.getMinutes();
-    return totalMins >= 9 * 60 + 15 && totalMins <= 15 * 60 + 30;
+  getMarketSession(value = new Date()) {
+    return getMarketSession(value);
   }
 
-  async analyze(symbol) {
+  isMarketOpen(value = new Date()) {
+    return this.getMarketSession(value).isLiveTrading;
+  }
+
+  async analyze(symbol, { force = false } = {}) {
     const cached = this.cache[symbol];
     const now = Date.now();
-    if (cached && now - cached.analyzedAt < 10 * 60 * 1000) return cached.bias;
+    if (!force && cached && now - cached.analyzedAt < 10 * 60 * 1000) return cached.bias;
 
     try {
       const yfSym = toYFSymbol(symbol);
@@ -377,21 +367,33 @@ class MarketBrain {
   getSyntheticHistory(symbol)     { return this.syntheticHistory[symbol] || []; }
   getSeedPrice(symbol)            { return this.seedPrices[symbol] || null; }
 
-  async getNextCandle(symbol, prevClose = null) {
+  async getNextCandle(symbol, prevClose = null, targetTime = null) {
     let bias = await this.analyze(symbol);
     const personality = PERSONALITIES[symbol] || PERSONALITIES['DEFAULT'];
     const history = this.syntheticHistory[symbol] || [];
     const lastCandle = history[history.length - 1];
 
     const startPrice = prevClose ?? lastCandle?.close ?? bias.lastRealPrice ?? 1000;
-    const nextTime   = (lastCandle?.time ?? Math.floor(Date.now() / 1000)) + 300;
+    const nextTime = targetTime == null
+      ? (lastCandle?.time ?? Math.floor(Date.now() / 1000)) + 300
+      : Math.max(targetTime, lastCandle?.time ?? targetTime);
 
     // Apply macro event bias modifier
     this._maybeInjectMacroEvent(symbol, bias);
     const macroBias = this._tickMacroEvent(symbol);
     const effectiveBias = { ...bias, bullishProbability: Math.min(90, Math.max(10, bias.bullishProbability + macroBias)) };
 
-    const candle = generateCandle(startPrice, effectiveBias, bias.atr || startPrice * 0.005, personality, nextTime);
+    const generated = generateCandle(startPrice, effectiveBias, bias.atr || startPrice * 0.005, personality, nextTime);
+    const isCurrentBucketUpdate = targetTime != null && lastCandle?.time === nextTime;
+    const candle = isCurrentBucketUpdate
+      ? {
+          ...generated,
+          open: lastCandle.open,
+          high: Math.max(lastCandle.high, generated.high, generated.close),
+          low: Math.min(lastCandle.low, generated.low, generated.close),
+          volume: lastCandle.volume + Math.max(1, Math.round(generated.volume / 12)),
+        }
+      : generated;
 
     if (!this.cache[symbol]) this.cache[symbol] = { bias };
     if (!this.cache[symbol].bias) this.cache[symbol].bias = bias;
@@ -402,7 +404,11 @@ class MarketBrain {
     }
 
     if (!this.syntheticHistory[symbol]) this.syntheticHistory[symbol] = [];
-    this.syntheticHistory[symbol].push(candle);
+    if (isCurrentBucketUpdate) {
+      this.syntheticHistory[symbol][this.syntheticHistory[symbol].length - 1] = candle;
+    } else {
+      this.syntheticHistory[symbol].push(candle);
+    }
     if (this.syntheticHistory[symbol].length > 500) this.syntheticHistory[symbol].shift();
 
     return candle;
@@ -415,6 +421,38 @@ class MarketBrain {
       open: lastRealPrice, high: lastRealPrice, low: lastRealPrice, close: lastRealPrice, volume: 0,
     }];
     await this.analyze(symbol);
+  }
+
+  async ensureSyntheticHistory(symbol) {
+    const session = this.getMarketSession();
+    const phase = session.state === 'POST_MARKET' ? 'POST' : 'PRE';
+    const sessionKey = `${session.dateKey}:${phase}`;
+    const history = this.syntheticHistory[symbol] || [];
+
+    if (history.length > 0 && this.simulationKeys[symbol] === sessionKey) {
+      return history;
+    }
+
+    const bias = await this.analyze(symbol, { force: true });
+    const anchor = Number(bias.lastRealPrice) > 0 ? Number(bias.lastRealPrice) : 1000;
+    const anchorTime = Math.floor(Date.now() / 300000) * 300 - 300 * 78;
+
+    this.seedPrices[symbol] = anchor;
+    this.syntheticHistory[symbol] = [{
+      time: anchorTime,
+      open: anchor,
+      high: anchor,
+      low: anchor,
+      close: anchor,
+      volume: 0,
+    }];
+    this.simulationKeys[symbol] = sessionKey;
+
+    for (let i = 0; i < 78; i += 1) {
+      await this.getNextCandle(symbol);
+    }
+
+    return this.syntheticHistory[symbol];
   }
 
   addClient(symbol, res) {
@@ -432,27 +470,43 @@ class MarketBrain {
   }
 
   startTicker(activeSymbols = []) {
+    if (this.ticker) return this.ticker;
     console.log('⚙️  [MarketBrain] Simulation ticker started');
-    setInterval(async () => {
+    this.ticker = setInterval(async () => {
+      if (this.isMarketOpen()) return;
+      const currentBucket = Math.floor(Date.now() / 300000) * 300;
       for (const symbol of activeSymbols) {
-        if ((this.clients[symbol] || []).length === 0) continue;
         try {
-          const candle = await this.getNextCandle(symbol);
+          await this.ensureSyntheticHistory(symbol);
+          const candle = await this.getNextCandle(symbol, null, currentBucket);
           this.broadcast(symbol, { type: 'CANDLE', candle, symbol });
         } catch (err) {}
       }
     }, 5000);
+    this.ticker.unref?.();
+    return this.ticker;
   }
 
   getBiasSummary(symbol) {
     const cached = this.cache[symbol];
     if (!cached) return null;
+    const bullishProbability = cached.bias.bullishProbability;
+    const signal = bullishProbability >= 62
+      ? 'BUY'
+      : bullishProbability <= 38
+        ? 'SELL'
+        : 'WAIT';
     return {
       symbol:              cached.bias.symbol,
       regime:              cached.bias.regime,
-      bullishProbability:  cached.bias.bullishProbability,
+      bullishProbability,
       rsi:                 cached.bias.rsi,
+      macd:                cached.bias.macd?.macd ?? 0,
+      macdSignal:          cached.bias.macd?.signal ?? 0,
       patterns:            cached.bias.patterns,
+      lastPrice:           (this.syntheticHistory[symbol] || []).at(-1)?.close ?? cached.bias.lastRealPrice,
+      signal,
+      marketMode:          this.isMarketOpen() ? 'LIVE' : 'SIMULATED',
     };
   }
 }

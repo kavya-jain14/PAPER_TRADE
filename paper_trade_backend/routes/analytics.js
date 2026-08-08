@@ -16,13 +16,15 @@ router.get('/metrics', fetchuser, async (req, res) => {
 
     if (!txns || txns.length === 0) {
       return res.json({
-        totalTrades: 0,
+        totalClosedTrades: 0,
+        totalRealizedPnL: 0,
         winRate: 0,
         profitFactor: 0,
-        realizedPnL: 0,
+        grossProfit: 0,
+        grossLoss: 0,
         bestTrade: null,
         worstTrade: null,
-        history: [] // For equity curve
+        equityCurve: []
       });
     }
 
@@ -32,6 +34,7 @@ router.get('/metrics', fetchuser, async (req, res) => {
     let grossLoss = 0;
     let winningTrades = 0;
     let losingTrades = 0;
+    let totalClosedTrades = 0;
 
     // Track state per symbol to calculate Realized P&L using Average Cost
     const positions = {}; // { [symbol]: { qty, totalCost } }
@@ -61,6 +64,7 @@ router.get('/metrics', fetchuser, async (req, res) => {
           const avgCostPerShare = pos.totalCost / pos.qty;
           const costBasisOfSoldShares = avgCostPerShare * quantity;
           const realizedTradePnL = totalAmount - costBasisOfSoldShares;
+          totalClosedTrades += 1;
 
           totalRealizedPnL += realizedTradePnL;
           runningRealizedPnL += realizedTradePnL;
@@ -101,7 +105,6 @@ router.get('/metrics', fetchuser, async (req, res) => {
       .map(([date, pnl]) => ({ time: date, value: Number(pnl.toFixed(2)) }))
       .sort((a, b) => new Date(a.time) - new Date(b.time));
 
-    const totalClosedTrades = winningTrades + losingTrades;
     const winRate = totalClosedTrades > 0 ? (winningTrades / totalClosedTrades) * 100 : 0;
     const profitFactor = grossLoss > 0 ? (grossProfit / grossLoss) : (grossProfit > 0 ? 999 : 0);
 

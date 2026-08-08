@@ -1,118 +1,66 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion as Motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { AppShell } from '../components/AppShell';
-import useMarketStatus from '../hooks/useMarketStatus';
-import Podium from '../components/Leaderboard/Podium';
-import LeaderboardList from '../components/Leaderboard/LeaderboardList';
+import { EmptyDesk, PageHeader, Panel } from '../components/workspace/Workspace';
+import { useMarketSession } from '../hooks/useMarketStatus';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+const money = (value) => Number(value || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export default function Leaderboard() {
-  const [leaderboard, setLeaderboard] = useState([]);
-  const [currentUserRank, setCurrentUserRank] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  // Basic AppShell state
-  const [userName, setUserName] = useState('');
-  const [avatar, setAvatar] = useState('');
-  const marketStatus = useMarketStatus();
-
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
+  const session = useMarketSession();
+  const [user, setUser] = useState({ name: '', avatar: '' });
+  const [rows, setRows] = useState([]);
+  const [current, setCurrent] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!token) return navigate('/login');
-
-    const fetchLeaderboard = async () => {
+    if (!token) { navigate('/login'); return; }
+    const controller = new AbortController();
+    const load = async () => {
       try {
-        const userRes = await fetch(`${API_URL}/api/auth/getuser`, { headers: { "Content-Type": "application/json", "auth-token": token } });
-        if (userRes.ok) {
-          const userData = await userRes.json();
-          setUserName(userData.name ? userData.name.split(' ')[0] : 'Trader');
-          setAvatar(userData.avatar || '');
+        const [userResponse, rankingResponse] = await Promise.all([
+          fetch(`${API_URL}/api/auth/getuser`, { headers: { 'auth-token': token }, signal: controller.signal }),
+          fetch(`${API_URL}/api/leaderboard`, { headers: { 'auth-token': token }, signal: controller.signal }),
+        ]);
+        if (userResponse.ok) {
+          const data = await userResponse.json();
+          setUser({ name: data.name?.split(' ')[0] || 'Trader', avatar: data.avatar || '' });
         }
-
-        const res = await fetch(`${API_URL}/api/leaderboard`, { headers: { "auth-token": token } });
-        const data = await res.json();
-
-        if (res.ok) {
-          setLeaderboard(data.leaderboard);
-          setCurrentUserRank(data.currentUser);
-        } else {
-          toast.error(data.message || 'Failed to fetch leaderboard');
-        }
-      } catch {
-        toast.error('Network error while fetching leaderboard');
+        if (!rankingResponse.ok) throw new Error('Ranking unavailable');
+        const data = await rankingResponse.json();
+        setRows(data.leaderboard || []);
+        setCurrent(data.currentUser || null);
+      } catch (error) {
+        if (error.name !== 'AbortError') toast.error(error.message || 'Failed to load ranking');
       } finally {
         setLoading(false);
       }
     };
-
-    fetchLeaderboard();
-  }, [token, navigate]);
-
-  const top3 = leaderboard.slice(0, 3);
-  const restOfUsers = leaderboard.slice(3);
+    load();
+    return () => controller.abort();
+  }, [navigate, token]);
 
   return (
-    <AppShell userName={userName} marketStatus={marketStatus} avatar={avatar}>
-      <Motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-1 flex flex-col min-w-0 relative h-full">
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10 pb-32">
-          <div className="max-w-[1000px] mx-auto space-y-12">
+    <AppShell userName={user.name} marketStatus={session.mode} avatar={user.avatar}>
+      <main className="workspace-page">
+        <div className="workspace-page__inner" style={{ maxWidth: 1000 }}>
+          <PageHeader title="Ranking" description="Paper-account equity across eligible platform users." session={session} />
 
-            <header className="text-center space-y-3 pb-8 border-b border-border">
-              <Motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="inline-flex items-center justify-center p-3 rounded-full bg-accent/10 text-accent mb-2">
-                <span className="material-symbols-outlined text-4xl">social_leaderboard</span>
-              </Motion.div>
-              <Motion.h1 initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="type-h1 bg-gradient-to-r from-accent to-accent-purple text-transparent bg-clip-text">
-                Global Hall of Fame
-              </Motion.h1>
-              <Motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="type-body text-text-secondary max-w-2xl mx-auto">
-                Compete against thousands of traders worldwide. Only the top 100 make the cut. Are you ready to claim your spot on the podium?
-              </Motion.p>
-            </header>
+          <div className="workspace-grid">
+          {current && <Panel><div style={{ padding: 16, display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: 16 }}><span className="type-data-lg" style={{ color: 'var(--color-accent)' }}>{current.unrankedReason ? '—' : `#${current.rank}`}</span><div><p style={{ margin: 0, color: 'var(--color-text-primary)', fontWeight: 600 }}>Your current standing</p><p className="type-caption-muted" style={{ margin: 3 }}>{current.unrankedReason ? 'Ranking is unavailable after manual funds were added.' : 'Rank is ordered by current paper-account equity.'}</p></div><span className="type-data-md">{Number.isFinite(current.equity) ? `₹${money(current.equity)}` : '—'}</span></div></Panel>}
 
-            {loading ? (
-              <div className="flex items-center justify-center h-64">
-                <div className="w-10 h-10 border-4 border-border border-t-accent rounded-full animate-spin"></div>
-              </div>
-            ) : (
-              <>
-                <Podium topUsers={top3} />
-                <LeaderboardList users={restOfUsers} />
-              </>
-            )}
-
+          <Panel title="Equity table" meta={`${rows.length} eligible accounts`}>
+            {loading ? <EmptyDesk title="Loading ranking" detail="Calculating eligible account equity." /> : rows.length === 0 ? <EmptyDesk title="No ranked accounts" detail="Eligible users will appear after the ranking is calculated." /> : <div className="desk-table-wrap"><table className="desk-table"><thead><tr><th data-numeric>Rank</th><th>Trader</th><th data-numeric>Equity</th></tr></thead><tbody>
+              {rows.map((row) => <tr key={row.id}><td data-numeric style={{ color: row.isCurrentUser ? 'var(--color-accent)' : undefined }}>{row.unrankedReason ? '—' : `#${row.rank}`}</td><td style={{ color: row.isCurrentUser ? 'var(--color-text-primary)' : undefined, fontWeight: row.isCurrentUser ? 600 : 400 }}>{row.name}{row.isCurrentUser ? ' · You' : ''}</td><td data-numeric>₹{money(row.equity)}</td></tr>)}
+            </tbody></table></div>}
+          </Panel>
           </div>
         </div>
-
-        {/* Sticky User Rank Bar */}
-        {!loading && currentUserRank && (
-          <Motion.div
-            initial={{ y: 100 }}
-            animate={{ y: 0 }}
-            transition={{ type: 'spring', damping: 25 }}
-            className="absolute bottom-0 left-0 right-0 p-4 border-t border-border bg-surface-overlay backdrop-blur-xl z-20 shadow-[0_-10px_30px_rgba(0,0,0,0.3)]"
-          >
-            <div className="max-w-[1000px] mx-auto flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded bg-accent/20 text-accent flex items-center justify-center font-bold font-mono">
-                  {currentUserRank.unrankedReason ? '—' : `#${currentUserRank.rank}`}
-                </div>
-                <div>
-                  <div className="type-label-body text-text-primary">You</div>
-                  <div className="type-caption-muted">{currentUserRank.unrankedReason ? '—  UNRANKED · FUNDS ADDED' : 'Keep trading to climb the ranks!'}</div>
-                </div>
-              </div>
-              <div className="text-xl font-bold font-mono text-positive">
-                {Number.isFinite(currentUserRank.equity) ? `₹${currentUserRank.equity.toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : '—'}
-              </div>
-            </div>
-          </Motion.div>
-        )}
-      </Motion.div>
+      </main>
     </AppShell>
   );
 }

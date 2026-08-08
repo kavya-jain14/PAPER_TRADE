@@ -11,16 +11,16 @@
  */
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { LayoutGrid, LineChart, PieChart, History, GraduationCap, Trophy, Bot, Menu, User, FileText, LifeBuoy, LogOut, X } from 'lucide-react';
+import { LayoutGrid, LineChart, PieChart, History, GraduationCap, Trophy, MessageSquareText, Menu, User, FileText, LifeBuoy, LogOut, X } from 'lucide-react';
 
 const NAV_ITEMS = [
   { path: '/dashboard', icon: LayoutGrid,  label: 'Dashboard' },
   { path: '/markets',   icon: LineChart,   label: 'Markets'   },
   { path: '/portfolio', icon: PieChart,    label: 'Portfolio' },
   { path: '/history',   icon: History,     label: 'Ledger'    },
-  { path: '/academy',   icon: GraduationCap, label: 'Academy'   },
+  { path: '/academy',   icon: GraduationCap, label: 'Study'   },
   { path: '/leaderboard', icon: Trophy,    label: 'Rankings'  },
-  { path: '/ai',        icon: Bot,         label: 'AI Coach'  },
+  { path: '/ai',        icon: MessageSquareText, label: 'Market Desk'  },
 ];
 
 const MOBILE_NAV_ITEMS = [
@@ -174,7 +174,7 @@ export function MobileBottomNav() {
             <Trophy size={20} strokeWidth={1.5} style={{ color: 'var(--color-text-secondary)', flexShrink: 0 }} /> Rankings
           </Link>
           <Link to="/ai" onClick={handleLinkClick} className="flex items-center gap-3 p-3 rounded-lg hover:bg-surface-raised transition-colors type-body">
-            <Bot size={20} strokeWidth={1.5} style={{ color: 'var(--color-text-secondary)', flexShrink: 0 }} /> AI Coach
+            <MessageSquareText size={20} strokeWidth={1.5} style={{ color: 'var(--color-text-secondary)', flexShrink: 0 }} /> Market Desk
           </Link>
           <div style={{ height: '1px', background: 'var(--color-border)', margin: '4px 0' }} />
           <Link to="/profile" onClick={handleLinkClick} className="flex items-center gap-3 p-3 rounded-lg hover:bg-surface-raised transition-colors type-body">
@@ -183,7 +183,7 @@ export function MobileBottomNav() {
           <Link to="/legal" onClick={handleLinkClick} className="flex items-center gap-3 p-3 rounded-lg hover:bg-surface-raised transition-colors type-body">
             <FileText size={20} strokeWidth={1.5} style={{ color: 'var(--color-text-secondary)', flexShrink: 0 }} /> Legal
           </Link>
-          <a href="mailto:support@papertrade.com" onClick={handleLinkClick} className="flex items-center gap-3 p-3 rounded-lg hover:bg-surface-raised transition-colors type-body">
+          <a href="mailto:kavyajain1407@gmail.com" onClick={handleLinkClick} className="flex items-center gap-3 p-3 rounded-lg hover:bg-surface-raised transition-colors type-body">
             <LifeBuoy size={20} strokeWidth={1.5} style={{ color: 'var(--color-text-secondary)', flexShrink: 0 }} /> Support
           </a>
           <button
@@ -340,7 +340,7 @@ function Sidebar({ userName = '', avatar = '' }) {
             Legal
           </Link>
           <a
-            href="mailto:support@papertrade.com"
+            href="mailto:kavyajain1407@gmail.com"
             style={{ fontSize: 'var(--text-label)', color: 'var(--color-text-tertiary)', textTransform: 'none', letterSpacing: 'normal' }}
             className="hover:opacity-80 transition-opacity"
           >
