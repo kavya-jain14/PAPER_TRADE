@@ -1,0 +1,91 @@
+/* ============================================================
+   LogoMorph — PaperTrade brand transformation sequence
+   ============================================================
+
+   Placement:
+   - Upper-left quadrant of the left workspace
+   - Below telemetry, left of center, above ticker
+   - Responsive clamps used for layout
+
+   Scale:
+   - 138×138px wrapper on desktop
+   - 104×104px wrapper on tablet
+   - 64×64px wrapper on mobile
+
+   Visual:
+   - Transparent background
+   - Soft radial warm-black backdrop for legibility
+   - No container or card edges
+   ============================================================ */
+
+/* ── Wrapper ──────────────────────────────────────────────────── */
+.wrapper {
+  position: absolute;
+
+  /* Strict 138×138px wrapper for desktop */
+  width: 138px;
+  height: 138px;
+
+  /* Left offset: upper-left zone, clear of workspace edge */
+  left: clamp(100px, 8.5vw, 140px);
+  top: clamp(155px, 18vh, 195px);
+  z-index: 4;
+  pointer-events: none;
+  user-select: none;
+
+  /* Soft radial warm-black backdrop for legibility — no visible hard edge */
+  background: radial-gradient(ellipse 140% 140% at 50% 50%,
+      rgba(11, 9, 7, 0.50) 0%,
+      rgba(11, 9, 7, 0.15) 55%,
+      transparent 100%);
+  border-radius: 50%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── SVG canvas ──────────────────────────────────────────────── */
+.logoMorph {
+  display: block;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 1;
+  overflow: visible;
+}
+
+/* ── Optical Normalisation ───────────────────────────────────── */
+.state-logo {
+  transform: scale(0.97);
+  transform-origin: center;
+  transform-box: fill-box;
+}
+
+.state-dollar {
+  transform: scale(0.91);
+  transform-origin: center;
+  transform-box: fill-box;
+}
+
+.state-graph {
+  transform: scale(0.94);
+  transform-origin: center;
+  transform-box: fill-box;
+}
+
+/* ── Tablet (900–1199px) ─────────────────────────────────────── */
+@media (min-width: 900px) and (max-width: 1199px) {
+  .wrapper {
+    width: 112px;
+    height: 112px;
+    left: clamp(56px, 7vw, 88px);
+    top: clamp(148px, 18vh, 184px);
+  }
+}
+
+/* ── Mobile (below 900px) ────────────────────────────────────── */
+@media (max-width: 899px) {
+  .wrapper {
+    display: none;
+  }
+}

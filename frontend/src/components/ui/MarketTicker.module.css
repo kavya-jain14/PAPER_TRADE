@@ -1,0 +1,186 @@
+/* ============================================================
+   MarketTicker
+   Exact two-sequence CSS-transform loop.
+
+   LOOP MATH:
+   - Both sequences have identical intrinsic widths.
+   - The track = sequence-A + sequence-B, total width = 2 × W.
+   - @keyframes translates from 0 to -50% (i.e. exactly -W).
+   - At -50% the visual position is identical to 0, so the
+     reset is invisible. No React state, no rAF.
+
+   PADDING STRATEGY:
+   - Leading padding lives on the VIEWPORT (padding-left),
+     not the sequence. This means the initial rendered frame
+     shows a gap before the first symbol — the animation
+     immediately moves the track leftward so a full item
+     enters from the right. On first paint, the very start of
+     the first item is visible at the left edge.
+   - Each sequence carries padding-right equal to the item gap
+     so the spacing at the seam between sequence-A's last item
+     and sequence-B's first item is visually identical to any
+     other inter-item gap.
+
+   BADGE:
+   - .modeBadge is a flex sibling of .tickerViewport inside
+     .tickerContainer. It is never inside the viewport or
+     the track. It cannot cover or constrain ticker items.
+
+   EDGE MASK:
+   - Applied only to .tickerViewport via a CSS mask-image.
+     The mask is narrow (28px each side) so it creates a soft
+     fade, not a large hidden region.
+   ============================================================ */
+
+.tickerContainer {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  background-color: transparent;
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* Viewport clips the animated track.
+   NO leading padding here — padding fights the mask and causes
+   the first character to sit right at the visible edge.
+   Leading space is handled by a CSS :first-child spacer on the sequence. */
+.tickerViewport {
+  /* Take all remaining width; badge is flex-none beside it. */
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  padding: 10px 0;          /* vertical breathing room only */
+  /* Warm-black edge fade — only on the viewport, not the badge. */
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0px,
+    black 20px,
+    black calc(100% - 20px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0px,
+    black 20px,
+    black calc(100% - 20px),
+    transparent 100%
+  );
+}
+
+/* Track holds exactly two sequences side by side.
+   width:max-content makes it exactly 2 × sequence intrinsic width. */
+.tickerTrack {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+  animation: tickerScroll linear infinite;
+}
+
+.tickerTrack.slow {
+  animation-duration: 52s;
+}
+
+.tickerTrack.fast {
+  animation-duration: 26s;
+}
+
+/* Each sequence: identical gap and padding.
+   padding-left on the SEQUENCE (not viewport) creates the visible
+   leading space at translateX(0) without conflicting with the mask.
+   padding-right MUST equal gap so the wrap-around seam is invisible. */
+.tickerSequence {
+  display: flex;
+  flex: none;
+  gap: 80px;
+  /* Leading space: large enough to clear the viewport's edge mask */
+  padding-left: 60px;
+  /* Trailing space: combined with leading space to equal one gap (60+20=80) */
+  padding-right: 20px;
+}
+
+/* -50% = exactly one sequence width (half of total track width).
+   The two sequences are identical, so the jump is invisible. */
+@keyframes tickerScroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* ── Reduced-motion ─────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .tickerTrack {
+    animation: none;
+    transform: none;
+  }
+
+  /* Show only the primary sequence; allow it to scroll horizontally
+     on small screens rather than clipping. */
+  .tickerViewport {
+    overflow-x: auto;
+    /* Remove mask so all items are fully readable when static */
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
+  /* aria-hidden duplicate — hidden from sighted and AT users */
+  .tickerSequence + .tickerSequence {
+    display: none;
+  }
+}
+
+/* ── Ticker item ────────────────────────────────────────────── */
+.tickerItem {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-family: var(--font-mono);
+  flex: none;
+  /* Prevent any item from wrapping — each is an atomic unit */
+  white-space: nowrap;
+}
+
+.symbol {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  letter-spacing: 0.02em;
+}
+
+.price {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+}
+
+.change {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.positive {
+  color: var(--color-positive);
+}
+
+.negative {
+  color: var(--color-negative);
+}
+
+/* ── SIMULATED badge ────────────────────────────────────────── */
+/* flex-none AND a fixed width so it cannot squeeze the viewport.
+   No z-index tricks needed — it is outside the viewport entirely. */
+.modeBadge {
+  flex: none;
+  width: 72px;  /* fixed so it never causes the viewport to shrink */
+  text-align: center;
+  margin-right: 12px;
+  padding: 2px 6px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: 9px;
+  font-weight: 500;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}

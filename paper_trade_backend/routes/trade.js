@@ -1,134 +1,198 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
+const YahooFinance = require('yahoo-finance2').default;
 const User = require('../models/User');
 const Transaction = require('../models/Transaction');
 const fetchuser = require('../middleware/fetchuser');
 const brain = require('../engine/marketBrain');
-const YahooFinance = require('yahoo-finance2').default;
+const aiCoach = require('../engine/aiCoach');
+const {
+  resolveExecutionPrice,
+  resolveMarkPrices,
+  invalidateLeaderboardCache
+} = require('../services/marketPriceService');
 
 const yahooFinance = new YahooFinance({
   suppressNotices: ['yahooSurvey', 'ripHistorical']
 });
 
-const priceCache = {}; // { [symbol]: { timestamp, data: { price, change, high, low } } }
+const {
+  isValidSymbol,
+  canonicalizeSymbol,
+  toYahooSymbol,
+  validateQuantity,
+  normalizeInterval
+} = require('../utils/validators');
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Helper: Validate trade inputs (FIX #9)
-// ─────────────────────────────────────────────────────────────────────────────
-const validateTradeInput = (symbol, quantity, currentPrice) => {
-  if (!symbol || typeof symbol !== 'string' || symbol.trim() === '') {
-    return 'Symbol is required.';
-  }
-  const qty = Number(quantity);
-  const price = Number(currentPrice);
-  if (!Number.isFinite(qty) || qty <= 0 || !Number.isInteger(qty)) {
-    return 'Quantity must be a positive whole number.';
-  }
-  if (!Number.isFinite(price) || price <= 0) {
-    return 'Price must be a positive number.';
-  }
-  return null; // No error
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 🟢 ROUTE: BUY STOCK (FIX #2 consistent uid, FIX #9 validation)
+// 🟢 ROUTE: BUY STOCK
 // ─────────────────────────────────────────────────────────────────────────────
 router.post('/buy', fetchuser, async (req, res) => {
+  // Validate inputs before touching the DB
+  const uid = req.user?.userId;
+  if (!uid) return res.status(400).json({ message: 'Authentication failure: User ID missing.' });
+
+  const { symbol, quantity } = req.body;
+  if (!isValidSymbol(symbol)) return res.status(400).json({ message: 'Invalid or unsupported symbol.' });
+  if (!validateQuantity(quantity)) return res.status(400).json({ message: 'Quantity must be a positive whole number.' });
+
+  const symClean = canonicalizeSymbol(symbol);
+  const qtyNumber = Number(quantity);
+
+  // Resolve execution price BEFORE opening any transaction (network call)
+  const resolved = await resolveExecutionPrice(symClean);
+  if (!(resolved.price > 0)) {
+    return res.status(400).json({ message: 'Quote unavailable. Execution rejected.' });
+  }
+
+  const priceNumber = resolved.price;
+  const totalCost = Number((qtyNumber * priceNumber).toFixed(2));
+
+  const session = await mongoose.startSession();
   try {
-    // ✅ FIX: JWT payload is now always { userId }, so use req.user.userId
-    const uid = req.user.userId;
-    if (!uid) return res.status(400).json({ message: 'Authentication failure: User ID missing.' });
+    let resultData = null;
+    await session.withTransaction(async () => {
+      // All DB work inside the transaction
+      const user = await User.findOneAndUpdate(
+        { _id: uid, virtualBalance: { $gte: totalCost } },
+        [{ $set: { virtualBalance: { $round: [{ $subtract: ['$virtualBalance', totalCost] }, 2] } } }],
+        { new: true, session }
+      );
+      if (!user) throw new Error('Insufficient Margin or user not found!');
 
-    const { symbol, quantity, currentPrice } = req.body;
+      const newTxn = new Transaction({
+        userId: uid,
+        symbol: symClean,
+        transactionType: 'BUY',
+        quantity: qtyNumber,
+        pricePerShare: priceNumber,
+        totalAmount: totalCost,
+        priceMode: resolved.mode,
+        quoteAsOf: resolved.asOf ? new Date(resolved.asOf) : new Date(),
+      });
+      await newTxn.save({ session });
 
-    // ✅ FIX #9: Validate all inputs
-    const validationError = validateTradeInput(symbol, quantity, currentPrice);
-    if (validationError) return res.status(400).json({ message: validationError });
+      const recentTrades = await Transaction.find({ userId: uid })
+        .sort({ createdAt: -1 }).limit(10).session(session);
+      const bias = brain.getBiasSummary(symClean);
+      const aiFeedback = aiCoach.evaluateTrade(symClean, 'BUY', qtyNumber, priceNumber, bias, recentTrades);
 
-    const qtyNumber = Number(quantity);
-    const priceNumber = Number(currentPrice);
-    const totalCost = qtyNumber * priceNumber;
-
-    const user = await User.findById(uid);
-    if (!user) return res.status(404).json({ message: 'User not found' });
-
-    if (user.virtualBalance < totalCost) {
-      return res.status(400).json({ message: 'Insufficient Margin!' });
-    }
-
-    user.virtualBalance = parseFloat((user.virtualBalance - totalCost).toFixed(2));
-    await user.save();
-
-    const newTxn = new Transaction({
-      userId: uid,
-      symbol: symbol.trim().toUpperCase(),
-      transactionType: 'BUY',
-      quantity: qtyNumber,
-      pricePerShare: priceNumber,
-      totalAmount: totalCost,
+      resultData = {
+        success: true,
+        message: 'Buy Order Executed!',
+        balance: user.virtualBalance,
+        executedPrice: priceNumber,
+        priceMode: resolved.mode,
+        quoteAsOf: resolved.asOf,
+        quoteSource: resolved.source,
+        aiFeedback
+      };
     });
-    await newTxn.save();
 
-    res.json({ success: true, message: 'Buy Order Executed!', balance: user.virtualBalance });
+    if (resultData) {
+      invalidateLeaderboardCache();
+      return res.json(resultData);
+    }
   } catch (error) {
-    console.error('Buy Error:', error);
-    res.status(500).json({ message: 'Internal Server Error' });
+    console.error('Buy Error:', error.message);
+    const knownMsgs = ['Insufficient Margin', 'user not found', 'Authentication'];
+    const msg = knownMsgs.some(k => error.message.includes(k)) ? error.message : 'Internal Server Error';
+    return res.status(msg === 'Internal Server Error' ? 500 : 400).json({ message: msg });
+  } finally {
+    await session.endSession();
   }
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 🔴 ROUTE: SELL STOCK (FIX #2 crash, FIX #9 validation)
+// 🔴 ROUTE: SELL STOCK
 // ─────────────────────────────────────────────────────────────────────────────
 router.post('/sell', fetchuser, async (req, res) => {
+  // Validate inputs before touching the DB
+  const uid = req.user?.userId;
+  if (!uid) return res.status(400).json({ message: 'Authentication failure: User ID missing.' });
+
+  const { symbol, quantity } = req.body;
+  if (!isValidSymbol(symbol)) return res.status(400).json({ message: 'Invalid or unsupported symbol.' });
+  if (!validateQuantity(quantity)) return res.status(400).json({ message: 'Quantity must be a positive whole number.' });
+
+  const symClean = canonicalizeSymbol(symbol);
+  const qtyNumber = Number(quantity);
+
+  // Resolve execution price BEFORE opening any transaction (network call)
+  const resolved = await resolveExecutionPrice(symClean);
+  if (!(resolved.price > 0)) {
+    return res.status(400).json({ message: 'Quote unavailable. Execution rejected.' });
+  }
+
+  const priceNumber = resolved.price;
+  const earnings = Number((qtyNumber * priceNumber).toFixed(2));
+
+  const session = await mongoose.startSession();
   try {
-    const uid = req.user.userId;
-    if (!uid) return res.status(400).json({ message: 'Authentication failure: User ID missing.' });
+    let resultData = null;
+    await session.withTransaction(async () => {
+      // All DB work inside the transaction (concurrent-SELL protection)
+      const userTxns = await Transaction.find({ userId: uid }).session(session);
+      let totalQty = 0;
+      userTxns.forEach(t => {
+        if (canonicalizeSymbol(t.symbol) === symClean) {
+          if (t.transactionType === 'BUY') totalQty += t.quantity;
+          if (t.transactionType === 'SELL') totalQty -= t.quantity;
+        }
+      });
 
-    const { symbol, quantity, currentPrice } = req.body;
+      if (totalQty < qtyNumber) {
+        throw new Error(`Insufficient holdings! You only have ${totalQty} shares of ${symClean}.`);
+      }
 
-    // ✅ FIX #9: Validate all inputs
-    const validationError = validateTradeInput(symbol, quantity, currentPrice);
-    if (validationError) return res.status(400).json({ message: validationError });
+      const user = await User.findOneAndUpdate(
+        { _id: uid },
+        [{ $set: { virtualBalance: { $round: [{ $add: ['$virtualBalance', earnings] }, 2] } } }],
+        { new: true, session }
+      );
+      if (!user) throw new Error('User not found');
 
-    const symClean = symbol.trim().toUpperCase();
-    const qtyNumber = Number(quantity);
-    const priceNumber = Number(currentPrice);
-    // ✅ FIX #2: Correctly named 'earnings' — money gained from selling
-    const earnings = qtyNumber * priceNumber;
+      const newTxn = new Transaction({
+        userId: uid,
+        symbol: symClean,
+        transactionType: 'SELL',
+        quantity: qtyNumber,
+        pricePerShare: priceNumber,
+        totalAmount: earnings,
+        priceMode: resolved.mode,
+        quoteAsOf: resolved.asOf ? new Date(resolved.asOf) : new Date(),
+      });
+      await newTxn.save({ session });
 
-    // Check if user has enough shares
-    const userTxns = await Transaction.find({ userId: uid, symbol: symClean });
-    let totalQty = 0;
-    userTxns.forEach(t => {
-      if (t.transactionType === 'BUY') totalQty += t.quantity;
-      if (t.transactionType === 'SELL') totalQty -= t.quantity;
+      const recentTrades = await Transaction.find({ userId: uid })
+        .sort({ createdAt: -1 }).limit(10).session(session);
+      const bias = brain.getBiasSummary(symClean);
+      const aiFeedback = aiCoach.evaluateTrade(symClean, 'SELL', qtyNumber, priceNumber, bias, recentTrades);
+
+      resultData = {
+        success: true,
+        message: 'Sell Order Executed!',
+        balance: user.virtualBalance,
+        executedPrice: priceNumber,
+        priceMode: resolved.mode,
+        quoteAsOf: resolved.asOf,
+        quoteSource: resolved.source,
+        aiFeedback
+      };
     });
 
-    if (totalQty < qtyNumber) {
-      return res.status(400).json({ message: `Insufficient holdings! You only have ${totalQty} shares of ${symClean}.` });
+    if (resultData) {
+      invalidateLeaderboardCache();
+      return res.json(resultData);
     }
-
-    const user = await User.findById(uid);
-    if (!user) return res.status(404).json({ message: 'User not found' });
-
-    // ✅ FIX #2: ADD earnings to balance (selling gives money back)
-    user.virtualBalance = parseFloat((user.virtualBalance + earnings).toFixed(2));
-    await user.save();
-
-    const newTxn = new Transaction({
-      userId: uid,
-      symbol: symClean,
-      transactionType: 'SELL',
-      quantity: qtyNumber,
-      pricePerShare: priceNumber,
-      totalAmount: earnings,
-    });
-    await newTxn.save();
-
-    res.json({ success: true, message: 'Sell Order Executed!', balance: user.virtualBalance });
   } catch (error) {
-    console.error('Sell Error:', error);
-    res.status(500).json({ message: 'Internal Server Error' });
+    console.error('Sell Error:', error.message);
+    const knownMsgs = ['Insufficient holdings', 'User not found', 'Authentication'];
+    const msg = knownMsgs.some(k => error.message.includes(k)) ? error.message : 'Internal Server Error';
+    return res.status(msg === 'Internal Server Error' ? 500 : 400).json({ message: msg });
+  } finally {
+    await session.endSession();
   }
 });
 
@@ -138,24 +202,34 @@ router.post('/sell', fetchuser, async (req, res) => {
 router.post('/deposit', fetchuser, async (req, res) => {
   try {
     const { amount } = req.body;
-    // ✅ FIX: Was using req.user.userId || req.user.userId (same field twice)
     const userId = req.user.userId;
 
-    // ✅ FIX #9: Validate deposit amount
-    const depositAmount = Number(amount);
+    let depositAmount = Number(amount);
     if (!Number.isFinite(depositAmount) || depositAmount <= 0) {
       return res.status(400).json({ message: 'Deposit amount must be a positive number.' });
     }
-    if (depositAmount > 10000000) { // Max ₹1 crore per deposit
+
+    // Normalize to two decimals before pipeline
+    depositAmount = Math.round(depositAmount * 100) / 100;
+
+    if (depositAmount <= 0) {
+      return res.status(400).json({ message: 'Deposit amount must be greater than zero.' });
+    }
+    if (depositAmount > 10000000) {
       return res.status(400).json({ message: 'Deposit amount cannot exceed ₹1,00,00,000.' });
     }
 
-    const user = await User.findById(userId);
+    const user = await User.findOneAndUpdate(
+      { _id: userId },
+      [{ $set: {
+          virtualBalance: { $round: [{ $add: ['$virtualBalance', depositAmount] }, 2] },
+          totalDeposited: { $round: [{ $add: [{ $ifNull: ['$totalDeposited', 0] }, depositAmount] }, 2] }
+      } }],
+      { new: true }
+    );
     if (!user) return res.status(404).json({ message: 'User not found!' });
 
-    user.virtualBalance = parseFloat((user.virtualBalance + depositAmount).toFixed(2));
-    await user.save();
-
+    invalidateLeaderboardCache();
     res.status(200).json({ message: 'Deposit successful', balance: user.virtualBalance });
   } catch (error) {
     console.error('Deposit Error:', error);
@@ -169,7 +243,6 @@ router.post('/deposit', fetchuser, async (req, res) => {
 router.get('/history', fetchuser, async (req, res) => {
   try {
     const userId = req.user.userId;
-    // Sort ascending for cost-basis calc, then reverse at the end for display
     const orders = await Transaction.find({ userId }).sort({ createdAt: 1 });
 
     const costBasis = {};
@@ -192,7 +265,7 @@ router.get('/history', fetchuser, async (req, res) => {
       }
     });
 
-    res.json(enriched.reverse()); // Newest first to frontend
+    res.json(enriched.reverse());
   } catch (error) {
     console.error('History Error:', error);
     res.status(500).json({ message: 'Internal Server Error' });
@@ -204,111 +277,23 @@ router.get('/history', fetchuser, async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 router.post('/live-prices', async (req, res) => {
   try {
-    console.log("🔥 /live-prices HIT. Body:", req.body);
     const { symbols } = req.body;
     if (!symbols || !Array.isArray(symbols)) return res.json({});
 
-    const symbolMap = {};
-    symbols.forEach(sym => {
-      if (sym === 'NIFTY 50') symbolMap[sym] = '^NSEI';
-      else if (sym === 'SENSEX') symbolMap[sym] = '^BSESN';
-      else if (sym === 'NIFTY BANK') symbolMap[sym] = '^NSEBANK';
-      else symbolMap[sym] = sym.includes('.NS') ? sym : `${sym}.NS`;
-    });
+    // Validate and de-duplicate symbols, enforcing max batch size (e.g. 50)
+    const validSymbols = [...new Set(symbols)].filter(s => isValidSymbol(s)).slice(0, 50);
+    if (validSymbols.length === 0) return res.json({});
 
-    console.log("🔥 Symbol map created:", Object.keys(symbolMap).length);
+    const canonicals = validSymbols.map(s => canonicalizeSymbol(s));
 
+    // Process prices via MarketPriceService
+    const resolved = await resolveMarkPrices(canonicals);
+
+    // Map canonicals back to requested original symbols (if client passed e.g., RELIANCE.NS, wait client should pass canonical now but in case it passed original)
     const livePrices = {};
-    const isMarketOpenNow = brain.isMarketOpen();
-    console.log("🔥 isMarketOpenNow:", isMarketOpenNow);
-
-    if (!isMarketOpenNow) {
-      // Market is closed — skip Yahoo Finance entirely to prevent hangs/rate-limits
-      Object.keys(symbolMap).forEach((originalSym) => {
-        let p = 0, c = 0, h = 0, l = 0;
-        const history = brain.getSyntheticHistory(originalSym);
-        if (history && history.length > 0) {
-          const lastCandle = history[history.length - 1];
-          const seedPrice  = brain.getSeedPrice(originalSym);
-          p = lastCandle.close;
-          h = lastCandle.high;
-          l = lastCandle.low;
-          if (seedPrice && seedPrice > 0) {
-            c = parseFloat((((p - seedPrice) / seedPrice) * 100).toFixed(2));
-          }
-        }
-        livePrices[originalSym] = { price: p, change: c, high: h, low: l };
-      });
-      console.log("🔥 Returning SYNTHETIC prices.");
-      return res.json(livePrices);
-    }
-
-    // Market is open — fetch from Yahoo Finance
-    const withTimeout = (promise, ms) =>
-      Promise.race([
-        promise,
-        new Promise((_, r) => setTimeout(() => r(new Error('timeout')), ms)),
-      ]);
-
-    const symbolsToFetch = [];
-    const now = Date.now();
-
-    // Check cache first
-    Object.keys(symbolMap).forEach((originalSym) => {
-      const sym = symbolMap[originalSym];
-      const cached = priceCache[sym];
-      if (cached && (now - cached.timestamp < 10000)) {
-        livePrices[originalSym] = cached.data;
-      } else {
-        symbolsToFetch.push(originalSym);
-      }
+    validSymbols.forEach((orig, idx) => {
+      livePrices[orig] = resolved[canonicals[idx]];
     });
-
-    if (symbolsToFetch.length > 0) {
-      const quotes = await Promise.allSettled(
-        symbolsToFetch.map(originalSym =>
-          withTimeout(yahooFinance.quote(symbolMap[originalSym], undefined, { validateResult: false }), 8000)
-        )
-      );
-
-      symbolsToFetch.forEach((originalSym, index) => {
-        const result = quotes[index];
-        const sym = symbolMap[originalSym];
-        let p = 0, c = 0, h = 0, l = 0;
-
-        if (result.status === 'fulfilled' && result.value) {
-          const q = result.value;
-          p = Number(q.regularMarketPrice?.toFixed(2)) || 0;
-          c = Number(q.regularMarketChangePercent?.toFixed(2)) || 0;
-          h = q.regularMarketDayHigh || 0;
-          l = q.regularMarketDayLow || 0;
-          
-          const data = { price: p, change: c, high: h, low: l };
-          livePrices[originalSym] = data;
-          priceCache[sym] = { timestamp: now, data };
-        } else {
-           // Fallback to cache if request fails but we have old data
-           if (priceCache[sym]) {
-             livePrices[originalSym] = priceCache[sym].data;
-           } else {
-             // FALLBACK TO SYNTHETIC PRICES IF YAHOO FAILS COMPLETELY
-             let p = 0, c = 0, h = 0, l = 0;
-             const history = brain.getSyntheticHistory(originalSym);
-             if (history && history.length > 0) {
-               const lastCandle = history[history.length - 1];
-               const seedPrice  = brain.getSeedPrice(originalSym);
-               p = lastCandle.close;
-               h = lastCandle.high;
-               l = lastCandle.low;
-               if (seedPrice && seedPrice > 0) {
-                 c = parseFloat((((p - seedPrice) / seedPrice) * 100).toFixed(2));
-               }
-             }
-             livePrices[originalSym] = { price: p, change: c, high: h, low: l };
-           }
-        }
-      });
-    }
 
     res.json(livePrices);
   } catch (error) {
@@ -324,44 +309,61 @@ router.get('/chart/:symbol', async (req, res) => {
   try {
     const symbol = decodeURIComponent(req.params.symbol);
 
-    let yfSymbol = symbol;
-    if (symbol === 'NIFTY 50') yfSymbol = '^NSEI';
-    else if (symbol === 'SENSEX') yfSymbol = '^BSESN';
-    else if (symbol === 'NIFTY BANK') yfSymbol = '^NSEBANK';
-    else if (!symbol.includes('.NS') && !symbol.includes('^')) yfSymbol = `${symbol}.NS`;
+    if (!isValidSymbol(symbol)) {
+      return res.status(400).json({ message: 'Unsupported symbol' });
+    }
+
+    const yahooTarget = toYahooSymbol(canonicalizeSymbol(symbol));
+    const interval = normalizeInterval(req.query.interval || '15m');
+    if (!interval) {
+      return res.status(400).json({ message: 'Invalid interval' });
+    }
+
+    let period1Time = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    if (interval === '1m') {
+      period1Time = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    } else if (['2m', '5m', '15m', '30m', '1h'].includes(interval)) {
+      period1Time = Date.now() - 59 * 24 * 60 * 60 * 1000;
+    } else if (['1d', '1wk', '1mo'].includes(interval)) {
+      period1Time = Date.now() - 5 * 365 * 24 * 60 * 60 * 1000;
+    }
 
     const queryOptions = {
-      period1: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-      interval: '15m',
+      period1: new Date(period1Time),
+      interval: interval,
     };
 
-    // ✅ FIX: Timeout wrapper — Yahoo Finance can hang indefinitely off-hours
     const fetchWithTimeout = (timeoutMs) => {
       const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('Yahoo Finance request timed out')), timeoutMs)
       );
       return Promise.race([
-        yahooFinance.chart(yfSymbol, queryOptions, { validateResult: false }),
+        yahooFinance.chart(yahooTarget, queryOptions, { validateResult: false }),
         timeoutPromise,
       ]);
     };
 
-    const result = await fetchWithTimeout(10000); // 10 second max
+    const result = await fetchWithTimeout(10000);
 
     if (!result || !result.quotes || result.quotes.length === 0) {
       return res.status(404).json({ message: 'No chart data available for this symbol' });
     }
 
     const chartData = result.quotes
-      .filter(candle => candle.close !== null && candle.close !== undefined)
-      .map(candle => ({
-        time: Math.floor(new Date(candle.date).getTime() / 1000),
-        value: Number(candle.close.toFixed(2)),
+      .filter(c => c.close !== null && c.close !== undefined)
+      .map(c => ({
+        time: Math.floor(new Date(c.date).getTime() / 1000),
+        value: Number(c.close.toFixed(2)),
+        open: Number(c.open?.toFixed(2) || c.close.toFixed(2)),
+        high: Number(c.high?.toFixed(2) || c.close.toFixed(2)),
+        low: Number(c.low?.toFixed(2) || c.close.toFixed(2)),
+        close: Number(c.close.toFixed(2)),
+        volume: c.volume || 0
       }));
 
     res.json(chartData);
   } catch (error) {
-    console.error(`Chart Error for ${req.params.symbol}:`, error.message);
+    console.error('Chart Error for ' + req.params.symbol + ':', error.message);
     res.status(500).json({ message: 'Chart fetch failed' });
   }
 });
@@ -375,7 +377,7 @@ router.get('/portfolio', fetchuser, async (req, res) => {
     const holdings = {};
 
     transactions.forEach(t => {
-      const sym = t.symbol.trim().toUpperCase();
+      const sym = canonicalizeSymbol(t.symbol);
       if (!holdings[sym]) holdings[sym] = { quantity: 0, investedValue: 0 };
 
       if (t.transactionType === 'BUY') {
@@ -419,7 +421,8 @@ router.delete('/reset', fetchuser, async (req, res) => {
   try {
     const userId = req.user.userId;
     await Transaction.deleteMany({ userId });
-    await User.findByIdAndUpdate(userId, { virtualBalance: 1000000 });
+    await User.findByIdAndUpdate(userId, { virtualBalance: 1000000, totalDeposited: 0 });
+    invalidateLeaderboardCache();
     res.json({ success: true, message: 'Portfolio & Ledger reset successfully!' });
   } catch (error) {
     console.error(error.message);

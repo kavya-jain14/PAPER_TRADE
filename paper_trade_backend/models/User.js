@@ -9,7 +9,12 @@ const UserSchema = new mongoose.Schema({
   bio:            { type: String, default: '' },    // Short user bio
   refreshToken:   { type: String, default: '' },    // Hashed refresh token
   virtualBalance: { type: Number, default: 1000000 },
+  totalDeposited: { type: Number, default: 0 },
   date:           { type: Date, default: Date.now },
+  resetToken:     String,
+  expireToken:    Date
 });
+
+UserSchema.index({ virtualBalance: -1 });
 
 module.exports = mongoose.model('user', UserSchema);

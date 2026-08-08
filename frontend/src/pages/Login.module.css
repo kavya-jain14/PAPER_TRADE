@@ -1,0 +1,481 @@
+/* PaperTrade Authentication Design System v4 - Isolated Tokens */
+.container {
+  /* Inherits colors from global theme. Local spacing/radii preserved. */
+  --color-divider: rgba(255, 255, 255, 0.10);
+  --space-0-5: 4px;
+  --space-1: 8px;
+  --space-1-5: 12px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 32px;
+  --space-6: 48px;
+  --space-8: 64px;
+
+  --radius-input: 0px;
+  --radius-btn-primary: 6px;
+  --radius-btn-secondary: 4px;
+  --radius-dropdown: 2px;
+  --duration-hover: 150ms;
+  --duration-focus: 180ms;
+  --duration-btn: 150ms;
+  --duration-page: 500ms;
+  --ease-standard: cubic-bezier(.16, .84, .44, 1);
+
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  overflow: hidden;
+
+  /* Reset all margins and paddings for the container and children to avoid tailwind leaks */
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.container *,
+.container *::before,
+.container *::after {
+  box-sizing: border-box;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.fadeIn {
+  animation: fadeIn var(--duration-page) var(--ease-standard) forwards;
+}
+
+.slideIn {
+  animation: slideInRight var(--duration-page) var(--ease-standard) forwards;
+}
+
+/* --- Layout --- */
+.splitLayout {
+  display: grid;
+  width: 100%;
+  height: 100vh;
+  /* Adaptive split: 68/32 default (>=1200px) */
+  grid-template-columns: 68fr 32fr;
+}
+
+@media (max-width: 1199px) {
+  .splitLayout {
+    /* 60/40 split (900-1199px) */
+    grid-template-columns: 60fr 40fr;
+  }
+}
+
+@media (max-width: 899px) {
+  .splitLayout {
+    /* Single column (<900px) */
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --- Left: Workspace --- */
+.workspace {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-right: 1px solid var(--color-divider);
+  overflow: hidden;
+  padding: var(--space-4);
+}
+
+@media (max-width: 899px) {
+  .workspace {
+    display: none;
+    /* Hide or reduce on mobile */
+  }
+}
+
+.engineeringGrid {
+  display: none;
+}
+
+/* ── 3D Perspective Grid ──────────────────────────────────────────────
+   Decorative layer behind candles, tilted to create cinematic depth.
+──────────────────────────────────────────────────────────────────── */
+.perspectiveGrid {
+  position: absolute;
+  inset: -5%;
+
+  background-image:
+    linear-gradient(rgba(244, 238, 230, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(244, 238, 230, 0.035) 1px, transparent 1px);
+  background-size: 42px 42px;
+
+  transform: perspective(1500px) rotateX(2deg) rotateY(-2.4deg) rotateZ(-0.25deg) scale(1.035);
+  transform-origin: 34% 42%;
+  pointer-events: none;
+  z-index: 0;
+
+  mask-image: radial-gradient(ellipse at 38% 42%,
+      black 34%,
+      rgba(0, 0, 0, 0.84) 64%,
+      transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse at 38% 42%,
+      black 34%,
+      rgba(0, 0, 0, 0.84) 64%,
+      transparent 100%);
+}
+
+.candlestickLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  opacity: 0.20;
+  pointer-events: none;
+  overflow: hidden;
+  /* clip track to workspace bounds */
+
+  /* Very weak matching transform to integrate with the 3D floor */
+  transform: perspective(1600px) rotateY(-0.6deg) rotateZ(-0.15deg) scale(1.012);
+  transform-origin: center center;
+}
+
+/* ── Carousel track — two SVG sequences side by side —————————————
+   LOOP MATH:
+   track width = sequence-A.width + sequence-B.width = 2 × sequence width.
+   translateX(-50%) = exactly one sequence width.
+   Both SVGs use identical viewBox so their intrinsic widths are identical.
+   The reset is invisible because the content at position 0 === content at -50%.
+   Duration: 48s — slow, professional, institutional drift.
+———————————————————————————————————————————————————— */
+.candlestickTrack {
+  display: flex;
+  width: max-content;
+  height: 100%;
+  will-change: transform;
+  animation: chartScroll 48s linear infinite;
+}
+
+/* Each SVG fills exactly the same width (set by preserveAspectRatio="none"
+   + explicit CSS width below). Both sequences must be identical. */
+.candlestickSequence {
+  display: block;
+  flex: 0 0 auto;
+  width: 100vw;
+  /* each sequence fills one viewport width — gives enough
+                     horizontal density for the candles to read clearly */
+  height: 100%;
+}
+
+@keyframes chartScroll {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .candlestickTrack {
+    animation: none;
+    transform: none;
+  }
+}
+
+/* --- Telemetry Bar & Info Rows --- */
+.telemetryBar {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.telemetryValue {
+  color: var(--color-text-secondary);
+}
+
+.tickerWrapper {
+  z-index: 2;
+  margin-bottom: var(--space-4);
+}
+
+/* --- Right: Auth Panel --- */
+.authPanel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--space-8);
+  background-color: var(--color-surface-elevated);
+  /* Subtly warmer surface */
+  border-left: 1px solid var(--color-border);
+  /* 1px warm divider */
+  z-index: 2;
+}
+
+@media (max-width: 1199px) {
+  .authPanel {
+    padding: var(--space-6);
+  }
+}
+
+@media (max-width: 899px) {
+  .authPanel {
+    padding: var(--space-4);
+    align-items: center;
+  }
+
+  .authPanelInner {
+    width: 100%;
+    max-width: 400px;
+  }
+}
+
+.authPanelInner {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto;
+}
+
+/* --- Branding & Typography --- */
+.branding {
+  margin-bottom: var(--space-4);
+}
+
+.logoText {
+  font-family: var(--font-sans);
+  font-size: 28px;
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.025em;
+  /* PAPERTRADE tracking */
+  color: var(--color-text-primary);
+  margin: 0 0 var(--space-0-5) 0;
+  text-transform: uppercase;
+}
+
+.subtitle {
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  font-weight: var(--weight-regular);
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.panelHeader {
+  margin-bottom: var(--space-3);
+}
+
+.headerTitle {
+  font-family: var(--font-sans);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  /* Terminal Access tracking */
+  color: var(--color-text-primary);
+  margin: 0 0 var(--space-1) 0;
+}
+
+.headerContext {
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  /* Authentication metadata tracking */
+  color: var(--color-text-muted);
+  margin: 0 0 var(--space-2) 0;
+}
+
+.headerDesc {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-regular);
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.authForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.supportingActions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--space-2);
+}
+
+.link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-caption);
+  font-weight: var(--weight-regular);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  text-decoration: none;
+  transition: color var(--duration-fast) var(--ease-swift);
+}
+
+.link:hover {
+  color: var(--color-accent);
+  text-decoration: underline;
+}
+
+.linkPrimary {
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.linkPrimary:hover {
+  color: var(--color-accent);
+}
+
+.networkErrorBanner {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-warning);
+  padding: var(--space-2);
+  margin-bottom: var(--space-4);
+  font-family: var(--font-sans);
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.networkErrorRetry {
+  background: none;
+  border: none;
+  color: var(--color-text-primary);
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+}
+
+.networkErrorRetry:hover {
+  text-decoration: underline;
+}
+
+.divider {
+  height: 1px;
+  background-color: var(--color-border);
+  margin: var(--space-4) 0;
+  width: 100%;
+}
+
+.customCheckboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  /* --space-1 */
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: var(--text-caption);
+  color: var(--color-text-muted);
+  min-height: 44px;
+  padding: 6px 0;
+}
+
+.checkboxWrapper {
+  position: relative;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nativeCheckbox {
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  margin: 0;
+  z-index: 2;
+}
+
+.customCheckbox {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: transparent;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  transition: all var(--duration-fast) var(--ease-swift);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Custom Checkmark using CSS pseudo-elements */
+.customCheckbox::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 4px;
+  height: 8px;
+  border: solid var(--color-button-text);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease-swift);
+}
+
+.nativeCheckbox:checked+.customCheckbox {
+  background-color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.nativeCheckbox:checked+.customCheckbox::after {
+  opacity: 1;
+}
+
+.nativeCheckbox:focus-visible+.customCheckbox {
+  outline: 1px solid var(--color-accent);
+  outline-offset: 3px;
+}
+.successBanner {
+  background-color: var(--color-positive);
+  color: #fff;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  margin-bottom: 16px;
+  font-size: 14px;
+  font-weight: 500;
+}

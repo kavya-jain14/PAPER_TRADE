@@ -3,19 +3,21 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import { Toaster } from 'react-hot-toast';
 import { AnimatePresence } from 'framer-motion';
 
-import Login     from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import Markets   from './pages/Markets';
-import Portfolio from './pages/Portfolio';
-import Academy   from './pages/Academy';
-import History   from './pages/History';
-import Profile   from './pages/Profile';
-import Legal     from './pages/Legal';
-import CommandPalette from './components/CommandPalette';
+// Lazy load routes to improve initial bundle size
+const Login          = React.lazy(() => import('./pages/Login'));
+const Dashboard      = React.lazy(() => import('./pages/Dashboard'));
+const Markets        = React.lazy(() => import('./pages/Markets'));
+const Portfolio      = React.lazy(() => import('./pages/Portfolio'));
+const Academy        = React.lazy(() => import('./pages/Academy'));
+const History        = React.lazy(() => import('./pages/History'));
+const Profile        = React.lazy(() => import('./pages/Profile'));
+const Legal          = React.lazy(() => import('./pages/Legal'));
+const ProTerminal    = React.lazy(() => import('./pages/ProTerminal'));
+const Leaderboard    = React.lazy(() => import('./pages/Leaderboard'));
+const AIPage         = React.lazy(() => import('./pages/AIPage'));
+const CommandPalette = React.lazy(() => import('./components/CommandPalette'));
 
 // ── Global Error Boundary ──────────────────────────────────────────────────────
-// Catches any unhandled render errors and shows a safe fallback instead of a
-// blank white/black screen — the #1 cause of "screen goes blank" reports.
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
@@ -34,46 +36,26 @@ class ErrorBoundary extends React.Component {
     if (this.state.hasError) {
       return (
         <div style={{
-          minHeight: '100vh',
-          background: 'var(--color-bg)',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '24px',
-          fontFamily: 'var(--font-sans)',
-          color: 'var(--color-text-primary)',
+          minHeight: '100vh', background: 'var(--color-bg)', display: 'flex',
+          flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          gap: '24px', fontFamily: 'var(--font-sans)', color: 'var(--color-text-primary)',
           padding: '24px',
         }}>
           <div style={{
-            width: 48, height: 48, borderRadius: 'var(--radius-lg)',
-            background: 'var(--color-surface-raised)',
-            border: '1px solid var(--color-border)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            width: 48, height: 48, borderRadius: 'var(--radius-lg)', background: 'var(--color-surface-raised)',
+            border: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 20, color: 'var(--color-text-secondary)',
-          }}>⚠</div>
+          }}>!</div>
           <div style={{ textAlign: 'center', maxWidth: 340 }}>
-            <h1 style={{ fontSize: 'var(--text-h3)', fontWeight: 500, margin: '0 0 8px', letterSpacing: '-0.015em', color: 'var(--color-text-primary)' }}>
+            <h1 style={{ fontSize: 'var(--text-h3)', fontWeight: 500, margin: '0 0 8px', color: 'var(--color-text-primary)' }}>
               Something went wrong
             </h1>
             <p style={{ fontSize: 'var(--text-caption)', color: 'var(--color-text-tertiary)', margin: 0 }}>
               {this.state.errorMsg}
             </p>
           </div>
-          <button
-            onClick={() => { this.setState({ hasError: false }); window.location.href = '/dashboard'; }}
-            style={{
-              padding: '8px 20px',
-              background: 'var(--color-accent)',
-              color: 'var(--color-accent-fg)',
-              border: 'none',
-              borderRadius: 'var(--radius-md)',
-              fontWeight: 500,
-              fontSize: 'var(--text-caption)',
-              cursor: 'pointer',
-              letterSpacing: '0.02em',
-            }}
-          >
+          <button onClick={() => { this.setState({ hasError: false }); window.location.href = '/dashboard'; }}
+            style={{ padding: '8px 20px', background: 'var(--color-accent)', color: 'var(--color-accent-fg)', border: 'none', borderRadius: 'var(--radius-md)', fontWeight: 500, cursor: 'pointer' }}>
             Return to Dashboard
           </button>
         </div>
@@ -83,27 +65,43 @@ class ErrorBoundary extends React.Component {
   }
 }
 
+// Simple Suspense Fallback
+const PageLoader = () => (
+  <div className="w-screen h-screen flex flex-col items-center justify-center bg-bg" style={{ background: 'var(--color-bg)' }}>
+    <div className="w-6 h-6 rounded-full border-2 border-border-strong border-t-accent animate-spin mb-4"></div>
+  </div>
+);
+
 function AnimatedRoutes() {
   const location = useLocation();
   
   return (
-    <AnimatePresence mode="wait">
-      <Routes location={location} key={location.pathname}>
-        <Route path="/"          element={<Navigate to="/login" replace />} />
-        <Route path="/login"     element={<Login />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/markets"   element={<Markets />} />
-        <Route path="/portfolio" element={<Portfolio />} />
-        <Route path="/academy"   element={<Academy />} />
-        <Route path="/history"   element={<History />} />
-        <Route path="/profile"   element={<Profile />} />
-        <Route path="/legal"     element={<Legal />} />
-        {/* 404 catch-all — redirect to dashboard if logged in, else login */}
-        <Route path="*" element={
-          <Navigate to={localStorage.getItem('token') ? '/dashboard' : '/login'} replace />
-        } />
-      </Routes>
-    </AnimatePresence>
+    <React.Suspense fallback={<PageLoader />}>
+      <AnimatePresence mode="wait">
+        <Routes location={location} key={location.pathname}>
+          <Route path="/"          element={<Navigate to="/login" replace />} />
+          <Route path="/login"     element={<Login />} />
+          <Route path="/register"  element={<Login />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/markets"   element={<Markets />} />
+          <Route path="/portfolio" element={<Portfolio />} />
+          <Route path="/academy"   element={<Academy />} />
+          <Route path="/history"   element={<History />} />
+          <Route path="/profile"   element={<Profile />} />
+          <Route path="/legal"     element={<Legal />} />
+          <Route path="/leaderboard" element={<Leaderboard />} />
+          <Route path="/ai"        element={<AIPage />} />
+          
+          {/* New Phase 12 Pro Terminal */}
+          <Route path="/terminal/:symbol" element={<ProTerminal />} />
+          
+          {/* 404 catch-all — redirect to dashboard if logged in, else login */}
+          <Route path="*" element={
+            <Navigate to={localStorage.getItem('token') ? '/dashboard' : '/login'} replace />
+          } />
+        </Routes>
+      </AnimatePresence>
+    </React.Suspense>
   );
 }
 
@@ -133,8 +131,9 @@ function App() {
         <AnimatedRoutes />
       </ErrorBoundary>
 
-      {/* ⌨️ Global Command Palette */}
-      <CommandPalette />
+      <React.Suspense fallback={null}>
+        <CommandPalette />
+      </React.Suspense>
     </BrowserRouter>
   );
 }

@@ -1,122 +1,95 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Sidebar, { MobileBottomNav } from '../components/Sidebar';
+import { AppShell } from '../components/AppShell';
+import { PageHeader, Panel } from '../components/workspace/Workspace';
+import { useMarketSession } from '../hooks/useMarketStatus';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+const PROMPTS = [
+  'How does the NSE trading session work?',
+  'Explain paper trading for a beginner',
+  'What is a stop-loss?',
+  'Show the current signal for RELIANCE',
+];
 
 export default function AIPage() {
   const navigate = useNavigate();
-  const [messages, setMessages] = useState([
-    { role: 'ai', content: "Hello! I am your AI Trading Assistant. How can I help you analyze the markets today?" }
-  ]);
+  const token = localStorage.getItem('token');
+  const session = useMarketSession();
+  const transcriptRef = useRef(null);
+  const [user, setUser] = useState({ name: '', avatar: '' });
+  const [messages, setMessages] = useState([{ role: 'desk', content: 'Ask a market concept or request a tracked-symbol signal. Signals are educational outputs from the platform rule engine.' }]);
   const [input, setInput] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const scrollRef = useRef(null);
+  const [pending, setPending] = useState(false);
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages]);
+    if (!token) { navigate('/login'); return; }
+    const controller = new AbortController();
+    fetch(`${API_URL}/api/auth/getuser`, { headers: { 'auth-token': token }, signal: controller.signal })
+      .then((response) => response.ok ? response.json() : null)
+      .then((data) => data && setUser({ name: data.name?.split(' ')[0] || 'Trader', avatar: data.avatar || '' }))
+      .catch(() => {});
+    return () => controller.abort();
+  }, [navigate, token]);
 
-  const handleSend = async (e) => {
-    e.preventDefault();
-    if (!input.trim()) return;
+  useEffect(() => {
+    if (transcriptRef.current) transcriptRef.current.scrollTop = transcriptRef.current.scrollHeight;
+  }, [messages, pending]);
 
-    const userMsg = input.trim();
-    setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
+  const send = async (event, suggested) => {
+    event?.preventDefault();
+    const message = (suggested || input).trim();
+    if (!message || pending) return;
+    setMessages((items) => [...items, { role: 'user', content: message }]);
     setInput('');
-    setIsTyping(true);
-
+    setPending(true);
     try {
-      const res = await fetch(`${API_URL}/api/synthetic/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userMsg })
+      const response = await fetch(`${API_URL}/api/synthetic/chat`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message }),
       });
-      const data = await res.json();
-      setMessages(prev => [...prev, { role: 'ai', content: data.reply }]);
-    } catch (err) {
-      setMessages(prev => [...prev, { role: 'ai', content: 'Connection to Market Brain lost. Please try again.' }]);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Market desk unavailable');
+      setMessages((items) => [...items, { role: 'desk', content: data.reply }]);
+    } catch (error) {
+      setMessages((items) => [...items, { role: 'desk', content: error.message || 'The market desk could not respond. Try again shortly.' }]);
     } finally {
-      setIsTyping(false);
+      setPending(false);
     }
   };
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} className="flex h-screen bg-[#0B0D10] text-[#E5E5E5] font-sans overflow-hidden selection:bg-[#D4A574]/30">
-      <Sidebar />
-      <MobileBottomNav />
-      <main className="flex-1 flex flex-col min-w-0 relative h-full">
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10 pb-32">
-          <div className="max-w-[1200px] mx-auto space-y-8 h-full flex flex-col">
-            
-            <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 shrink-0">
-              <div>
-                <motion.h1 initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="text-4xl md:text-5xl lg:text-[56px] font-light tracking-tight text-[#E5E5E5] leading-none mb-4">
-                  Market <span className="font-bold">Brain</span>.
-                </motion.h1>
-                <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }} className="flex items-center gap-2">
-                  <div className={`w-2.5 h-2.5 rounded-full bg-[#4ADE80] animate-pulse shadow-[0_0_10px_#4ADE80]`} />
-                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#E5E5E5]/40">System Online</p>
-                </motion.div>
-              </div>
-            </header>
+    <AppShell userName={user.name} marketStatus={session.mode} avatar={user.avatar}>
+      <main className="workspace-page">
+        <div className="workspace-page__inner" style={{ maxWidth: 1120 }}>
+          <PageHeader title="Market desk" description="Plain-language market guidance and rule-based tracked-symbol signals." session={session} />
 
-            <div className="flex-1 flex flex-col bg-[#16181D]/50 rounded-[32px] overflow-hidden shadow-2xl border border-[#E5E5E5]/5 min-h-[500px]">
-              
-              <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 md:p-10 space-y-8 custom-scrollbar">
-                {messages.map((msg, i) => (
-                  <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[85%] md:max-w-[70%] p-6 rounded-[24px] text-lg leading-relaxed shadow-lg transition-transform hover:-translate-y-1 ${
-                      msg.role === 'user' 
-                        ? 'bg-[#D4A574] text-[#0B0D10] rounded-br-sm' 
-                        : 'bg-[#1F2229] border border-[#E5E5E5]/5 text-[#E5E5E5] rounded-bl-sm'
-                    }`}>
-                      {msg.role === 'ai' && <div className="text-[10px] uppercase tracking-[0.2em] font-black text-[#D4A574] mb-3 flex items-center gap-2"><span className="material-symbols-outlined text-[14px]">smart_toy</span> Brain</div>}
-                      {msg.content}
-                    </div>
-                  </div>
-                ))}
-                {isTyping && (
-                  <div className="flex justify-start">
-                    <div className="bg-[#1F2229] border border-[#E5E5E5]/5 text-[#E5E5E5] rounded-[24px] rounded-bl-sm px-6 py-5 flex gap-2">
-                      <span className="w-2.5 h-2.5 bg-[#D4A574] rounded-full animate-bounce" />
-                      <span className="w-2.5 h-2.5 bg-[#D4A574] rounded-full animate-bounce [animation-delay:-0.15s]" />
-                      <span className="w-2.5 h-2.5 bg-[#D4A574] rounded-full animate-bounce [animation-delay:-0.3s]" />
-                    </div>
-                  </div>
-                )}
+          <div className="workspace-grid workspace-grid--two">
+            <Panel title="Briefing transcript" meta="Educational only · not financial advice">
+              <div ref={transcriptRef} style={{ height: 'min(54vh, 560px)', minHeight: 360, overflowY: 'auto' }}>
+                {messages.map((message, index) => <div key={`${message.role}-${index}`} style={{ display: 'grid', gridTemplateColumns: '88px minmax(0, 1fr)', gap: 16, padding: '14px 16px', borderBottom: '1px solid var(--color-border)', background: message.role === 'user' ? 'rgba(244,238,230,0.012)' : 'transparent' }}><span className="type-label" style={{ color: message.role === 'user' ? 'var(--color-text-muted)' : 'var(--color-accent)' }}>{message.role === 'user' ? 'You' : 'Market desk'}</span><p style={{ margin: 0, color: 'var(--color-text-secondary)', fontSize: 'var(--text-body)', lineHeight: 1.65, whiteSpace: 'pre-wrap' }}>{message.content}</p></div>)}
+                {pending && <div style={{ padding: '14px 16px', color: 'var(--color-text-tertiary)', fontSize: 'var(--text-caption)' }}>Market desk is checking the request…</div>}
               </div>
+              <form onSubmit={send} style={{ display: 'flex', gap: 8, padding: 12, borderTop: '1px solid var(--color-border)' }}>
+                <input className="desk-input" style={{ flex: 1 }} value={input} onChange={(event) => setInput(event.target.value)} placeholder="Ask a market question" maxLength={300} aria-label="Market question" />
+                <button className="desk-button desk-button--primary" type="submit" disabled={!input.trim() || pending}>Send</button>
+              </form>
+            </Panel>
 
-              <div className="p-6 md:p-8 bg-[#0B0D10]/30 shrink-0 border-t border-[#E5E5E5]/5 backdrop-blur-md">
-                <form onSubmit={handleSend} className="relative flex items-center">
-                  <input
-                    type="text"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    placeholder="Ask about market trends..."
-                    className="w-full bg-[#16181D] border border-[#E5E5E5]/10 rounded-full py-5 pl-8 pr-16 text-lg text-white placeholder-[#E5E5E5]/30 outline-none focus:border-[#D4A574]/50 transition-colors shadow-inner"
-                  />
-                  <button 
-                    type="submit" 
-                    disabled={!input.trim() || isTyping}
-                    className="absolute right-3 w-12 h-12 flex items-center justify-center bg-[#D4A574] hover:bg-[#D4A574]/80 text-[#0B0D10] rounded-full transition-colors disabled:opacity-50 hover-glow"
-                  >
-                    <span className="material-symbols-outlined text-[24px]">send</span>
-                  </button>
-                </form>
-                <div className="mt-4 text-center">
-                   <p className="text-[10px] uppercase tracking-widest text-[#E5E5E5]/20 font-bold">AI analysis is simulated and does not constitute financial advice.</p>
-                </div>
-              </div>
-              
+            <div style={{ display: 'grid', alignContent: 'start', gap: 16 }}>
+              <Panel title="Start with a question">
+                <div style={{ display: 'grid' }}>{PROMPTS.map((prompt) => <button key={prompt} type="button" onClick={(event) => send(event, prompt)} style={{ padding: '12px 16px', border: 0, borderBottom: '1px solid var(--color-border)', background: 'transparent', color: 'var(--color-text-secondary)', textAlign: 'left', font: 'inherit', fontSize: 'var(--text-caption)', cursor: 'pointer' }}>{prompt}</button>)}</div>
+              </Panel>
+              <Panel title="How to read a signal">
+                <dl style={{ margin: 0, padding: 16, display: 'grid', gap: 14 }}>
+                  <div><dt className="type-label">Regime</dt><dd className="type-caption" style={{ margin: '3px 0 0' }}>Trend classification from recent candles.</dd></div>
+                  <div><dt className="type-label">RSI</dt><dd className="type-caption" style={{ margin: '3px 0 0' }}>Momentum measure; context matters more than a single threshold.</dd></div>
+                  <div><dt className="type-label">Probability</dt><dd className="type-caption" style={{ margin: '3px 0 0' }}>A model score, not a guarantee or expected return.</dd></div>
+                </dl>
+              </Panel>
             </div>
-            
           </div>
         </div>
       </main>
-    </motion.div>
+    </AppShell>
   );
 }

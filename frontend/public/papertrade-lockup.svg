@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 100" width="450" height="100">
+  <!-- Mark -->
+  <rect x="15" y="15" width="70" height="70" rx="14" fill="none" stroke="#B9784B" stroke-width="6"/>
+  <path d="M 30 35 L 70 35" stroke="#B9784B" stroke-width="6" stroke-linecap="round"/>
+  <path d="M 42 35 L 42 68" stroke="#B9784B" stroke-width="6" stroke-linecap="round"/>
+  <path d="M 42 35 L 56 35 A 11 11 0 0 1 56 57 L 42 57" stroke="#B9784B" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <!-- Text -->
+  <text x="105" y="66" font-family="Satoshi, Avenir Next, sans-serif" font-weight="700" font-size="44" fill="#F4EEE6" letter-spacing="-0.025em">PAPERTRADE</text>
+</svg>
