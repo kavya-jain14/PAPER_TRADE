@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { apiFetch } from '../lib/api';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
@@ -22,7 +23,7 @@ export function useMarketSession() {
 
     const load = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/synthetic/status`, {
+        const response = await apiFetch(`${API_URL}/api/synthetic/status`, {
           signal: controller.signal,
         });
         if (!response.ok) throw new Error('Market status unavailable');

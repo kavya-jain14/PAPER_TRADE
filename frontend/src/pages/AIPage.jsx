@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { AppShell } from '../components/AppShell';
 import { PageHeader, Panel } from '../components/workspace/Workspace';
 import { useMarketSession } from '../hooks/useMarketStatus';
+import { apiFetch } from '../lib/api';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 const PROMPTS = [
@@ -13,8 +13,6 @@ const PROMPTS = [
 ];
 
 export default function AIPage() {
-  const navigate = useNavigate();
-  const token = localStorage.getItem('token');
   const session = useMarketSession();
   const transcriptRef = useRef(null);
   const [user, setUser] = useState({ name: '', avatar: '' });
@@ -23,14 +21,13 @@ export default function AIPage() {
   const [pending, setPending] = useState(false);
 
   useEffect(() => {
-    if (!token) { navigate('/login'); return; }
     const controller = new AbortController();
-    fetch(`${API_URL}/api/auth/getuser`, { headers: { 'auth-token': token }, signal: controller.signal })
+    apiFetch(`${API_URL}/api/auth/getuser`, { signal: controller.signal })
       .then((response) => response.ok ? response.json() : null)
       .then((data) => data && setUser({ name: data.name?.split(' ')[0] || 'Trader', avatar: data.avatar || '' }))
       .catch(() => {});
     return () => controller.abort();
-  }, [navigate, token]);
+  }, []);
 
   useEffect(() => {
     if (transcriptRef.current) transcriptRef.current.scrollTop = transcriptRef.current.scrollHeight;
@@ -44,8 +41,8 @@ export default function AIPage() {
     setInput('');
     setPending(true);
     try {
-      const response = await fetch(`${API_URL}/api/synthetic/chat`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message }),
+      const response = await apiFetch(`${API_URL}/api/synthetic/chat`, {
+        method: 'POST', body: JSON.stringify({ message }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || 'Market desk unavailable');

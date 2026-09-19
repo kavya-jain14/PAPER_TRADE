@@ -9,7 +9,6 @@
  *   symbol      — ticker symbol e.g. "RELIANCE"
  *   marketData  — { price, change, high, low }
  *   balance     — user's available margin
- *   token       — auth token for API calls
  *   ownedQty    — units currently held (for SELL validation)
  *   onClose     — close callback
  *   onSuccess   — called after successful order (parent refreshes data)
@@ -19,11 +18,12 @@ import { motion as Motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import SmartChart, { CandlestickModal } from './SmartChart';
 import { Button, Input } from './ui';
+import { apiFetch } from '../lib/api';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 const INDICES  = ['NIFTY 50', 'SENSEX', 'NIFTY BANK'];
 
-export default function TradeModal({ symbol, marketData, balance, token, ownedQty = 0, onClose, onSuccess }) {
+export default function TradeModal({ symbol, marketData, balance, ownedQty = 0, onClose, onSuccess }) {
   const [qty, setQty]           = useState('');
   const [side, setSide]         = useState('BUY');
   const [showCandle, setShowCandle] = useState(false);
@@ -48,9 +48,8 @@ export default function TradeModal({ symbol, marketData, balance, token, ownedQt
 
     const id = toast.loading('Routing order…');
     try {
-      const res = await fetch(`${API_URL}/api/trade/${side === 'BUY' ? 'buy' : 'sell'}`, {
+      const res = await apiFetch(`${API_URL}/api/trade/${side === 'BUY' ? 'buy' : 'sell'}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'auth-token': token },
         body: JSON.stringify({ symbol, quantity: n, currentPrice: price }),
       });
       const d = await res.json();

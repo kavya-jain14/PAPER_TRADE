@@ -12,6 +12,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { LayoutGrid, LineChart, PieChart, History, GraduationCap, Trophy, MessageSquareText, Menu, User, FileText, LifeBuoy, LogOut, X } from 'lucide-react';
+import { apiFetch } from '../lib/api';
 
 const NAV_ITEMS = [
   { path: '/dashboard', icon: LayoutGrid,  label: 'Dashboard' },
@@ -87,8 +88,8 @@ export function MobileBottomNav() {
 
   const handleLinkClick = () => closeMore();
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
+  const handleLogout = async () => {
+    try { await apiFetch('/api/auth/logout', { method: 'POST' }); } catch { /* navigation still proceeds */ }
     navigate('/login');
   };
 
@@ -209,8 +210,8 @@ function Sidebar({ userName = '', avatar = '' }) {
     ? userName.trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2)
     : 'U';
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
+  const handleLogout = async () => {
+    try { await apiFetch('/api/auth/logout', { method: 'POST' }); } catch { /* navigation still proceeds */ }
     navigate('/login');
   };
 

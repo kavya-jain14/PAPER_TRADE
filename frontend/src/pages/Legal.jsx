@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { AppShell } from '../components/AppShell';
 import { PageHeader, Panel, SegmentedControl } from '../components/workspace/Workspace';
 import { useMarketSession } from '../hooks/useMarketStatus';
+import { apiFetch } from '../lib/api';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 const CONTACT = 'kavyajain1407@gmail.com';
@@ -9,7 +10,7 @@ const CONTACT = 'kavyajain1407@gmail.com';
 const PRIVACY = [
   ['Information stored', 'Paper Trade stores the name and email used to create your account, a hashed password for password-based accounts, optional profile bio and avatar, virtual balance, paper positions, trade history and a hashed refresh-token record. Google sign-in can provide a name, email and public profile image. The platform does not ask for bank, card, demat or brokerage credentials.'],
   ['How it is used', 'Account data is used to authenticate you, maintain the paper portfolio and ledger, calculate platform rankings, and show your selected profile details. A display name and paper-account equity may appear in the in-product ranking table.'],
-  ['Browser storage and cookies', 'The browser stores the short-lived access token and watchlist preferences in localStorage. A refresh token is set in an HTTP-only cookie. Clearing site data signs you out and removes local preferences, but it does not delete server-side account or trade records.'],
+  ['Browser storage and cookies', 'Authentication tokens are stored only in secure HTTP-only cookies; browser scripts cannot read them. Watchlist preferences remain in localStorage. Clearing site data signs you out and removes local preferences, but it does not delete server-side account or trade records.'],
   ['Service providers', 'Database, application-hosting and quote-data providers process the information needed to run the service. Their availability and security practices are outside the application’s direct control. Paper Trade does not provide an advertising-cookie or payment workflow.'],
   ['Security', 'Passwords are hashed before storage. Authenticated API routes use signed access tokens, refresh tokens are stored as hashes on the server, and production refresh cookies are configured as HTTP-only and secure. No internet service can promise complete security; use a unique password and protect your email account.'],
   ['Your controls', 'You can edit your display name, bio and avatar, export the visible trade ledger to CSV, and sign out from Profile. The current application does not include self-service account deletion. For account or data questions, contact the address below.'],
@@ -31,10 +32,8 @@ export default function Legal() {
   const [user, setUser] = useState({ name: '', avatar: '' });
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
     const controller = new AbortController();
-    fetch(`${API_URL}/api/auth/getuser`, { headers: { 'auth-token': token }, signal: controller.signal })
+    apiFetch(`${API_URL}/api/auth/getuser`, { signal: controller.signal })
       .then((response) => response.ok ? response.json() : null)
       .then((data) => data && setUser({ name: data.name?.split(' ')[0] || 'Trader', avatar: data.avatar || '' }))
       .catch(() => {});

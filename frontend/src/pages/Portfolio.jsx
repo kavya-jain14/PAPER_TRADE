@@ -6,15 +6,15 @@ import TradeModal from '../components/TradeModal';
 import { EmptyDesk, PageHeader, Panel } from '../components/workspace/Workspace';
 import useAnalytics from '../hooks/useAnalytics';
 import { useMarketSession } from '../hooks/useMarketStatus';
+import { apiFetch } from '../lib/api';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 const money = (value) => Number(value || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export default function Portfolio() {
   const navigate = useNavigate();
-  const token = localStorage.getItem('token');
   const session = useMarketSession();
-  const { metrics } = useAnalytics(token);
+  const { metrics } = useAnalytics();
   const [user, setUser] = useState({ name: '', avatar: '', balance: 0 });
   const [holdings, setHoldings] = useState([]);
   const [quotes, setQuotes] = useState({});
@@ -24,8 +24,8 @@ export default function Portfolio() {
   const load = useCallback(async (signal) => {
     try {
       const [userResponse, portfolioResponse] = await Promise.all([
-        fetch(`${API_URL}/api/auth/getuser`, { headers: { 'auth-token': token }, signal }),
-        fetch(`${API_URL}/api/trade/portfolio`, { headers: { 'auth-token': token }, signal }),
+        apiFetch(`${API_URL}/api/auth/getuser`, { signal }),
+        apiFetch(`${API_URL}/api/trade/portfolio`, { signal }),
       ]);
       if (userResponse.ok) {
         const data = await userResponse.json();
@@ -35,7 +35,7 @@ export default function Portfolio() {
         const positions = await portfolioResponse.json();
         setHoldings(positions);
         if (positions.length) {
-          const quoteResponse = await fetch(`${API_URL}/api/trade/live-prices`, {
+          const quoteResponse = await apiFetch(`${API_URL}/api/trade/live-prices`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ symbols: positions.map((item) => item.symbol) }), signal,
           });
@@ -45,10 +45,9 @@ export default function Portfolio() {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, []);
 
   useEffect(() => {
-    if (!token) { navigate('/login'); return undefined; }
     let controller = new AbortController();
     let timeoutId;
     const poll = async () => {
@@ -59,7 +58,7 @@ export default function Portfolio() {
     };
     poll();
     return () => { controller.abort(); clearTimeout(timeoutId); };
-  }, [load, navigate, token]);
+  }, [load]);
 
   const positions = useMemo(() => holdings.map((holding) => {
     const quote = quotes[holding.symbol];
@@ -118,7 +117,7 @@ export default function Portfolio() {
         </div>
       </main>
 
-      <AnimatePresence>{selectedAsset && <TradeModal symbol={selectedAsset} marketData={quotes[selectedAsset] || {}} onClose={() => setSelectedAsset(null)} balance={user.balance} token={token} onSuccess={() => load(new AbortController().signal)} ownedQty={holdings.find((item) => item.symbol === selectedAsset)?.quantity || 0} />}</AnimatePresence>
+      <AnimatePresence>{selectedAsset && <TradeModal symbol={selectedAsset} marketData={quotes[selectedAsset] || {}} onClose={() => setSelectedAsset(null)} balance={user.balance} onSuccess={() => load(new AbortController().signal)} ownedQty={holdings.find((item) => item.symbol === selectedAsset)?.quantity || 0} />}</AnimatePresence>
     </AppShell>
   );
 }

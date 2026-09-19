@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { AppShell } from '../components/AppShell';
 import { EmptyDesk, PageHeader, Panel, SegmentedControl } from '../components/workspace/Workspace';
 import { useMarketSession } from '../hooks/useMarketStatus';
+import { apiFetch } from '../lib/api';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 const FILTERS = ['All', 'Buys', 'Sells', 'Profits', 'Losses'];
@@ -28,8 +28,6 @@ const enrichLedger = (transactions) => {
 };
 
 export default function History() {
-  const navigate = useNavigate();
-  const token = localStorage.getItem('token');
   const session = useMarketSession();
   const [user, setUser] = useState({ name: '', avatar: '' });
   const [trades, setTrades] = useState([]);
@@ -40,8 +38,8 @@ export default function History() {
     try {
       setLoading(true);
       const [userResponse, historyResponse] = await Promise.all([
-        fetch(`${API_URL}/api/auth/getuser`, { headers: { 'auth-token': token } }),
-        fetch(`${API_URL}/api/trade/history`, { headers: { 'auth-token': token } }),
+        apiFetch(`${API_URL}/api/auth/getuser`),
+        apiFetch(`${API_URL}/api/trade/history`),
       ]);
       if (userResponse.ok) {
         const data = await userResponse.json();
@@ -54,12 +52,11 @@ export default function History() {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, []);
 
   useEffect(() => {
-    if (!token) { navigate('/login'); return; }
     load();
-  }, [load, navigate, token]);
+  }, [load]);
 
   const visibleTrades = useMemo(() => trades.filter((trade) => {
     const buy = trade.transactionType?.toUpperCase() === 'BUY';

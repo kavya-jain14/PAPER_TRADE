@@ -7,8 +7,16 @@ import MarketTicker from '../components/ui/MarketTicker';
 import LogoMorph from '../components/brand/LogoMorph';
 import logoMorphStyles from '../components/brand/LogoMorph.module.css';
 import styles from './Login.module.css';
+import { apiFetch, hasActiveSession, readJson } from '../lib/api';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+const BLOCKED_EMAIL_DOMAINS = new Set(['abcd.com', 'example.com', 'example.net', 'example.org', 'test.com', 'mailinator.com', 'yopmail.com', 'tempmail.com', '10minutemail.com']);
+
+const validateRegistrationEmail = (value) => {
+  const normalized = value.trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) return 'Enter a valid email address';
+  if (BLOCKED_EMAIL_DOMAINS.has(normalized.split('@')[1])) return 'Use a real, permanent email address';
+  return '';
+};
 
 // Deterministic fallback data for the ticker
 const simulatedMarketData = [
@@ -89,13 +97,16 @@ export default function Login() {
   const [successMessage, setSuccessMessage] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [rememberEmail, setRememberEmail] = useState(() => Boolean(localStorage.getItem('paper_trade_remembered_email')));
+  const [verification, setVerification] = useState(null);
+  const [verificationCode, setVerificationCode] = useState('');
+  const [resendIn, setResendIn] = useState(0);
 
   const utcClockRef = useRef(null);
 
   useEffect(() => {
-    if (localStorage.getItem('token')) {
-      navigate('/dashboard');
-    }
+    const controller = new AbortController();
+    hasActiveSession(controller.signal).then((active) => { if (active) navigate('/dashboard', { replace: true }); }).catch(() => {});
+    return () => controller.abort();
   }, [navigate]);
 
   useEffect(() => {
@@ -106,6 +117,8 @@ export default function Login() {
     setServerError(null);
     setSuccessMessage(null);
     setIsSubmitting(false);
+    setVerification(null);
+    setVerificationCode('');
 
     // If redirected from successful registration
     if (mode === 'login' && location.state?.registrationSuccess) {
@@ -117,6 +130,12 @@ export default function Login() {
       window.history.replaceState({}, document.title);
     }
   }, [mode, location.state]);
+
+  useEffect(() => {
+    if (resendIn <= 0) return undefined;
+    const timer = setInterval(() => setResendIn((value) => Math.max(0, value - 1)), 1000);
+    return () => clearInterval(timer);
+  }, [resendIn]);
 
   useEffect(() => {
     // UTC Clock
@@ -134,9 +153,11 @@ export default function Login() {
   const handleRegister = async () => {
     const errors = {};
     if (!fullName.trim()) errors.fullName = 'Full name is required';
-    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.email = 'Enter a valid email address';
+    const emailError = validateRegistrationEmail(email);
+    if (emailError) errors.email = emailError;
     if (!password) errors.password = 'Password is required';
-    else if (password.length < 8) errors.password = 'Password must be at least 8 characters';
+    else if (password.length < 12) errors.password = 'Use at least 12 characters';
+    else if (password.length > 128) errors.password = 'Password cannot exceed 128 characters';
     if (password !== confirmPassword) errors.confirmPassword = 'Passwords do not match';
 
     if (Object.keys(errors).length > 0) {
@@ -148,9 +169,8 @@ export default function Login() {
     setServerError(null);
 
     try {
-      const response = await fetch(`${API_URL}/api/auth/register`, {
+      const response = await apiFetch('/api/auth/register', {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           username: fullName.trim(),
           email: email.trim().toLowerCase(),
@@ -158,23 +178,14 @@ export default function Login() {
         })
       });
 
-      const data = await response.json();
+      const data = await readJson(response);
 
-      if (response.ok) {
-        navigate("/login", {
-          replace: true,
-          state: {
-            registrationSuccess: true,
-            registeredEmail: email.trim().toLowerCase()
-          }
-        });
+      if (response.ok && data.verificationRequired) {
+        setVerification({ challengeId: data.challengeId, email: email.trim().toLowerCase(), purpose: 'registration' });
+        setResendIn(Number(data.retryAfter) || 60);
+        setSuccessMessage(data.message || 'Verification code sent.');
       } else {
-        const errorMsg = data.message || data.error || "";
-        if (errorMsg.toLowerCase().includes('already registered')) {
-          setServerError('An account with this email already exists');
-        } else {
-          setServerError('Unable to create account. Try again.');
-        }
+        setServerError(data.message || 'Unable to create account. Try again.');
       }
     } catch {
       setServerError('Unable to create account. Check your connection and try again.');
@@ -198,33 +209,26 @@ export default function Login() {
     setSuccessMessage(null);
 
     try {
-      const response = await fetch(`${API_URL}/api/auth/login`, {
+      const response = await apiFetch('/api/auth/login', {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: email.trim().toLowerCase(),
           password
         })
       });
 
-      const data = await response.json();
+      const data = await readJson(response);
 
-      if (response.ok && (data.authtoken || data.token)) {
+      if (response.ok && data.success) {
         if (rememberEmail) localStorage.setItem('paper_trade_remembered_email', email.trim().toLowerCase());
         else localStorage.removeItem('paper_trade_remembered_email');
-        localStorage.setItem('token', data.authtoken || data.token);
         navigate('/dashboard');
+      } else if (response.status === 403 && data.verificationRequired) {
+        setVerification({ challengeId: data.challengeId, email: email.trim().toLowerCase(), purpose: 'existing-account' });
+        setResendIn(Number(data.retryAfter) || 60);
+        setSuccessMessage(data.message || 'Verify your email to finish signing in.');
       } else {
-        const errorMsg = data.error || data.message || "Invalid request";
-
-        if (errorMsg.toLowerCase().includes('locked')) {
-          setServerError('Account locked. Contact Support');
-        } else if (errorMsg.toLowerCase().includes('rate') || response.status === 429) {
-          setServerError('Too many attempts. Try again shortly.');
-        } else {
-          setServerError('Invalid email or password');
-        }
-        setIsSubmitting(false);
+        setServerError(data.message || (response.status === 429 ? 'Too many attempts. Try again shortly.' : 'Invalid email or password'));
       }
     } catch {
       setServerError('Network / server failure');
@@ -236,7 +240,9 @@ export default function Login() {
     e.preventDefault();
     if (isSubmitting) return;
 
-    if (mode === 'register') {
+    if (verification) {
+      await handleVerifyEmail();
+    } else if (mode === 'register') {
       await handleRegister();
     } else {
       await handleLogin();
@@ -245,24 +251,66 @@ export default function Login() {
 
   const handleGoogleSuccess = async (credentialResponse) => {
     setIsSubmitting(true);
+    setServerError(null);
     try {
-      const res = await fetch(`${API_URL}/api/auth/googlelogin`, {
+      const res = await apiFetch('/api/auth/googlelogin', {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tokenId: credentialResponse.credential || credentialResponse.access_token })
+        body: JSON.stringify({ credential: credentialResponse.credential })
       });
-      const data = await res.json();
-      if (data.success || data.authtoken) {
-        localStorage.setItem('token', data.authtoken || data.token);
+      const data = await readJson(res);
+      if (res.ok && data.success) {
         navigate('/dashboard');
       } else {
-        setServerError('Invalid email or password');
-        setIsSubmitting(false);
+        setServerError(data.message || 'Google sign-in could not be verified.');
       }
     } catch {
       setServerError('Network / server failure');
+    } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleVerifyEmail = async () => {
+    if (!/^\d{6}$/.test(verificationCode)) {
+      setFieldErrors({ verificationCode: 'Enter the 6-digit code' });
+      return;
+    }
+    setIsSubmitting(true);
+    setServerError(null);
+    try {
+      const response = await apiFetch('/api/auth/verify-email', {
+        method: 'POST', body: JSON.stringify({ challengeId: verification.challengeId, code: verificationCode }),
+      });
+      const data = await readJson(response);
+      if (!response.ok) {
+        setServerError(data.message || 'Verification failed.');
+        return;
+      }
+      if (data.authenticated) {
+        navigate('/dashboard');
+        return;
+      }
+      navigate('/login', { replace: true, state: { registrationSuccess: true, registeredEmail: verification.email } });
+    } catch {
+      setServerError('Unable to verify the code. Check your connection.');
+    } finally { setIsSubmitting(false); }
+  };
+
+  const handleResend = async () => {
+    if (!verification || resendIn > 0 || isSubmitting) return;
+    setIsSubmitting(true);
+    setServerError(null);
+    try {
+      const response = await apiFetch('/api/auth/resend-verification', {
+        method: 'POST', body: JSON.stringify({ challengeId: verification.challengeId }),
+      });
+      const data = await readJson(response);
+      if (!response.ok) { setServerError(data.message || 'Unable to resend code.'); return; }
+      setVerification((value) => ({ ...value, challengeId: data.challengeId }));
+      setResendIn(Number(data.retryAfter) || 60);
+      setSuccessMessage(data.message || 'A new code was sent.');
+    } catch { setServerError('Unable to resend code. Check your connection.'); }
+    finally { setIsSubmitting(false); }
   };
 
   // Chart geometry
@@ -363,10 +411,12 @@ export default function Login() {
             </div>
 
             <div className={styles.panelHeader}>
-              <h2 className={styles.headerContext}>{mode === 'register' ? 'New account' : 'Authentication'}</h2>
-              <h3 className={styles.headerTitle}>{mode === 'register' ? 'Create your account' : 'Terminal Access'}</h3>
+              <h2 className={styles.headerContext}>{verification ? 'Identity check' : mode === 'register' ? 'New account' : 'Authentication'}</h2>
+              <h3 className={styles.headerTitle}>{verification ? 'Check your inbox' : mode === 'register' ? 'Create your account' : 'Terminal Access'}</h3>
               <p className={styles.headerDesc}>
-                {mode === 'register'
+                {verification
+                  ? <>Enter the six-digit code sent to <strong>{verification.email}</strong>.</>
+                  : mode === 'register'
                   ? 'Set up your PaperTrade workspace and begin with virtual capital.'
                   : 'Authenticate to access your trading workspace.'}
               </p>
@@ -379,89 +429,50 @@ export default function Login() {
             )}
 
             <form onSubmit={handleSubmit} className={styles.authForm} noValidate>
-
-              {mode === 'register' && (
-                <TextField
-                  label="Full name"
-                  name="fullName"
-                  type="text"
-                  value={fullName}
-                  onChange={(e) => { setFullName(e.target.value); setFieldErrors(prev => ({...prev, fullName: null})); }}
-                  error={fieldErrors.fullName}
-                  autoComplete="name"
-                />
-              )}
-
-              <TextField
-                label="Email"
-                name="email"
-                type="email"
-                value={email}
-                onChange={(e) => { setEmail(e.target.value); setFieldErrors(prev => ({...prev, email: null})); setServerError(null); setSuccessMessage(null); }}
-                error={fieldErrors.email}
-                autoComplete="email"
-              />
-
-              <TextField
-                label="Password"
-                name="password"
-                type="password"
-                value={password}
-                onChange={(e) => { setPassword(e.target.value); setFieldErrors(prev => ({...prev, password: null})); setServerError(null); setSuccessMessage(null); }}
-                error={fieldErrors.password}
-                capsLockAware={true}
-                autoComplete={mode === 'register' ? "new-password" : "current-password"}
-              />
-
-              {mode === 'register' && (
-                <TextField
-                  label="Confirm password"
-                  name="confirmPassword"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => { setConfirmPassword(e.target.value); setFieldErrors(prev => ({...prev, confirmPassword: null})); }}
-                  error={fieldErrors.confirmPassword}
-                  capsLockAware={true}
-                  autoComplete="new-password"
-                />
-              )}
-
-              {mode === 'login' && (
-                <div className={styles.supportingActions} style={{ marginTop: 0 }}>
-                  <label className={styles.customCheckboxLabel}>
-                    <div className={styles.checkboxWrapper}>
-                      <input type="checkbox" className={styles.nativeCheckbox} checked={rememberEmail} onChange={(event) => setRememberEmail(event.target.checked)} />
-                      <div className={styles.customCheckbox}></div>
-                    </div>
-                    Remember email
-                  </label>
-                </div>
+              {verification ? (
+                <>
+                  <TextField
+                    label="Verification code"
+                    name="verificationCode"
+                    type="text"
+                    value={verificationCode}
+                    onChange={(event) => { setVerificationCode(event.target.value.replace(/\D/g, '').slice(0, 6)); setFieldErrors({}); setServerError(null); }}
+                    error={fieldErrors.verificationCode}
+                    autoComplete="one-time-code"
+                    inputMode="numeric"
+                    maxLength={6}
+                  />
+                  <div className={styles.verificationActions}>
+                    <button type="button" className={styles.linkButton} onClick={handleResend} disabled={resendIn > 0 || isSubmitting}>
+                      {resendIn > 0 ? `Resend in ${resendIn}s` : 'Resend code'}
+                    </button>
+                    <button type="button" className={styles.linkButton} onClick={() => { setVerification(null); setVerificationCode(''); setSuccessMessage(null); setServerError(null); }}>
+                      Change details
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {mode === 'register' && <TextField label="Full name" name="fullName" type="text" value={fullName} onChange={(event) => { setFullName(event.target.value); setFieldErrors((prev) => ({ ...prev, fullName: null })); }} error={fieldErrors.fullName} autoComplete="name" />}
+                  <TextField label="Email" name="email" type="email" value={email} onChange={(event) => { setEmail(event.target.value); setFieldErrors((prev) => ({ ...prev, email: null })); setServerError(null); setSuccessMessage(null); }} error={fieldErrors.email} autoComplete="email" />
+                  <TextField label="Password" name="password" type="password" value={password} onChange={(event) => { setPassword(event.target.value); setFieldErrors((prev) => ({ ...prev, password: null })); setServerError(null); setSuccessMessage(null); }} error={fieldErrors.password} capsLockAware autoComplete={mode === 'register' ? 'new-password' : 'current-password'} />
+                  {mode === 'register' && <TextField label="Confirm password" name="confirmPassword" type="password" value={confirmPassword} onChange={(event) => { setConfirmPassword(event.target.value); setFieldErrors((prev) => ({ ...prev, confirmPassword: null })); }} error={fieldErrors.confirmPassword} capsLockAware autoComplete="new-password" />}
+                  {mode === 'login' && <div className={styles.supportingActions} style={{ marginTop: 0 }}><label className={styles.customCheckboxLabel}><div className={styles.checkboxWrapper}><input type="checkbox" className={styles.nativeCheckbox} checked={rememberEmail} onChange={(event) => setRememberEmail(event.target.checked)} /><div className={styles.customCheckbox} /></div>Remember email</label></div>}
+                </>
               )}
 
               <div style={{ marginTop: '8px' }}>
                 <PrimaryButton
                   type="submit"
                   state={isSubmitting ? 'loading' : 'idle'}
-                  loadingLabel={mode === 'register' ? 'Creating account...' : 'Authenticating...'}
+                  loadingLabel={verification ? 'Verifying...' : mode === 'register' ? 'Sending code...' : 'Authenticating...'}
                 >
-                  {mode === 'register' ? 'Create account' : 'Authenticate'}
+                  {verification ? 'Verify email' : mode === 'register' ? 'Continue securely' : 'Authenticate'}
                 </PrimaryButton>
               </div>
             </form>
 
-            <div className={styles.divider} />
-
-            <GhostButton onSuccess={handleGoogleSuccess} onError={() => { setServerError('Network / server failure'); setIsSubmitting(false); }} />
-
-            <div style={{ marginTop: '32px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Link
-                to={mode === 'register' ? '/login' : '/register'}
-                className={styles.linkPrimary}
-                style={{ textDecoration: 'none' }}
-              >
-                {mode === 'register' ? 'Already have access? Login →' : 'New here? Create account →'}
-              </Link>
-            </div>
+            {!verification && <><div className={styles.divider} /><GhostButton onSuccess={handleGoogleSuccess} onError={() => { setServerError('Google sign-in was cancelled or blocked.'); setIsSubmitting(false); }} /><div style={{ marginTop: '32px', display: 'flex', alignItems: 'center', gap: '6px' }}><Link to={mode === 'register' ? '/login' : '/register'} className={styles.linkPrimary} style={{ textDecoration: 'none' }}>{mode === 'register' ? 'Already have access? Login →' : 'New here? Create account →'}</Link></div></>}
 
           </div>
         </div>

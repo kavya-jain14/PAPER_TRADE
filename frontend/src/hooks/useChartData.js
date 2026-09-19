@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { apiFetch } from '../lib/api';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
@@ -53,7 +54,7 @@ export default function useChartData(symbol, interval, onTick) {
           const fetchLive = async () => {
             if (!isMounted || myToken !== currentRequestToken) return;
             try {
-              const res = await fetch(
+              const res = await apiFetch(
                 `${API_URL}/api/trade/chart/${encodeURIComponent(symbol)}?interval=${interval}`,
                 { signal: historyAbort.signal }
               );
@@ -91,7 +92,7 @@ export default function useChartData(symbol, interval, onTick) {
 
           await fetchLive();
         } else {
-          const synRes = await fetch(
+          const synRes = await apiFetch(
             `${API_URL}/api/synthetic/history-ohlc/${encodeURIComponent(symbol)}`,
             { signal: historyAbort.signal }
           );
@@ -131,7 +132,7 @@ export default function useChartData(symbol, interval, onTick) {
       statusAbort = new AbortController();
 
       try {
-        const res = await fetch(`${API_URL}/api/synthetic/status`, { signal: statusAbort.signal });
+        const res = await apiFetch(`${API_URL}/api/synthetic/status`, { signal: statusAbort.signal });
         if (!res.ok) throw new Error('Status fetch failed');
         const data = await res.json();
         if (typeof data.marketOpen !== 'boolean') throw new Error('Invalid status response');

@@ -6,7 +6,7 @@ import ReplayControlBar from './ReplayControlBar';
 /**
  * ReplayCanvas — Visualization component for Replay Mode.
  */
-const ReplayCanvas = memo(({ symbol, interval, targetDate, token, onPriceUpdate, onExit }) => {
+const ReplayCanvas = memo(({ symbol, interval, targetDate, onPriceUpdate, onExit }) => {
   const containerRef = useRef(null);
   const chartRef = useRef(null);
   const seriesRef = useRef(null);
@@ -104,7 +104,7 @@ const ReplayCanvas = memo(({ symbol, interval, targetDate, token, onPriceUpdate,
   const {
     loading, isPlaying, togglePlay, stepForward, 
     speedMultiplier, setSpeed, progress, currentPrice
-  } = useReplayData(symbol, targetDate, interval, token, handleInit, handleTick);
+  } = useReplayData(symbol, targetDate, interval, handleInit, handleTick);
 
   // Sync price to parent
   useEffect(() => {

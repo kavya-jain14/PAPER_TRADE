@@ -14,6 +14,8 @@ const TextField = ({
   required = false,
   disabled = false,
   autoComplete,
+  inputMode,
+  maxLength,
 }) => {
   const [capsLockActive, setCapsLockActive] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
@@ -64,6 +66,8 @@ const TextField = ({
           required={required}
           disabled={disabled}
           autoComplete={autoComplete}
+          inputMode={inputMode}
+          maxLength={maxLength}
           aria-invalid={!!error}
           aria-describedby={error ? errorId : undefined}
           className={`${styles.input} ${error ? styles.error : ''} ${type === 'password' ? styles.inputPassword : ''}`}

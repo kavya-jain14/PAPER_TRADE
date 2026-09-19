@@ -5,6 +5,7 @@ import { AppShell } from '../components/AppShell';
 import TradeModal from '../components/TradeModal';
 import { PageHeader, Panel, SegmentedControl } from '../components/workspace/Workspace';
 import { useMarketSession } from '../hooks/useMarketStatus';
+import { apiFetch } from '../lib/api';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 const STOCKS = ['RELIANCE', 'TCS', 'HDFCBANK', 'ICICIBANK', 'INFY', 'ITC', 'SBIN', 'BHARTIARTL', 'LT', 'AXISBANK'];
@@ -28,7 +29,6 @@ function LineTrace({ values, positive }) {
 
 export default function Markets() {
   const navigate = useNavigate();
-  const token = localStorage.getItem('token');
   const session = useMarketSession();
   const [user, setUser] = useState({ name: '', avatar: '', balance: 0 });
   const [holdings, setHoldings] = useState([]);
@@ -40,24 +40,22 @@ export default function Markets() {
   const [selectedAsset, setSelectedAsset] = useState(null);
 
   const fetchAccount = useCallback(async (signal) => {
-    if (!token) return;
     const [userResponse, portfolioResponse] = await Promise.all([
-      fetch(`${API_URL}/api/auth/getuser`, { headers: { 'auth-token': token }, signal }),
-      fetch(`${API_URL}/api/trade/portfolio`, { headers: { 'auth-token': token }, signal }),
+      apiFetch(`${API_URL}/api/auth/getuser`, { signal }),
+      apiFetch(`${API_URL}/api/trade/portfolio`, { signal }),
     ]);
     if (userResponse.ok) {
       const data = await userResponse.json();
       setUser({ name: data.name?.split(' ')[0] || 'Trader', avatar: data.avatar || '', balance: data.virtualBalance ?? data.balance ?? 0 });
     }
     if (portfolioResponse.ok) setHoldings(await portfolioResponse.json());
-  }, [token]);
+  }, []);
 
   useEffect(() => {
-    if (!token) { navigate('/login'); return undefined; }
     const controller = new AbortController();
     fetchAccount(controller.signal).catch(() => {});
     return () => controller.abort();
-  }, [fetchAccount, navigate, token]);
+  }, [fetchAccount]);
 
   useEffect(() => {
     let controller = new AbortController();
@@ -66,7 +64,7 @@ export default function Markets() {
       controller.abort();
       controller = new AbortController();
       try {
-        const response = await fetch(`${API_URL}/api/trade/live-prices`, {
+        const response = await apiFetch(`${API_URL}/api/trade/live-prices`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ symbols: [...STOCKS, ...INDICES] }),
@@ -157,7 +155,7 @@ export default function Markets() {
       </main>
 
       <AnimatePresence>
-        {selectedAsset && <TradeModal symbol={selectedAsset} marketData={quotes[selectedAsset]} balance={user.balance} ownedQty={holdings.find((item) => item.symbol === selectedAsset)?.quantity || 0} token={token} onClose={() => setSelectedAsset(null)} onSuccess={() => fetchAccount(new AbortController().signal)} />}
+        {selectedAsset && <TradeModal symbol={selectedAsset} marketData={quotes[selectedAsset]} balance={user.balance} ownedQty={holdings.find((item) => item.symbol === selectedAsset)?.quantity || 0} onClose={() => setSelectedAsset(null)} onSuccess={() => fetchAccount(new AbortController().signal)} />}
       </AnimatePresence>
     </AppShell>
   );

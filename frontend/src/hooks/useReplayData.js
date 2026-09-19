@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import toast from 'react-hot-toast';
+import { apiFetch } from '../lib/api';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
@@ -14,7 +15,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
  * @param {function} onInit - Callback fired to load initial chart history
  * @param {function} onTick - Callback fired when a replay candle is pushed
  */
-export default function useReplayData(symbol, targetDate, interval, token, onInit, onTick) {
+export default function useReplayData(symbol, targetDate, interval, onInit, onTick) {
   const [loading, setLoading] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
   const [speedMultiplier, setSpeedMultiplier] = useState(1); // 1x, 3x, 10x
@@ -50,9 +51,7 @@ export default function useReplayData(symbol, targetDate, interval, token, onIni
         url.searchParams.append('date', targetDate);
         url.searchParams.append('interval', interval);
 
-        const res = await fetch(url.toString(), {
-          headers: { 'auth-token': token }
-        });
+        const res = await apiFetch(url.toString());
 
         if (res.status === 401) {
           throw new Error('Authentication failed (401). Please log in again.');
@@ -88,7 +87,7 @@ export default function useReplayData(symbol, targetDate, interval, token, onIni
       isMounted = false;
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [symbol, targetDate, interval, token]);
+  }, [symbol, targetDate, interval]);
 
   // 2. Playback Engine
   const pushNextCandle = useCallback(() => {

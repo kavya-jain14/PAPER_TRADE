@@ -7,12 +7,12 @@ import TradeReviewCard from './TradeReviewCard';
  * OrderPanel — The trade execution sidebar for the Pro Terminal.
  * Implements the Staff-level design system tokens.
  */
-export default function OrderPanel({ symbol, quote, balance, ownedQty, token, isReplayMode = false, onSuccess }) {
+export default function OrderPanel({ symbol, quote, balance, ownedQty, isReplayMode = false, onSuccess }) {
   const {
     qty, setQty, side, setSide,
     estCost, afterBal, maxBuy, handleExecute,
     aiFeedback, setAiFeedback, priceInvalid, price
-  } = useTradeExecution(symbol, quote, balance, ownedQty, token, onSuccess, isReplayMode);
+  } = useTradeExecution(symbol, quote, balance, ownedQty, onSuccess, isReplayMode);
 
   return (
     <div className="w-full h-full flex flex-col" style={{ background: 'var(--color-surface)' }}>

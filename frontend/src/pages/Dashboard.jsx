@@ -6,6 +6,7 @@ import { AppShell } from '../components/AppShell';
 import useMarketStatus from '../hooks/useMarketStatus';
 import TradeModal from '../components/TradeModal';
 import { Shield, ArrowUpRight, History } from 'lucide-react';
+import { apiFetch } from '../lib/api';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
@@ -91,15 +92,13 @@ function Dashboard() {
   }, [watchlist]);
 
   const navigate = useNavigate();
-  const token = localStorage.getItem('token');
   const marketStatus = useMarketStatus();
 
   /* ── Data fetching ──────────────────────────────────────────────────────── */
   const fetchUserData = useCallback(async (signal) => {
     try {
-      const res = await fetch(`${API_URL}/api/auth/getuser`, {
+      const res = await apiFetch(`${API_URL}/api/auth/getuser`, {
         method: 'GET',
-        headers: { 'Content-Type': 'application/json', 'auth-token': token },
         signal,
       });
       const data = await res.json();
@@ -109,15 +108,11 @@ function Dashboard() {
         setBalance(data.virtualBalance !== undefined ? data.virtualBalance : data.balance || 0);
       }
       try {
-        const pr = await fetch(`${API_URL}/api/trade/portfolio`, {
-          headers: { 'Content-Type': 'application/json', 'auth-token': token }, signal,
-        });
+        const pr = await apiFetch(`${API_URL}/api/trade/portfolio`, { signal });
         if (pr.ok) setHoldings((await pr.json()) || []);
       } catch { /* ignored */ }
       try {
-        const hr = await fetch(`${API_URL}/api/trade/history`, {
-          headers: { 'Content-Type': 'application/json', 'auth-token': token }, signal,
-        });
+        const hr = await apiFetch(`${API_URL}/api/trade/history`, { signal });
         if (hr.ok) {
           const raw = await hr.json();
           const asc = [...raw].reverse();
@@ -142,14 +137,13 @@ function Dashboard() {
     } catch (err) {
       if (err.name !== 'AbortError') console.error(err);
     }
-  }, [token]);
+  }, []);
 
   useEffect(() => {
-    if (!token) { navigate('/login'); return; }
     const c = new AbortController();
     fetchUserData(c.signal);
     return () => c.abort();
-  }, [token, navigate, fetchUserData]);
+  }, [fetchUserData]);
 
   useEffect(() => {
     let ac = new AbortController();
@@ -157,7 +151,7 @@ function Dashboard() {
       ac.abort();
       ac = new AbortController();
       try {
-        const r = await fetch(`${API_URL}/api/trade/live-prices`, {
+        const r = await apiFetch(`${API_URL}/api/trade/live-prices`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ symbols: [...TOP_STOCKS, ...INDICES] }),
@@ -815,7 +809,6 @@ function Dashboard() {
             marketData={marketPrices[selectedAsset]}
             onClose={() => setSelectedAsset(null)}
             balance={balance}
-            token={token}
             onSuccess={fetchUserData}
             ownedQty={holdings.find((h) => h.symbol === selectedAsset)?.quantity || 0}
           />

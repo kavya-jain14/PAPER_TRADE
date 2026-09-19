@@ -16,6 +16,9 @@ const ProTerminal    = React.lazy(() => import('./pages/ProTerminal'));
 const Leaderboard    = React.lazy(() => import('./pages/Leaderboard'));
 const AIPage         = React.lazy(() => import('./pages/AIPage'));
 const CommandPalette = React.lazy(() => import('./components/CommandPalette'));
+const AuthGate       = React.lazy(() => import('./components/AuthGate'));
+
+const secured = (page) => <AuthGate>{page}</AuthGate>;
 
 // ── Global Error Boundary ──────────────────────────────────────────────────────
 class ErrorBoundary extends React.Component {
@@ -82,22 +85,22 @@ function AnimatedRoutes() {
           <Route path="/"          element={<Navigate to="/login" replace />} />
           <Route path="/login"     element={<Login />} />
           <Route path="/register"  element={<Login />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/markets"   element={<Markets />} />
-          <Route path="/portfolio" element={<Portfolio />} />
-          <Route path="/academy"   element={<Academy />} />
-          <Route path="/history"   element={<History />} />
-          <Route path="/profile"   element={<Profile />} />
-          <Route path="/legal"     element={<Legal />} />
-          <Route path="/leaderboard" element={<Leaderboard />} />
-          <Route path="/ai"        element={<AIPage />} />
+          <Route path="/dashboard" element={secured(<Dashboard />)} />
+          <Route path="/markets"   element={secured(<Markets />)} />
+          <Route path="/portfolio" element={secured(<Portfolio />)} />
+          <Route path="/academy"   element={secured(<Academy />)} />
+          <Route path="/history"   element={secured(<History />)} />
+          <Route path="/profile"   element={secured(<Profile />)} />
+          <Route path="/legal"     element={secured(<Legal />)} />
+          <Route path="/leaderboard" element={secured(<Leaderboard />)} />
+          <Route path="/ai"        element={secured(<AIPage />)} />
           
           {/* New Phase 12 Pro Terminal */}
-          <Route path="/terminal/:symbol" element={<ProTerminal />} />
+          <Route path="/terminal/:symbol" element={secured(<ProTerminal />)} />
           
           {/* 404 catch-all — redirect to dashboard if logged in, else login */}
           <Route path="*" element={
-            <Navigate to={localStorage.getItem('token') ? '/dashboard' : '/login'} replace />
+            <Navigate to="/dashboard" replace />
           } />
         </Routes>
       </AnimatePresence>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { createChart, AreaSeries, CandlestickSeries } from 'lightweight-charts';
 import useMarketStatus from '../hooks/useMarketStatus';
+import { apiFetch } from '../lib/api';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
@@ -175,7 +176,7 @@ export const CandlestickModal = ({ symbol, onClose }) => {
           const fetchRealData = async () => {
             if (!isMounted || myToken !== currentRequestToken) return;
             try {
-              const res = await fetch(`${BASE_URL}/api/trade/chart/${encodeURIComponent(symbol)}?range=1d&interval=5m`, { signal: controller.signal });
+              const res = await apiFetch(`${BASE_URL}/api/trade/chart/${encodeURIComponent(symbol)}?range=1d&interval=5m`, { signal: controller.signal });
               if (!res.ok) throw new Error('Live chart fetch failed');
               const data = await res.json();
               if (!Array.isArray(data)) throw new Error('Invalid chart response format');
@@ -202,7 +203,7 @@ export const CandlestickModal = ({ symbol, onClose }) => {
           await fetchRealData();
         } else {
           // SIMULATED MODE: synthetic history + EventSource
-          const res  = await fetch(
+          const res  = await apiFetch(
             `${BASE_URL}/api/synthetic/history-ohlc/${encodeURIComponent(symbol)}`,
             { signal: controller.signal }
           );
@@ -253,7 +254,7 @@ export const CandlestickModal = ({ symbol, onClose }) => {
     load();
 
     // Get bias
-    fetch(`${BASE_URL}/api/synthetic/bias/${encodeURIComponent(symbol)}`)
+    apiFetch(`${BASE_URL}/api/synthetic/bias/${encodeURIComponent(symbol)}`)
       .then(r => r.json())
       .then(d => { if (isMounted) setBias(d); })
       .catch(() => {});
@@ -502,7 +503,7 @@ const SmartChart = ({ symbol, currentPrice, isGreen, mini = false }) => {
       try {
         if (marketStatus === 'LIVE') {
           // LIVE MODE: real history, no synthetic stream
-          const res  = await fetch(
+          const res  = await apiFetch(
             `${BASE_URL}/api/trade/chart/${encodeURIComponent(symbol)}?range=1d&interval=5m`,
             { signal: controller.signal }
           );
@@ -515,7 +516,7 @@ const SmartChart = ({ symbol, currentPrice, isGreen, mini = false }) => {
           // Real price updates arrive via currentPrice prop (polling)
         } else {
           // SIMULATED MODE: synthetic history + one EventSource
-          const res = await fetch(
+          const res = await apiFetch(
             `${BASE_URL}/api/synthetic/history/${encodeURIComponent(symbol)}`,
             { signal: controller.signal }
           );
