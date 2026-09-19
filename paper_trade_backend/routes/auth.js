@@ -1,243 +1,341 @@
-const express      = require('express');
-const router       = express.Router();
-const User         = require('../models/User');
-const jwt          = require('jsonwebtoken');
-const bcrypt       = require('bcryptjs');
-const fetchuser    = require('../middleware/fetchuser');
+const express = require('express');
+const crypto = require('node:crypto');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 const { OAuth2Client } = require('google-auth-library');
+const User = require('../models/User');
+const AuthChallenge = require('../models/AuthChallenge');
+const fetchuser = require('../middleware/fetchuser');
+const { validateEmail, validatePassword, domainAcceptsEmail, normalizeEmail } = require('../security/emailPolicy');
+const { sendVerificationEmail } = require('../services/verificationEmail');
 
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID?.trim());
-
-// ─────────────────────────────────────────────────────────────────
-// 🔑 Token Helpers
-// ─────────────────────────────────────────────────────────────────
-const generateAccessToken = (userId) =>
-  jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '1d' });
-
-const generateRefreshToken = (userId) =>
-  jwt.sign({ userId }, process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET + '_refresh', { expiresIn: '30d' });
-
+const router = express.Router();
 const isProd = process.env.NODE_ENV === 'production';
+const ACCESS_COOKIE = isProd ? '__Host-pt_at' : 'pt_at';
+const REFRESH_COOKIE = isProd ? '__Host-pt_rt' : 'pt_rt';
+const ACCESS_TTL_MS = 15 * 60 * 1000;
+const REFRESH_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const CHALLENGE_TTL_MS = 10 * 60 * 1000;
+const RESEND_COOLDOWN_MS = 60 * 1000;
+const MAX_CODE_ATTEMPTS = 5;
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOCK_DURATION_MS = 15 * 60 * 1000;
+const DUMMY_PASSWORD_HASH = '$2b$12$pV4m4AoYxaJGmYh1eD6txuW1tQ3knC4YfLr7S0b5s3z2g1qgPqfTy';
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID?.trim());
 
-const COOKIE_OPTIONS = {
-  httpOnly: true,           // Not accessible via JS — prevents XSS token theft
-  sameSite: isProd ? 'none' : 'lax', // 'none' required for cross-origin (Vercel frontend + Railway backend)
-                                      // 'lax' is safe for local dev same-site flows
-                                      // 'strict' BREAKS Google OAuth — it drops the cookie on the OAuth redirect
-  secure: isProd,           // HTTPS only in prod (required when sameSite: 'none')
-  maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-};
+const refreshSecret = () => process.env.JWT_REFRESH_SECRET || `${process.env.JWT_SECRET}_refresh`;
+const cookieOptions = (maxAge, path = '/') => ({ httpOnly: true, secure: isProd, sameSite: isProd ? 'none' : 'lax', path, maxAge });
+const clearCookieOptions = (path = '/') => ({ httpOnly: true, secure: isProd, sameSite: isProd ? 'none' : 'lax', path });
 
-// ─────────────────────────────────────────────────────────────────
-// 📌 Register
-// ─────────────────────────────────────────────────────────────────
+function setSessionCookies(res, accessToken, refreshToken) {
+  res.cookie(ACCESS_COOKIE, accessToken, cookieOptions(ACCESS_TTL_MS));
+  res.cookie(REFRESH_COOKIE, refreshToken, cookieOptions(REFRESH_TTL_MS, '/api/auth'));
+}
+
+function clearSessionCookies(res) {
+  res.clearCookie(ACCESS_COOKIE, clearCookieOptions());
+  res.clearCookie(REFRESH_COOKIE, clearCookieOptions('/api/auth'));
+}
+
+function signAccessToken(user) {
+  return jwt.sign(
+    { userId: String(user._id), sessionVersion: user.sessionVersion, type: 'access' },
+    process.env.JWT_SECRET,
+    { expiresIn: '15m', issuer: 'papertrade-api', audience: 'papertrade-web' },
+  );
+}
+
+function signRefreshToken(user) {
+  return jwt.sign(
+    { userId: String(user._id), sessionVersion: user.sessionVersion, type: 'refresh', jti: crypto.randomUUID() },
+    refreshSecret(),
+    { expiresIn: '7d', issuer: 'papertrade-api', audience: 'papertrade-web' },
+  );
+}
+
+async function establishSession(userId) {
+  const user = await User.findByIdAndUpdate(
+    userId,
+    { $inc: { sessionVersion: 1 }, $set: { failedLoginAttempts: 0, lockedUntil: null } },
+    { new: true },
+  );
+  const accessToken = signAccessToken(user);
+  const refreshToken = signRefreshToken(user);
+  user.refreshToken = await bcrypt.hash(refreshToken, 10);
+  await user.save();
+  return { user, accessToken, refreshToken };
+}
+
+function safeUser(user) {
+  return { id: user._id, name: user.name, email: user.email, balance: user.virtualBalance, emailVerified: user.emailVerified === true };
+}
+
+function hashCode(challengeId, code) {
+  const secret = process.env.EMAIL_VERIFICATION_SECRET || refreshSecret();
+  return crypto.createHmac('sha256', secret).update(`${challengeId}:${code}`).digest('hex');
+}
+
+function codeMatches(challenge, code) {
+  const supplied = Buffer.from(hashCode(challenge.challengeId, code), 'hex');
+  const stored = Buffer.from(challenge.codeHash, 'hex');
+  return supplied.length === stored.length && crypto.timingSafeEqual(supplied, stored);
+}
+
+async function createChallenge({ purpose, email, name = '', pendingPasswordHash = '', userId = null, reuseRecent = true }) {
+  const now = Date.now();
+  const recent = await AuthChallenge.findOne({ purpose, email, expiresAt: { $gt: new Date(now) } }).sort({ createdAt: -1 });
+  const elapsed = recent ? now - new Date(recent.lastSentAt).getTime() : Infinity;
+  if (reuseRecent && recent && elapsed < RESEND_COOLDOWN_MS) {
+    return { challenge: recent, sent: false, retryAfter: Math.ceil((RESEND_COOLDOWN_MS - elapsed) / 1000) };
+  }
+
+  const challengeId = crypto.randomBytes(24).toString('hex');
+  const code = String(crypto.randomInt(100000, 1000000));
+  await AuthChallenge.deleteMany({ purpose, email });
+  const challenge = await AuthChallenge.create({
+    challengeId, purpose, email, userId, name, pendingPasswordHash,
+    codeHash: hashCode(challengeId, code), attempts: 0,
+    lastSentAt: new Date(now), expiresAt: new Date(now + CHALLENGE_TTL_MS),
+  });
+
+  try {
+    await sendVerificationEmail({ email, name, code });
+  } catch (error) {
+    await AuthChallenge.deleteOne({ _id: challenge._id }).catch(() => {});
+    throw error;
+  }
+  return { challenge, sent: true, retryAfter: 60 };
+}
+
+function challengeResponse(result, sentMessage) {
+  return {
+    success: true, verificationRequired: true,
+    challengeId: result.challenge.challengeId,
+    retryAfter: result.retryAfter,
+    message: result.sent ? sentMessage : 'A code was already sent. Check your inbox.',
+  };
+}
+
 router.post('/register', async (req, res) => {
   try {
-    const { username, email, password } = req.body;
+    const name = String(req.body?.username || '').trim().replace(/\s+/g, ' ');
+    const emailCheck = validateEmail(req.body?.email);
+    const passwordCheck = validatePassword(req.body?.password);
+    if (name.length < 2 || name.length > 50) return res.status(400).json({ code: 'INVALID_NAME', message: 'Enter your full name (2–50 characters).' });
+    if (!emailCheck.valid) return res.status(400).json({ code: 'INVALID_EMAIL', message: emailCheck.reason });
+    if (!passwordCheck.valid) return res.status(400).json({ code: 'WEAK_PASSWORD', message: passwordCheck.reason });
+    if (await User.exists({ email: emailCheck.email })) return res.status(409).json({ code: 'ACCOUNT_EXISTS', message: 'An account already exists for this email.' });
 
-    if (!username || !email || !password)
-      return res.status(400).json({ message: 'All fields are required.' });
+    const mx = await domainAcceptsEmail(emailCheck.domain);
+    if (mx.deliverable === false) return res.status(400).json({ code: 'EMAIL_DOMAIN_UNREACHABLE', message: 'This email domain cannot receive mail.' });
+    if (mx.temporaryFailure) return res.status(503).json({ code: 'EMAIL_CHECK_UNAVAILABLE', message: 'Email verification is temporarily unavailable. Try again.' });
 
-    // 🔒 Minimum 8 characters (was 5 — security improvement)
-    if (password.length < 8)
-      return res.status(400).json({ message: 'Password must be at least 8 characters.' });
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email))
-      return res.status(400).json({ message: 'Invalid email format.' });
-
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
-    if (existingUser)
-      return res.status(400).json({ message: 'This email is already registered!' });
-
-    const salt = await bcrypt.genSalt(12); // 12 rounds (was 10)
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    const newUser = new User({ name: username, email: email.toLowerCase(), password: hashedPassword });
-    await newUser.save();
-
-    res.status(201).json({
-      message: 'Account created successfully! ₹10,00,000 credited.',
-      user: { id: newUser._id, name: newUser.name, email: newUser.email, virtualBalance: newUser.virtualBalance }
-    });
+    const pendingPasswordHash = await bcrypt.hash(String(req.body.password), 12);
+    const result = await createChallenge({ purpose: 'registration', email: emailCheck.email, name, pendingPasswordHash });
+    return res.status(202).json(challengeResponse(result, 'Verification code sent.'));
   } catch (error) {
     console.error('[Register Error]:', error.message);
-    res.status(500).json({ message: 'Registration failed. Please try again.' });
+    return res.status(503).json({ code: 'VERIFICATION_DELIVERY_FAILED', message: 'We could not send the verification code. Try again shortly.' });
   }
 });
 
-// ─────────────────────────────────────────────────────────────────
-// 📌 Login
-// ─────────────────────────────────────────────────────────────────
+router.post('/verify-email', async (req, res) => {
+  try {
+    const challengeId = String(req.body?.challengeId || '');
+    const code = String(req.body?.code || '').replace(/\D/g, '');
+    if (!/^[a-f0-9]{48}$/.test(challengeId) || !/^\d{6}$/.test(code)) return res.status(400).json({ code: 'INVALID_CODE', message: 'Enter the 6-digit code.' });
+
+    const challenge = await AuthChallenge.findOne({ challengeId });
+    if (!challenge || challenge.expiresAt <= new Date()) return res.status(410).json({ code: 'CODE_EXPIRED', message: 'This code has expired. Request a new one.' });
+    if (challenge.attempts >= MAX_CODE_ATTEMPTS) {
+      await AuthChallenge.deleteOne({ _id: challenge._id });
+      return res.status(429).json({ code: 'CODE_ATTEMPTS_EXCEEDED', message: 'Too many incorrect attempts. Request a new code.' });
+    }
+    if (!codeMatches(challenge, code)) {
+      challenge.attempts += 1;
+      await challenge.save();
+      const left = MAX_CODE_ATTEMPTS - challenge.attempts;
+      return res.status(400).json({ code: 'INVALID_CODE', message: `Incorrect code. ${left} attempt${left === 1 ? '' : 's'} left.` });
+    }
+
+    if (challenge.purpose === 'registration') {
+      if (await User.exists({ email: challenge.email })) {
+        await AuthChallenge.deleteOne({ _id: challenge._id });
+        return res.status(409).json({ code: 'ACCOUNT_EXISTS', message: 'An account already exists for this email.' });
+      }
+      const user = await User.create({
+        name: challenge.name, email: challenge.email, password: challenge.pendingPasswordHash,
+        authProvider: 'local', emailVerified: true, emailVerifiedAt: new Date(),
+      });
+      await AuthChallenge.deleteOne({ _id: challenge._id });
+      return res.status(201).json({ success: true, registered: true, user: safeUser(user), message: 'Email verified. Your account is ready.' });
+    }
+
+    const user = await User.findById(challenge.userId);
+    if (!user || user.email !== challenge.email) return res.status(400).json({ code: 'INVALID_CHALLENGE', message: 'Verification request is no longer valid.' });
+    user.emailVerified = true;
+    user.emailVerifiedAt = new Date();
+    await user.save();
+    await AuthChallenge.deleteOne({ _id: challenge._id });
+    const session = await establishSession(user._id);
+    setSessionCookies(res, session.accessToken, session.refreshToken);
+    return res.json({ success: true, authenticated: true, user: safeUser(session.user) });
+  } catch (error) {
+    console.error('[Verify Email Error]:', error.message);
+    return res.status(500).json({ code: 'VERIFICATION_FAILED', message: 'Email verification failed. Try again.' });
+  }
+});
+
+router.post('/resend-verification', async (req, res) => {
+  try {
+    const previous = await AuthChallenge.findOne({ challengeId: String(req.body?.challengeId || '') });
+    if (!previous || previous.expiresAt <= new Date()) return res.status(410).json({ code: 'CODE_EXPIRED', message: 'Restart verification to request a new code.' });
+    const result = await createChallenge({
+      purpose: previous.purpose, email: previous.email, name: previous.name,
+      pendingPasswordHash: previous.pendingPasswordHash, userId: previous.userId,
+    });
+    return res.status(202).json(challengeResponse(result, 'A new verification code was sent.'));
+  } catch (error) {
+    console.error('[Resend Error]:', error.message);
+    return res.status(503).json({ code: 'VERIFICATION_DELIVERY_FAILED', message: 'We could not send another code. Try again shortly.' });
+  }
+});
+
 router.post('/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
-    if (!email || !password)
-      return res.status(400).json({ error: 'Email and password are required.' });
+    const email = normalizeEmail(req.body?.email);
+    const password = String(req.body?.password || '');
+    if (!email || !password) return res.status(400).json({ code: 'MISSING_CREDENTIALS', message: 'Email and password are required.' });
 
-    const user = await User.findOne({ email: email.toLowerCase() });
-    if (!user)
-      return res.status(401).json({ error: 'Invalid credentials.' });
-
-    const isMatch = await bcrypt.compare(password, user.password);
-
-    // 🔒 Legacy migration: if password wasn't hashed, hash it now
-    if (!isMatch) {
-      if (user.password === password) {
-        const salt = await bcrypt.genSalt(12);
-        const hashed = await bcrypt.hash(password, salt);
-        await User.findByIdAndUpdate(user._id, { $set: { password: hashed } });
-      } else {
-        return res.status(401).json({ error: 'Invalid credentials.' });
+    const user = await User.findOne({ email });
+    const passwordMatches = await bcrypt.compare(password, user?.password || DUMMY_PASSWORD_HASH).catch(() => false);
+    if (!user || !user.password || !passwordMatches) {
+      if (user) {
+        const attempts = (user.failedLoginAttempts || 0) + 1;
+        const update = { failedLoginAttempts: attempts };
+        if (attempts >= MAX_LOGIN_ATTEMPTS) update.lockedUntil = new Date(Date.now() + LOCK_DURATION_MS);
+        await User.findByIdAndUpdate(user._id, { $set: update });
       }
+      return res.status(401).json({ code: 'INVALID_CREDENTIALS', message: 'Invalid email or password.' });
+    }
+    if (user.lockedUntil && user.lockedUntil > new Date()) return res.status(429).json({ code: 'ACCOUNT_LOCKED', message: 'Too many failed attempts. Try again in 15 minutes.' });
+
+    if (user.emailVerified !== true) {
+      const result = await createChallenge({ purpose: 'existing-account', email: user.email, name: user.name, userId: user._id });
+      return res.status(403).json(challengeResponse(result, 'Verify your email to finish signing in.'));
     }
 
-    const authtoken     = generateAccessToken(user._id);
-    const refreshToken  = generateRefreshToken(user._id);
-
-    // Store hashed refresh token in DB
-    const hashedRefresh = await bcrypt.hash(refreshToken, 10);
-    await User.findByIdAndUpdate(user._id, { $set: { refreshToken: hashedRefresh } });
-
-    // Send refresh token as httpOnly cookie
-    res.cookie('refreshToken', refreshToken, COOKIE_OPTIONS);
-
-    res.json({
-      success: true,
-      authtoken,
-      user: { name: user.name, email: user.email, balance: user.virtualBalance }
-    });
+    const session = await establishSession(user._id);
+    setSessionCookies(res, session.accessToken, session.refreshToken);
+    return res.json({ success: true, user: safeUser(session.user) });
   } catch (error) {
     console.error('[Login Error]:', error.message);
-    res.status(500).json({ error: 'Login failed. Please try again.' });
+    return res.status(500).json({ code: 'LOGIN_FAILED', message: 'Login failed. Try again.' });
   }
 });
 
-// ─────────────────────────────────────────────────────────────────
-// 📌 Refresh Token — get new access token using cookie
-// ─────────────────────────────────────────────────────────────────
 router.post('/refresh', async (req, res) => {
   try {
-    const token = req.cookies?.refreshToken;
-    if (!token) return res.status(401).json({ error: 'No refresh token.' });
-
-    const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET + '_refresh');
+    const token = req.cookies?.[REFRESH_COOKIE];
+    if (!token) return res.status(401).json({ code: 'NO_SESSION', message: 'No active session.' });
+    const decoded = jwt.verify(token, refreshSecret(), { issuer: 'papertrade-api', audience: 'papertrade-web' });
+    if (decoded.type !== 'refresh') throw new Error('Unexpected token type');
     const user = await User.findById(decoded.userId);
-    if (!user || !user.refreshToken) return res.status(401).json({ error: 'Invalid session.' });
+    if (!user || !user.refreshToken || user.sessionVersion !== decoded.sessionVersion) throw new Error('Invalid session');
+    if (!(await bcrypt.compare(token, user.refreshToken))) throw new Error('Invalid refresh token');
 
-    const isValid = await bcrypt.compare(token, user.refreshToken);
-    if (!isValid) return res.status(401).json({ error: 'Invalid refresh token.' });
-
-    const newAccessToken  = generateAccessToken(user._id);
-    const newRefreshToken = generateRefreshToken(user._id);
-
-    const hashedRefresh = await bcrypt.hash(newRefreshToken, 10);
-    await User.findByIdAndUpdate(user._id, { $set: { refreshToken: hashedRefresh } });
-
-    res.cookie('refreshToken', newRefreshToken, COOKIE_OPTIONS);
-    res.json({ success: true, authtoken: newAccessToken });
-  } catch (error) {
-    res.clearCookie('refreshToken');
-    res.status(401).json({ error: 'Session expired. Please log in again.' });
+    const accessToken = signAccessToken(user);
+    const refreshToken = signRefreshToken(user);
+    user.refreshToken = await bcrypt.hash(refreshToken, 10);
+    await user.save();
+    setSessionCookies(res, accessToken, refreshToken);
+    return res.json({ success: true });
+  } catch {
+    clearSessionCookies(res);
+    return res.status(401).json({ code: 'SESSION_EXPIRED', message: 'Session expired. Log in again.' });
   }
 });
 
-// ─────────────────────────────────────────────────────────────────
-// 📌 Logout — clear refresh token
-// ─────────────────────────────────────────────────────────────────
 router.post('/logout', fetchuser, async (req, res) => {
   try {
-    await User.findByIdAndUpdate(req.user.userId, { $set: { refreshToken: '' } });
-    res.clearCookie('refreshToken', { ...COOKIE_OPTIONS, maxAge: 0 });
-    res.json({ success: true, message: 'Logged out successfully.' });
-  } catch (error) {
-    res.status(500).json({ error: 'Logout failed.' });
+    await User.findByIdAndUpdate(req.user.userId, { $inc: { sessionVersion: 1 }, $set: { refreshToken: '' } });
+    clearSessionCookies(res);
+    return res.json({ success: true, message: 'Logged out.' });
+  } catch {
+    clearSessionCookies(res);
+    return res.status(500).json({ code: 'LOGOUT_FAILED', message: 'Logout failed.' });
   }
 });
 
-// ─────────────────────────────────────────────────────────────────
-// 📌 Get User Data
-// ─────────────────────────────────────────────────────────────────
-router.get('/getuser', fetchuser, async (req, res) => {
-  try {
-    const user = await User.findById(req.user.userId).select('-password -refreshToken');
-    if (!user) return res.status(404).json({ message: 'User not found!' });
-
-    res.json({
-      balance:    user.virtualBalance,
-      portfolio:  user.portfolio || [],
-      name:       user.name,
-      email:      user.email,
-      bio:        user.bio || '',
-      avatar:     user.avatar || user.profilePic || '',
-    });
-  } catch (error) {
-    console.error('[GetUser Error]:', error.message);
-    res.status(500).json({ message: 'Failed to fetch user data.' });
-  }
+router.get('/getuser', fetchuser, (req, res) => {
+  const user = req.userRecord;
+  return res.json({
+    balance: user.virtualBalance, portfolio: user.portfolio || [], name: user.name,
+    email: user.email, bio: user.bio || '', avatar: user.avatar || user.profilePic || '',
+    emailVerified: user.emailVerified === true,
+  });
 });
 
-// ─────────────────────────────────────────────────────────────────
-// 📌 Update Profile — name, bio, avatar
-// ─────────────────────────────────────────────────────────────────
 router.put('/update-profile', fetchuser, async (req, res) => {
   try {
-    const { name, bio, avatar } = req.body;
     const updates = {};
-
-    if (name !== undefined) {
-      if (name.trim().length < 1) return res.status(400).json({ message: 'Name cannot be empty.' });
-      updates.name = name.trim().slice(0, 50);
+    if (req.body.name !== undefined) {
+      const name = String(req.body.name).trim().replace(/\s+/g, ' ');
+      if (!name) return res.status(400).json({ message: 'Name cannot be empty.' });
+      updates.name = name.slice(0, 50);
     }
-    if (bio !== undefined)    updates.bio    = bio.trim().slice(0, 200);
-    if (avatar !== undefined) {
-      // Guard: base64 images shouldn't exceed ~400KB (300KB data + encoding overhead)
-      if (avatar.length > 550000) return res.status(400).json({ message: 'Avatar image too large. Max 400KB.' });
+    if (req.body.bio !== undefined) updates.bio = String(req.body.bio).trim().slice(0, 200);
+    if (req.body.avatar !== undefined) {
+      const avatar = req.body.avatar;
+      if (typeof avatar !== 'string' || avatar.length > 550000 || (avatar && !avatar.startsWith('data:image/'))) return res.status(400).json({ message: 'Avatar must be an image under 400 KB.' });
       updates.avatar = avatar;
     }
-
-    const user = await User.findByIdAndUpdate(
-      req.user.userId,
-      { $set: updates },
-      { new: true, select: '-password -refreshToken' }
-    );
-
-    res.json({ success: true, name: user.name, bio: user.bio, avatar: user.avatar });
+    const user = await User.findByIdAndUpdate(req.user.userId, { $set: updates }, { new: true, select: '-password -refreshToken' });
+    return res.json({ success: true, name: user.name, bio: user.bio, avatar: user.avatar });
   } catch (error) {
     console.error('[UpdateProfile Error]:', error.message);
-    res.status(500).json({ message: 'Failed to update profile.' });
+    return res.status(500).json({ message: 'Failed to update profile.' });
   }
 });
 
-// ─────────────────────────────────────────────────────────────────
-// 📌 Google OAuth Login
-// ─────────────────────────────────────────────────────────────────
 router.post('/googlelogin', async (req, res) => {
   try {
-    const { tokenId } = req.body;
-    if (!tokenId) return res.status(400).json({ success: false, message: 'Token is required.' });
+    const credential = String(req.body?.credential || '');
+    if (!credential) return res.status(400).json({ code: 'GOOGLE_TOKEN_REQUIRED', message: 'Google credential is required.' });
+    if (!process.env.GOOGLE_CLIENT_ID) return res.status(503).json({ code: 'GOOGLE_NOT_CONFIGURED', message: 'Google sign-in is not configured.' });
 
-    const ticket = await client.verifyIdToken({ idToken: tokenId, audience: process.env.GOOGLE_CLIENT_ID?.trim() });
-    const { name, email, picture } = ticket.getPayload();
-
-    let user = await User.findOne({ email: email.toLowerCase() });
-    if (!user) {
-      user = new User({ name, email: email.toLowerCase(), profilePic: picture, virtualBalance: 1000000 });
-      await user.save();
-    } else if (!user.profilePic) {
-      await User.findByIdAndUpdate(user._id, { $set: { profilePic: picture } });
+    const ticket = await googleClient.verifyIdToken({ idToken: credential, audience: process.env.GOOGLE_CLIENT_ID.trim() });
+    const payload = ticket.getPayload() || {};
+    const email = normalizeEmail(payload.email);
+    const googleIsAuthoritative = email.endsWith('@gmail.com') || (payload.email_verified === true && Boolean(payload.hd));
+    if (!payload.sub || !email || payload.email_verified !== true || !googleIsAuthoritative) {
+      return res.status(403).json({ code: 'GOOGLE_EMAIL_NOT_AUTHORITATIVE', message: 'Use Gmail, verified Google Workspace, or email verification.' });
     }
 
-    const authtoken    = generateAccessToken(user._id);
-    const refreshToken = generateRefreshToken(user._id);
-    const hashedRefresh = await bcrypt.hash(refreshToken, 10);
-    await User.findByIdAndUpdate(user._id, { $set: { refreshToken: hashedRefresh } });
-    res.cookie('refreshToken', refreshToken, COOKIE_OPTIONS);
+    let user = await User.findOne({ googleSub: payload.sub });
+    if (!user) {
+      const sameEmail = await User.findOne({ email });
+      if (sameEmail) return res.status(409).json({ code: 'ACCOUNT_LINK_REQUIRED', message: 'This email already has a password account. Sign in with your password.' });
+      user = await User.create({
+        name: String(payload.name || email.split('@')[0]).slice(0, 50), email,
+        profilePic: payload.picture || '', authProvider: 'google', googleSub: payload.sub,
+        emailVerified: true, emailVerifiedAt: new Date(),
+      });
+    } else if (user.email !== email) {
+      if (await User.exists({ email, _id: { $ne: user._id } })) return res.status(409).json({ code: 'EMAIL_CONFLICT', message: 'Google email conflicts with another account.' });
+      user.email = email;
+      user.emailVerified = true;
+      user.emailVerifiedAt = new Date();
+      if (!user.profilePic && payload.picture) user.profilePic = payload.picture;
+      await user.save();
+    }
 
-    res.json({ success: true, authtoken });
+    const session = await establishSession(user._id);
+    setSessionCookies(res, session.accessToken, session.refreshToken);
+    return res.json({ success: true, user: safeUser(session.user) });
   } catch (error) {
     console.error('[Google Auth Error]:', error.message);
-    res.status(500).json({ success: false, message: `Google Auth Error: ${error.message}` });
+    return res.status(401).json({ code: 'GOOGLE_AUTH_FAILED', message: 'Google sign-in could not be verified.' });
   }
 });
 

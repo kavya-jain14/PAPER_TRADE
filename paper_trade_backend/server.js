@@ -6,6 +6,19 @@ const rateLimit      = require('express-rate-limit');
 const cookieParser   = require('cookie-parser');
 require('dotenv').config();
 
+function validateProductionSecurityConfig() {
+  if (process.env.NODE_ENV !== 'production') return;
+  const required = ['MONGO_URI', 'JWT_SECRET', 'JWT_REFRESH_SECRET', 'EMAIL_VERIFICATION_SECRET', 'GOOGLE_CLIENT_ID', 'RESEND_API_KEY', 'EMAIL_FROM'];
+  const missing = required.filter((key) => !String(process.env[key] || '').trim());
+  if (missing.length) throw new Error(`FATAL: Missing production configuration: ${missing.join(', ')}`);
+  for (const key of ['JWT_SECRET', 'JWT_REFRESH_SECRET', 'EMAIL_VERIFICATION_SECRET']) {
+    if (process.env[key].length < 32) throw new Error(`FATAL: ${key} must contain at least 32 characters.`);
+  }
+  if (process.env.JWT_SECRET === process.env.JWT_REFRESH_SECRET) throw new Error('FATAL: Access and refresh token secrets must be different.');
+}
+
+validateProductionSecurityConfig();
+
 const app = express();
 
 // Trust proxy so express-rate-limit reads the real client IP behind
@@ -17,10 +30,7 @@ app.set('trust proxy', 1);
 // ─────────────────────────────────────────────────────────────────────────────
 
 // 1. HTTP Security Headers (CSP, HSTS, X-Frame-Options, etc.)
-app.use(helmet({
-  crossOriginEmbedderPolicy: false,  // Allow embedding charts from Yahoo/Unsplash
-  contentSecurityPolicy: false,       // Too strict for dev; enable in prod with proper config
-}));
+app.use(helmet({ crossOriginResourcePolicy: { policy: 'same-site' } }));
 
 // 2. CORS — explicit allowlist built from:
 //    • localhost defaults (always included in dev)
@@ -75,7 +85,7 @@ app.use(cors({
   },
   credentials: true,                 // Allow cookies (for refresh tokens)
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'auth-token', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'X-PaperTrade-Client'],
 }));
 
 // CORS Error Handler (returns 403 instead of 500)
@@ -91,6 +101,13 @@ app.use(cookieParser());
 
 // 4. Body parser
 app.use(express.json({ limit: '500kb' })); // cap body size to prevent DoS
+
+app.use('/api', (req, res, next) => {
+  if (process.env.NODE_ENV === 'production' && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
+    if (req.get('X-PaperTrade-Client') !== 'web') return res.status(403).json({ code: 'REQUEST_ORIGIN_UNVERIFIED', message: 'Request origin could not be verified.' });
+  }
+  return next();
+});
 
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -115,6 +132,14 @@ const authLimiter = rateLimit({
   legacyHeaders: false,
   message: { error: 'Too many auth attempts. Try again in 15 minutes.' },
   skipSuccessfulRequests: true,      // Only count failed requests
+});
+
+const verificationLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { code: 'VERIFICATION_RATE_LIMIT', message: 'Too many verification requests. Try again later.' },
 });
 
 // Trade limiter: 60 requests per minute (prevents order spamming)
@@ -146,7 +171,9 @@ const analyticsRoutes = require('./routes/analytics');
 const leaderboardRoutes = require('./routes/leaderboard');
 
 app.use('/api/auth/login', authLimiter);
-app.use('/api/auth/register', authLimiter);
+app.use('/api/auth/register', verificationLimiter);
+app.use('/api/auth/resend-verification', verificationLimiter);
+app.use('/api/auth/verify-email', authLimiter);
 app.use('/api/auth/googlelogin', authLimiter);
 app.use('/api/auth', authRoutes);
 app.use('/api/trade',     tradeLimiter, tradeRoutes);
@@ -169,6 +196,8 @@ const connectDB = async () => {
 };
 connectDB();
 
+app.get('/', (req, res) => res.json({ status: 'Paper Trade API is running', version: '3.0' }));
+
 // ─────────────────────────────────────────────────────────────────────────────
 // ❌  GLOBAL ERROR HANDLER — Never expose stack traces to the client
 // ─────────────────────────────────────────────────────────────────────────────
@@ -181,8 +210,6 @@ app.use((err, req, res, next) => { // eslint-disable-line no-unused-vars
   console.error(`[ERROR] ${req.method} ${req.path}:`, err.message);
   res.status(status).json({ success: false, error: message });
 });
-
-app.get('/', (req, res) => res.json({ status: 'Paper Trade API is running', version: '2.1' }));
 
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
