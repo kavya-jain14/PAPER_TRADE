@@ -4,12 +4,10 @@ import toast from 'react-hot-toast';
 import { AppShell } from '../components/AppShell';
 import { PageHeader, Panel } from '../components/workspace/Workspace';
 import { useMarketSession } from '../hooks/useMarketStatus';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+import { API_URL, apiFetch } from '../lib/api';
 
 export default function Profile() {
   const navigate = useNavigate();
-  const token = localStorage.getItem('token');
   const session = useMarketSession();
   const fileRef = useRef(null);
   const [profile, setProfile] = useState({ name: '', email: '', bio: '', avatar: '', balance: 0 });
@@ -18,9 +16,8 @@ export default function Profile() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!token) { navigate('/login'); return; }
     const controller = new AbortController();
-    fetch(`${API_URL}/api/auth/getuser`, { headers: { 'auth-token': token }, signal: controller.signal })
+    apiFetch(`${API_URL}/api/auth/getuser`, { signal: controller.signal })
       .then(async (response) => {
         const data = await response.json();
         if (!response.ok) throw new Error(data.message || 'Profile unavailable');
@@ -29,7 +26,7 @@ export default function Profile() {
         setDraft({ name: next.name, bio: next.bio });
       }).catch((error) => { if (error.name !== 'AbortError') toast.error(error.message); });
     return () => controller.abort();
-  }, [navigate, token]);
+  }, []);
 
   const chooseAvatar = (event) => {
     const file = event.target.files?.[0];
@@ -44,8 +41,8 @@ export default function Profile() {
     if (!draft.name.trim()) { toast.error('Display name is required'); return; }
     setSaving(true);
     try {
-      const response = await fetch(`${API_URL}/api/auth/update-profile`, {
-        method: 'PUT', headers: { 'Content-Type': 'application/json', 'auth-token': token },
+      const response = await apiFetch(`${API_URL}/api/auth/update-profile`, {
+        method: 'PUT',
         body: JSON.stringify({ name: draft.name.trim(), bio: draft.bio.trim(), avatar: profile.avatar }),
       });
       const data = await response.json();
@@ -57,8 +54,7 @@ export default function Profile() {
   };
 
   const signOut = async () => {
-    try { await fetch(`${API_URL}/api/auth/logout`, { method: 'POST', headers: { 'auth-token': token }, credentials: 'include' }); } catch { /* local sign-out still proceeds */ }
-    localStorage.removeItem('token');
+    try { await apiFetch(`${API_URL}/api/auth/logout`, { method: 'POST' }); } catch { /* navigation still proceeds */ }
     navigate('/login');
   };
 
@@ -68,7 +64,7 @@ export default function Profile() {
         <div className="workspace-page__inner" style={{ maxWidth: 1000 }}>
           <PageHeader title="Profile" description="Personal details used inside your paper-trading workspace." session={session} actions={<button className="desk-button" type="button" onClick={signOut}>Sign out</button>} />
 
-          <div className="workspace-grid workspace-grid--two">
+          <div className="workspace-grid profile-layout">
             <Panel title="Trader profile" actions={!editing && <button className="desk-button" type="button" onClick={() => setEditing(true)}>Edit</button>}>
               <div className="profile-editor">
                 <div>

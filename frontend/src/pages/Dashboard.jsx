@@ -5,9 +5,7 @@ import SmartChart from '../components/SmartChart';
 import { AppShell } from '../components/AppShell';
 import useMarketStatus from '../hooks/useMarketStatus';
 import TradeModal from '../components/TradeModal';
-import { Shield, ArrowUpRight, History } from 'lucide-react';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+import { API_URL, apiFetch } from '../lib/api';
 
 const TOP_STOCKS = ['RELIANCE', 'TCS', 'HDFCBANK', 'ICICIBANK', 'INFY', 'ITC', 'SBIN', 'BHARTIARTL', 'LT', 'AXISBANK'];
 const INDICES = ['NIFTY 50', 'SENSEX', 'NIFTY BANK'];
@@ -91,15 +89,13 @@ function Dashboard() {
   }, [watchlist]);
 
   const navigate = useNavigate();
-  const token = localStorage.getItem('token');
   const marketStatus = useMarketStatus();
 
   /* ── Data fetching ──────────────────────────────────────────────────────── */
   const fetchUserData = useCallback(async (signal) => {
     try {
-      const res = await fetch(`${API_URL}/api/auth/getuser`, {
+      const res = await apiFetch(`${API_URL}/api/auth/getuser`, {
         method: 'GET',
-        headers: { 'Content-Type': 'application/json', 'auth-token': token },
         signal,
       });
       const data = await res.json();
@@ -109,15 +105,11 @@ function Dashboard() {
         setBalance(data.virtualBalance !== undefined ? data.virtualBalance : data.balance || 0);
       }
       try {
-        const pr = await fetch(`${API_URL}/api/trade/portfolio`, {
-          headers: { 'Content-Type': 'application/json', 'auth-token': token }, signal,
-        });
+        const pr = await apiFetch(`${API_URL}/api/trade/portfolio`, { signal });
         if (pr.ok) setHoldings((await pr.json()) || []);
       } catch { /* ignored */ }
       try {
-        const hr = await fetch(`${API_URL}/api/trade/history`, {
-          headers: { 'Content-Type': 'application/json', 'auth-token': token }, signal,
-        });
+        const hr = await apiFetch(`${API_URL}/api/trade/history`, { signal });
         if (hr.ok) {
           const raw = await hr.json();
           const asc = [...raw].reverse();
@@ -142,14 +134,13 @@ function Dashboard() {
     } catch (err) {
       if (err.name !== 'AbortError') console.error(err);
     }
-  }, [token]);
+  }, []);
 
   useEffect(() => {
-    if (!token) { navigate('/login'); return; }
     const c = new AbortController();
     fetchUserData(c.signal);
     return () => c.abort();
-  }, [token, navigate, fetchUserData]);
+  }, [fetchUserData]);
 
   useEffect(() => {
     let ac = new AbortController();
@@ -157,7 +148,7 @@ function Dashboard() {
       ac.abort();
       ac = new AbortController();
       try {
-        const r = await fetch(`${API_URL}/api/trade/live-prices`, {
+        const r = await apiFetch(`${API_URL}/api/trade/live-prices`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ symbols: [...TOP_STOCKS, ...INDICES] }),
@@ -270,7 +261,7 @@ function Dashboard() {
             borderBottom: '1px solid var(--color-border)',
           }}
         >
-          <Shield size={13} strokeWidth={2} style={{ color: 'var(--color-text-muted)', flexShrink: 0 }} />
+          <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--color-text-muted)', flexShrink: 0 }} />
           <span style={{ fontSize: 'var(--text-label)', color: 'var(--color-text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
             Paper Trading &middot; Simulated Capital
           </span>
@@ -310,19 +301,6 @@ function Dashboard() {
               <div className="flex gap-3 shrink-0">
                 <button
                   type="button"
-                  onClick={() => navigate('/portfolio')}
-                  style={{
-                    padding: '7px 14px', fontSize: 'var(--text-caption)', fontWeight: 500,
-                    color: 'var(--color-text-secondary)',
-                    background: 'var(--color-surface-raised)',
-                    border: '1px solid var(--color-border)',
-                    borderRadius: 'var(--radius-md)', cursor: 'pointer',
-                  }}
-                >
-                  Deposit funds
-                </button>
-                <button
-                  type="button"
                   onClick={() => navigate('/markets')}
                   style={{
                     padding: '7px 14px', fontSize: 'var(--text-caption)', fontWeight: 500,
@@ -353,9 +331,9 @@ function Dashboard() {
               <div
                 className="xl:col-span-2"
                 style={{
-                  background: 'var(--color-surface-elevated)',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: 'var(--radius-lg)',
+                  background: 'transparent',
+                  borderTop: '1px solid var(--color-border)',
+                  borderBottom: '1px solid var(--color-border)',
                   padding: '20px 24px',
                   minWidth: 0,
                 }}
@@ -425,9 +403,9 @@ function Dashboard() {
               <div
                 className="xl:col-span-1"
                 style={{
-                  background: 'var(--color-surface)',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: 'var(--radius-lg)',
+                  background: 'transparent',
+                  borderTop: '1px solid var(--color-border)',
+                  borderBottom: '1px solid var(--color-border)',
                   padding: '20px 24px',
                   minWidth: 0,
                   alignSelf: 'start',
@@ -521,20 +499,20 @@ function Dashboard() {
                         display: 'flex', alignItems: 'center', gap: 4,
                       }}
                     >
-                      View Ledger <ArrowUpRight size={13} />
+                      View ledger →
                     </button>
                   </div>
 
                   <div style={{
-                    background: 'var(--color-surface)',
-                    border: '1px solid var(--color-border)',
-                    borderRadius: 'var(--radius-lg)',
+                    background: 'transparent',
+                    borderTop: '1px solid var(--color-border)',
+                    borderBottom: '1px solid var(--color-border)',
                     overflow: 'hidden',
                   }}>
                     {tradeHistory.length === 0 ? (
                       /* Compact empty state */
                       <div style={{ padding: '24px 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <History size={16} style={{ color: 'var(--color-text-muted)', flexShrink: 0 }} />
+                        <span className="type-label" aria-hidden="true">00</span>
                         <span style={{ fontSize: 'var(--text-caption)', color: 'var(--color-text-muted)' }}>
                           No execution activity yet.{' '}
                           <button
@@ -623,9 +601,7 @@ function Dashboard() {
                                       {fmtTradeTs(trade.date || trade.createdAt)}
                                     </td>
                                     <td style={{ padding: '10px 14px', fontSize: 'var(--text-caption)', color: 'var(--color-text-muted)', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                                      {mode === 'SIMULATED'
-                                        ? <><Shield size={11} style={{ display: 'inline', marginRight: 3, verticalAlign: 'middle', opacity: 0.7 }} />Simulated</>
-                                        : mode}
+                                      {mode === 'SIMULATED' ? 'Simulated' : mode}
                                     </td>
                                   </tr>
                                 );
@@ -671,9 +647,9 @@ function Dashboard() {
 
                 {/* Tracked Breadth */}
                 <div style={{
-                  background: 'var(--color-surface)',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: 'var(--radius-lg)',
+                  background: 'transparent',
+                  borderTop: '1px solid var(--color-border)',
+                  borderBottom: '1px solid var(--color-border)',
                   padding: '16px 20px',
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
@@ -740,9 +716,9 @@ function Dashboard() {
 
                 {/* Watchlist */}
                 <div style={{
-                  background: 'var(--color-surface)',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: 'var(--radius-lg)',
+                  background: 'transparent',
+                  borderTop: '1px solid var(--color-border)',
+                  borderBottom: '1px solid var(--color-border)',
                   overflow: 'hidden',
                 }}>
                   <div style={{
@@ -815,7 +791,6 @@ function Dashboard() {
             marketData={marketPrices[selectedAsset]}
             onClose={() => setSelectedAsset(null)}
             balance={balance}
-            token={token}
             onSuccess={fetchUserData}
             ownedQty={holdings.find((h) => h.symbol === selectedAsset)?.quantity || 0}
           />

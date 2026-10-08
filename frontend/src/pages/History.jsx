@@ -1,11 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { AppShell } from '../components/AppShell';
-import { EmptyDesk, PageHeader, Panel, SegmentedControl } from '../components/workspace/Workspace';
+import { EmptyDesk, MetricStrip, PageHeader, Panel, SegmentedControl } from '../components/workspace/Workspace';
 import { useMarketSession } from '../hooks/useMarketStatus';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+import { API_URL, apiFetch } from '../lib/api';
 const FILTERS = ['All', 'Buys', 'Sells', 'Profits', 'Losses'];
 const money = (value) => Number(value || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -28,8 +26,6 @@ const enrichLedger = (transactions) => {
 };
 
 export default function History() {
-  const navigate = useNavigate();
-  const token = localStorage.getItem('token');
   const session = useMarketSession();
   const [user, setUser] = useState({ name: '', avatar: '' });
   const [trades, setTrades] = useState([]);
@@ -40,8 +36,8 @@ export default function History() {
     try {
       setLoading(true);
       const [userResponse, historyResponse] = await Promise.all([
-        fetch(`${API_URL}/api/auth/getuser`, { headers: { 'auth-token': token } }),
-        fetch(`${API_URL}/api/trade/history`, { headers: { 'auth-token': token } }),
+        apiFetch(`${API_URL}/api/auth/getuser`),
+        apiFetch(`${API_URL}/api/trade/history`),
       ]);
       if (userResponse.ok) {
         const data = await userResponse.json();
@@ -54,12 +50,11 @@ export default function History() {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, []);
 
   useEffect(() => {
-    if (!token) { navigate('/login'); return; }
     load();
-  }, [load, navigate, token]);
+  }, [load]);
 
   const visibleTrades = useMemo(() => trades.filter((trade) => {
     const buy = trade.transactionType?.toUpperCase() === 'BUY';
@@ -103,14 +98,12 @@ export default function History() {
             actions={<div style={{ display: 'flex', gap: 8 }}><button className="desk-button" type="button" onClick={load}>Refresh</button><button className="desk-button" type="button" onClick={exportCsv} disabled={!trades.length}>Export CSV</button></div>}
           />
 
-          <div className="workspace-grid ledger-stats" style={{ marginBottom: 16 }}>
-            {[
-              ['Executions', trades.length],
-              ['Closed sells', sells.length],
-              ['Win rate', winRate === null ? '—' : `${winRate.toFixed(1)}%`],
-              ['Realized P&L', `${realized >= 0 ? '+' : ''}₹${money(realized)}`],
-            ].map(([label, value]) => <Panel key={label}><div style={{ padding: 16 }}><p className="type-label" style={{ margin: 0 }}>{label}</p><p className="type-data-lg" style={{ margin: '7px 0 0', color: label === 'Realized P&L' ? (realized >= 0 ? 'var(--color-positive)' : 'var(--color-negative)') : undefined }}>{value}</p></div></Panel>)}
-          </div>
+          <MetricStrip ariaLabel="Ledger summary" items={[
+            { label: 'Executions', value: trades.length },
+            { label: 'Closed sells', value: sells.length },
+            { label: 'Win rate', value: winRate === null ? '—' : `${winRate.toFixed(1)}%` },
+            { label: 'Realized P&L', value: `${realized >= 0 ? '+' : ''}₹${money(realized)}`, tone: realized >= 0 ? 'positive' : 'negative' },
+          ]} />
 
           <Panel title="Executions" meta={`${visibleTrades.length} records`} actions={<SegmentedControl label="Ledger filter" value={filter} options={FILTERS} onChange={setFilter} />}>
             {loading ? <EmptyDesk title="Loading ledger" detail="Reconstructing position cost basis." /> : visibleTrades.length === 0 ? <EmptyDesk title={filter === 'All' ? 'No executions yet' : `No ${filter.toLowerCase()} found`} detail={filter === 'All' ? 'Place a paper order from Markets to start the ledger.' : 'Choose a different filter to inspect the ledger.'} /> : (

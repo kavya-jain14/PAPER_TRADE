@@ -3,18 +3,16 @@ import { AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { AppShell } from '../components/AppShell';
 import TradeModal from '../components/TradeModal';
-import { EmptyDesk, PageHeader, Panel } from '../components/workspace/Workspace';
+import { EmptyDesk, MetricStrip, PageHeader, Panel } from '../components/workspace/Workspace';
 import useAnalytics from '../hooks/useAnalytics';
 import { useMarketSession } from '../hooks/useMarketStatus';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+import { API_URL, apiFetch } from '../lib/api';
 const money = (value) => Number(value || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export default function Portfolio() {
   const navigate = useNavigate();
-  const token = localStorage.getItem('token');
   const session = useMarketSession();
-  const { metrics } = useAnalytics(token);
+  const { metrics } = useAnalytics();
   const [user, setUser] = useState({ name: '', avatar: '', balance: 0 });
   const [holdings, setHoldings] = useState([]);
   const [quotes, setQuotes] = useState({});
@@ -24,8 +22,8 @@ export default function Portfolio() {
   const load = useCallback(async (signal) => {
     try {
       const [userResponse, portfolioResponse] = await Promise.all([
-        fetch(`${API_URL}/api/auth/getuser`, { headers: { 'auth-token': token }, signal }),
-        fetch(`${API_URL}/api/trade/portfolio`, { headers: { 'auth-token': token }, signal }),
+        apiFetch(`${API_URL}/api/auth/getuser`, { signal }),
+        apiFetch(`${API_URL}/api/trade/portfolio`, { signal }),
       ]);
       if (userResponse.ok) {
         const data = await userResponse.json();
@@ -35,7 +33,7 @@ export default function Portfolio() {
         const positions = await portfolioResponse.json();
         setHoldings(positions);
         if (positions.length) {
-          const quoteResponse = await fetch(`${API_URL}/api/trade/live-prices`, {
+          const quoteResponse = await apiFetch(`${API_URL}/api/trade/live-prices`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ symbols: positions.map((item) => item.symbol) }), signal,
           });
@@ -45,10 +43,9 @@ export default function Portfolio() {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, []);
 
   useEffect(() => {
-    if (!token) { navigate('/login'); return undefined; }
     let controller = new AbortController();
     let timeoutId;
     const poll = async () => {
@@ -59,7 +56,7 @@ export default function Portfolio() {
     };
     poll();
     return () => { controller.abort(); clearTimeout(timeoutId); };
-  }, [load, navigate, token]);
+  }, [load]);
 
   const positions = useMemo(() => holdings.map((holding) => {
     const quote = quotes[holding.symbol];
@@ -82,14 +79,12 @@ export default function Portfolio() {
         <div className="workspace-page__inner">
           <PageHeader title="Portfolio" description="Open positions, cost basis and marked-to-market equity." session={session} actions={<button className="desk-button desk-button--primary" type="button" onClick={() => navigate('/markets')}>New order</button>} />
 
-          <div className="workspace-grid ledger-stats" style={{ marginBottom: 16 }}>
-            {[
-              ['Account equity', `₹${money(equity)}`],
-              ['Available balance', `₹${money(user.balance)}`],
-              ['Invested capital', `₹${money(invested)}`],
-              ['Unrealized P&L', `${unrealized >= 0 ? '+' : ''}₹${money(unrealized)}`],
-            ].map(([label, value]) => <Panel key={label}><div style={{ padding: 16 }}><p className="type-label" style={{ margin: 0 }}>{label}</p><p className="type-data-lg" style={{ margin: '7px 0 0', color: label === 'Unrealized P&L' ? (unrealized >= 0 ? 'var(--color-positive)' : 'var(--color-negative)') : undefined }}>{value}</p></div></Panel>)}
-          </div>
+          <MetricStrip ariaLabel="Portfolio summary" items={[
+            { label: 'Account equity', value: `₹${money(equity)}` },
+            { label: 'Available balance', value: `₹${money(user.balance)}` },
+            { label: 'Invested capital', value: `₹${money(invested)}` },
+            { label: 'Unrealized P&L', value: `${unrealized >= 0 ? '+' : ''}₹${money(unrealized)}`, tone: unrealized >= 0 ? 'positive' : 'negative' },
+          ]} />
 
           {metrics && (
             <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', padding: '10px 2px 20px', color: 'var(--color-text-muted)', fontSize: 'var(--text-caption)' }}>
@@ -100,7 +95,7 @@ export default function Portfolio() {
             </div>
           )}
 
-          <div className="workspace-grid workspace-grid--two">
+          <div className="workspace-grid portfolio-layout">
             <Panel title="Open positions" meta={`${positions.length} active`}>
               {loading ? <EmptyDesk title="Loading positions" detail="Updating portfolio marks." /> : positions.length === 0 ? <EmptyDesk title="No open positions" detail="Your first filled buy order will appear here." /> : (
                 <div className="desk-table-wrap"><table className="desk-table"><thead><tr><th>Symbol</th><th>Mode</th><th data-numeric>Qty</th><th data-numeric>Average</th><th data-numeric>Last</th><th data-numeric>Value</th><th data-numeric>P&L</th><th aria-label="Actions" /></tr></thead><tbody>
@@ -118,7 +113,7 @@ export default function Portfolio() {
         </div>
       </main>
 
-      <AnimatePresence>{selectedAsset && <TradeModal symbol={selectedAsset} marketData={quotes[selectedAsset] || {}} onClose={() => setSelectedAsset(null)} balance={user.balance} token={token} onSuccess={() => load(new AbortController().signal)} ownedQty={holdings.find((item) => item.symbol === selectedAsset)?.quantity || 0} />}</AnimatePresence>
+      <AnimatePresence>{selectedAsset && <TradeModal symbol={selectedAsset} marketData={quotes[selectedAsset] || {}} onClose={() => setSelectedAsset(null)} balance={user.balance} onSuccess={() => load(new AbortController().signal)} ownedQty={holdings.find((item) => item.symbol === selectedAsset)?.quantity || 0} />}</AnimatePresence>
     </AppShell>
   );
 }

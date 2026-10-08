@@ -39,9 +39,9 @@ export function PageHeader({ title, description, session, actions }) {
   );
 }
 
-export function Panel({ title, meta, actions, children, className = '' }) {
+export function Panel({ title, meta, actions, children, className = '', surface = 'open' }) {
   return (
-    <section className={`workspace-panel ${className}`.trim()}>
+    <section className={`workspace-panel workspace-panel--${surface} ${className}`.trim()}>
       {(title || meta || actions) && (
         <div className="workspace-panel__header">
           <div>
@@ -53,6 +53,20 @@ export function Panel({ title, meta, actions, children, className = '' }) {
       )}
       {children}
     </section>
+  );
+}
+
+export function MetricStrip({ items, columns = 4, ariaLabel = 'Key metrics' }) {
+  return (
+    <dl className="metric-strip" style={{ '--metric-columns': columns }} aria-label={ariaLabel}>
+      {items.map((item) => (
+        <div key={item.label} className="metric-strip__item">
+          <dt>{item.label}</dt>
+          <dd className={item.tone ? `is-${item.tone}` : ''}>{item.value}</dd>
+          {item.detail ? <small>{item.detail}</small> : null}
+        </div>
+      ))}
+    </dl>
   );
 }
 

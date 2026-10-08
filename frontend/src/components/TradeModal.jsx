@@ -9,7 +9,6 @@
  *   symbol      — ticker symbol e.g. "RELIANCE"
  *   marketData  — { price, change, high, low }
  *   balance     — user's available margin
- *   token       — auth token for API calls
  *   ownedQty    — units currently held (for SELL validation)
  *   onClose     — close callback
  *   onSuccess   — called after successful order (parent refreshes data)
@@ -19,11 +18,10 @@ import { motion as Motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import SmartChart, { CandlestickModal } from './SmartChart';
 import { Button, Input } from './ui';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+import { API_URL, apiFetch } from '../lib/api';
 const INDICES  = ['NIFTY 50', 'SENSEX', 'NIFTY BANK'];
 
-export default function TradeModal({ symbol, marketData, balance, token, ownedQty = 0, onClose, onSuccess }) {
+export default function TradeModal({ symbol, marketData, balance, ownedQty = 0, onClose, onSuccess }) {
   const [qty, setQty]           = useState('');
   const [side, setSide]         = useState('BUY');
   const [showCandle, setShowCandle] = useState(false);
@@ -48,9 +46,8 @@ export default function TradeModal({ symbol, marketData, balance, token, ownedQt
 
     const id = toast.loading('Routing order…');
     try {
-      const res = await fetch(`${API_URL}/api/trade/${side === 'BUY' ? 'buy' : 'sell'}`, {
+      const res = await apiFetch(`${API_URL}/api/trade/${side === 'BUY' ? 'buy' : 'sell'}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'auth-token': token },
         body: JSON.stringify({ symbol, quantity: n, currentPrice: price }),
       });
       const d = await res.json();
@@ -75,22 +72,21 @@ export default function TradeModal({ symbol, marketData, balance, token, ownedQt
       {/* Backdrop */}
       <div
         className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
-        style={{ background: 'rgba(0,0,0,0.80)', backdropFilter: 'blur(8px)' }}
+        style={{ background: 'rgba(0,0,0,0.82)' }}
         onClick={onClose}
         aria-modal="true"
         role="dialog"
         aria-label={`Trade ${symbol}`}
       >
         <Motion.div
-          initial={{ opacity: 0, y: 32 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 24 }}
-          transition={{ duration: 0.28, ease: [0.34, 1.1, 0.64, 1] }}
-          className="w-full max-w-[880px] max-h-[92vh] overflow-hidden flex flex-col md:flex-row rounded-lg"
+          transition={{ duration: 0.2, ease: 'easeOut' }}
+          className="w-full max-w-[880px] max-h-[92vh] overflow-hidden flex flex-col md:flex-row"
           style={{
             background: 'var(--color-surface)',
             border: '1px solid var(--color-border)',
-            boxShadow: 'var(--shadow-3)',
           }}
           onClick={e => e.stopPropagation()}
         >
@@ -115,17 +111,16 @@ export default function TradeModal({ symbol, marketData, balance, token, ownedQt
 
             {/* Chart */}
             <div
-              className="flex-1 min-h-[220px] rounded-md overflow-hidden relative group mb-5"
+              className="flex-1 min-h-[220px] overflow-hidden relative group mb-5"
               style={{ border: '1px solid var(--color-border)' }}
             >
               <SmartChart symbol={symbol} currentPrice={price} isGreen={isGreen} />
               <button
                 onClick={() => setShowCandle(true)}
-                className="absolute bottom-3 right-3 z-30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 px-2.5 py-1.5 rounded-md type-caption-muted hover:text-text-primary shadow-1"
+                className="absolute bottom-3 right-3 z-30 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity px-2.5 py-1.5 type-caption-muted hover:text-text-primary"
                 style={{ background: 'var(--color-surface-raised)', border: '1px solid var(--color-border)' }}
               >
-                <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>candlestick_chart</span>
-                Candlestick
+                Open candlesticks
               </button>
             </div>
 
@@ -154,26 +149,23 @@ export default function TradeModal({ symbol, marketData, balance, token, ownedQt
                 onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-tertiary)'}
                 aria-label="Close"
               >
-                <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-md)' }}>close</span>
+                <span aria-hidden="true" style={{ fontSize: 24, lineHeight: 1 }}>×</span>
               </button>
             </div>
 
             {/* Buy / Sell toggle */}
-            <div
-              className="flex p-1 rounded-md mb-6"
-              style={{ background: 'var(--color-surface-raised)', border: '1px solid var(--color-border)' }}
-            >
+            <div className="flex mb-6" style={{ borderBottom: '1px solid var(--color-border)' }}>
               {['BUY', 'SELL'].map(s => (
                 <button
                   key={s}
                   onClick={() => setSide(s)}
-                  className="flex-1 py-2 rounded transition-all type-label"
+                  className="flex-1 py-2 transition-colors type-label"
                   style={{
-                    background: side === s ? 'var(--color-surface-overlay)' : 'transparent',
+                    background: 'transparent',
+                    borderBottom: side === s ? `2px solid ${s === 'BUY' ? 'var(--color-positive)' : 'var(--color-negative)'}` : '2px solid transparent',
                     color: side === s
                       ? s === 'BUY' ? 'var(--color-positive)' : 'var(--color-negative)'
                       : 'var(--color-text-tertiary)',
-                    boxShadow: side === s ? 'var(--shadow-1)' : 'none',
                     fontWeight: side === s ? 500 : 400,
                   }}
                 >
