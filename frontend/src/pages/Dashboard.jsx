@@ -5,10 +5,7 @@ import SmartChart from '../components/SmartChart';
 import { AppShell } from '../components/AppShell';
 import useMarketStatus from '../hooks/useMarketStatus';
 import TradeModal from '../components/TradeModal';
-import { Shield, ArrowUpRight, History } from 'lucide-react';
-import { apiFetch } from '../lib/api';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+import { API_URL, apiFetch } from '../lib/api';
 
 const TOP_STOCKS = ['RELIANCE', 'TCS', 'HDFCBANK', 'ICICIBANK', 'INFY', 'ITC', 'SBIN', 'BHARTIARTL', 'LT', 'AXISBANK'];
 const INDICES = ['NIFTY 50', 'SENSEX', 'NIFTY BANK'];
@@ -264,7 +261,7 @@ function Dashboard() {
             borderBottom: '1px solid var(--color-border)',
           }}
         >
-          <Shield size={13} strokeWidth={2} style={{ color: 'var(--color-text-muted)', flexShrink: 0 }} />
+          <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--color-text-muted)', flexShrink: 0 }} />
           <span style={{ fontSize: 'var(--text-label)', color: 'var(--color-text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
             Paper Trading &middot; Simulated Capital
           </span>
@@ -304,19 +301,6 @@ function Dashboard() {
               <div className="flex gap-3 shrink-0">
                 <button
                   type="button"
-                  onClick={() => navigate('/portfolio')}
-                  style={{
-                    padding: '7px 14px', fontSize: 'var(--text-caption)', fontWeight: 500,
-                    color: 'var(--color-text-secondary)',
-                    background: 'var(--color-surface-raised)',
-                    border: '1px solid var(--color-border)',
-                    borderRadius: 'var(--radius-md)', cursor: 'pointer',
-                  }}
-                >
-                  Deposit funds
-                </button>
-                <button
-                  type="button"
                   onClick={() => navigate('/markets')}
                   style={{
                     padding: '7px 14px', fontSize: 'var(--text-caption)', fontWeight: 500,
@@ -347,9 +331,9 @@ function Dashboard() {
               <div
                 className="xl:col-span-2"
                 style={{
-                  background: 'var(--color-surface-elevated)',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: 'var(--radius-lg)',
+                  background: 'transparent',
+                  borderTop: '1px solid var(--color-border)',
+                  borderBottom: '1px solid var(--color-border)',
                   padding: '20px 24px',
                   minWidth: 0,
                 }}
@@ -419,9 +403,9 @@ function Dashboard() {
               <div
                 className="xl:col-span-1"
                 style={{
-                  background: 'var(--color-surface)',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: 'var(--radius-lg)',
+                  background: 'transparent',
+                  borderTop: '1px solid var(--color-border)',
+                  borderBottom: '1px solid var(--color-border)',
                   padding: '20px 24px',
                   minWidth: 0,
                   alignSelf: 'start',
@@ -515,20 +499,20 @@ function Dashboard() {
                         display: 'flex', alignItems: 'center', gap: 4,
                       }}
                     >
-                      View Ledger <ArrowUpRight size={13} />
+                      View ledger →
                     </button>
                   </div>
 
                   <div style={{
-                    background: 'var(--color-surface)',
-                    border: '1px solid var(--color-border)',
-                    borderRadius: 'var(--radius-lg)',
+                    background: 'transparent',
+                    borderTop: '1px solid var(--color-border)',
+                    borderBottom: '1px solid var(--color-border)',
                     overflow: 'hidden',
                   }}>
                     {tradeHistory.length === 0 ? (
                       /* Compact empty state */
                       <div style={{ padding: '24px 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <History size={16} style={{ color: 'var(--color-text-muted)', flexShrink: 0 }} />
+                        <span className="type-label" aria-hidden="true">00</span>
                         <span style={{ fontSize: 'var(--text-caption)', color: 'var(--color-text-muted)' }}>
                           No execution activity yet.{' '}
                           <button
@@ -617,9 +601,7 @@ function Dashboard() {
                                       {fmtTradeTs(trade.date || trade.createdAt)}
                                     </td>
                                     <td style={{ padding: '10px 14px', fontSize: 'var(--text-caption)', color: 'var(--color-text-muted)', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                                      {mode === 'SIMULATED'
-                                        ? <><Shield size={11} style={{ display: 'inline', marginRight: 3, verticalAlign: 'middle', opacity: 0.7 }} />Simulated</>
-                                        : mode}
+                                      {mode === 'SIMULATED' ? 'Simulated' : mode}
                                     </td>
                                   </tr>
                                 );
@@ -665,9 +647,9 @@ function Dashboard() {
 
                 {/* Tracked Breadth */}
                 <div style={{
-                  background: 'var(--color-surface)',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: 'var(--radius-lg)',
+                  background: 'transparent',
+                  borderTop: '1px solid var(--color-border)',
+                  borderBottom: '1px solid var(--color-border)',
                   padding: '16px 20px',
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
@@ -734,9 +716,9 @@ function Dashboard() {
 
                 {/* Watchlist */}
                 <div style={{
-                  background: 'var(--color-surface)',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: 'var(--radius-lg)',
+                  background: 'transparent',
+                  borderTop: '1px solid var(--color-border)',
+                  borderBottom: '1px solid var(--color-border)',
                   overflow: 'hidden',
                 }}>
                   <div style={{

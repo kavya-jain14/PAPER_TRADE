@@ -3,9 +3,7 @@ import toast from 'react-hot-toast';
 import { AppShell } from '../components/AppShell';
 import { EmptyDesk, PageHeader, Panel } from '../components/workspace/Workspace';
 import { useMarketSession } from '../hooks/useMarketStatus';
-import { apiFetch } from '../lib/api';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+import { API_URL, apiFetch } from '../lib/api';
 const money = (value) => Number(value || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export default function Leaderboard() {

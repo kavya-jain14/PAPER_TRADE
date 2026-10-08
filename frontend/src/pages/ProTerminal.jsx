@@ -5,9 +5,7 @@ import ChartCanvas from '../components/Terminal/ChartCanvas';
 import ReplayCanvas from '../components/Terminal/ReplayCanvas';
 import OrderPanel from '../components/Terminal/OrderPanel';
 import { useMarketSession } from '../hooks/useMarketStatus';
-import { apiFetch } from '../lib/api';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+import { API_URL, apiFetch } from '../lib/api';
 const WATCHLIST = ['RELIANCE', 'TCS', 'HDFCBANK', 'ICICIBANK', 'INFY', 'ITC', 'SBIN', 'BHARTIARTL', 'LT', 'AXISBANK'];
 const TIMEFRAMES = ['1m', '5m', '15m', '1h', '1d'];
 const replayDefault = () => new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);

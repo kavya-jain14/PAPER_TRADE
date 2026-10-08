@@ -14,7 +14,7 @@ const Profile        = React.lazy(() => import('./pages/Profile'));
 const Legal          = React.lazy(() => import('./pages/Legal'));
 const ProTerminal    = React.lazy(() => import('./pages/ProTerminal'));
 const Leaderboard    = React.lazy(() => import('./pages/Leaderboard'));
-const AIPage         = React.lazy(() => import('./pages/AIPage'));
+const MarketDesk     = React.lazy(() => import('./pages/MarketDesk'));
 const CommandPalette = React.lazy(() => import('./components/CommandPalette'));
 const AuthGate       = React.lazy(() => import('./components/AuthGate'));
 
@@ -44,11 +44,7 @@ class ErrorBoundary extends React.Component {
           gap: '24px', fontFamily: 'var(--font-sans)', color: 'var(--color-text-primary)',
           padding: '24px',
         }}>
-          <div style={{
-            width: 48, height: 48, borderRadius: 'var(--radius-lg)', background: 'var(--color-surface-raised)',
-            border: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 20, color: 'var(--color-text-secondary)',
-          }}>!</div>
+          <p className="type-label" style={{ margin: 0, color: 'var(--color-negative)' }}>Runtime error</p>
           <div style={{ textAlign: 'center', maxWidth: 340 }}>
             <h1 style={{ fontSize: 'var(--text-h3)', fontWeight: 500, margin: '0 0 8px', color: 'var(--color-text-primary)' }}>
               Something went wrong
@@ -58,7 +54,7 @@ class ErrorBoundary extends React.Component {
             </p>
           </div>
           <button onClick={() => { this.setState({ hasError: false }); window.location.href = '/dashboard'; }}
-            style={{ padding: '8px 20px', background: 'var(--color-accent)', color: 'var(--color-accent-fg)', border: 'none', borderRadius: 'var(--radius-md)', fontWeight: 500, cursor: 'pointer' }}>
+            style={{ padding: '8px 20px', background: 'var(--color-accent)', color: 'var(--color-accent-fg)', border: 'none', borderRadius: 2, fontWeight: 500, cursor: 'pointer' }}>
             Return to Dashboard
           </button>
         </div>
@@ -88,12 +84,14 @@ function AnimatedRoutes() {
           <Route path="/dashboard" element={secured(<Dashboard />)} />
           <Route path="/markets"   element={secured(<Markets />)} />
           <Route path="/portfolio" element={secured(<Portfolio />)} />
-          <Route path="/academy"   element={secured(<Academy />)} />
+          <Route path="/study"     element={secured(<Academy />)} />
+          <Route path="/academy"   element={<Navigate to="/study" replace />} />
           <Route path="/history"   element={secured(<History />)} />
           <Route path="/profile"   element={secured(<Profile />)} />
           <Route path="/legal"     element={secured(<Legal />)} />
           <Route path="/leaderboard" element={secured(<Leaderboard />)} />
-          <Route path="/ai"        element={secured(<AIPage />)} />
+          <Route path="/desk"      element={secured(<MarketDesk />)} />
+          <Route path="/ai"        element={<Navigate to="/desk" replace />} />
           
           {/* New Phase 12 Pro Terminal */}
           <Route path="/terminal/:symbol" element={secured(<ProTerminal />)} />

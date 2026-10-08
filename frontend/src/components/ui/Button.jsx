@@ -28,7 +28,7 @@ export const Button = React.forwardRef(({
 
   const base = [
     'inline-flex items-center justify-center gap-2',
-    'font-medium tracking-wide rounded-md',
+    'font-medium tracking-wide rounded-sm',
     'transition-colors',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg',
     'disabled:opacity-40 disabled:pointer-events-none',
@@ -36,10 +36,10 @@ export const Button = React.forwardRef(({
   ].join(' ');
 
   const variants = {
-    primary:   'bg-accent text-accent-fg hover:bg-accent-hover shadow-1',
+    primary:   'bg-accent text-accent-fg hover:bg-accent-hover',
     secondary: 'bg-surface-raised text-text-primary border border-border hover:border-border-strong hover:bg-surface-overlay',
     ghost:     'text-text-secondary hover:text-text-primary hover:bg-accent-muted',
-    danger:    'bg-negative text-white hover:opacity-90 shadow-1',
+    danger:    'bg-negative text-white hover:opacity-90',
   };
 
   const sizes = {

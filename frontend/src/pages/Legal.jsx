@@ -2,9 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { AppShell } from '../components/AppShell';
 import { PageHeader, Panel, SegmentedControl } from '../components/workspace/Workspace';
 import { useMarketSession } from '../hooks/useMarketStatus';
-import { apiFetch } from '../lib/api';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+import { API_URL, apiFetch } from '../lib/api';
 const CONTACT = 'kavyajain1407@gmail.com';
 
 const PRIVACY = [

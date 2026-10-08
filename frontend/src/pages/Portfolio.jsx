@@ -3,12 +3,10 @@ import { AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { AppShell } from '../components/AppShell';
 import TradeModal from '../components/TradeModal';
-import { EmptyDesk, PageHeader, Panel } from '../components/workspace/Workspace';
+import { EmptyDesk, MetricStrip, PageHeader, Panel } from '../components/workspace/Workspace';
 import useAnalytics from '../hooks/useAnalytics';
 import { useMarketSession } from '../hooks/useMarketStatus';
-import { apiFetch } from '../lib/api';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+import { API_URL, apiFetch } from '../lib/api';
 const money = (value) => Number(value || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export default function Portfolio() {
@@ -81,14 +79,12 @@ export default function Portfolio() {
         <div className="workspace-page__inner">
           <PageHeader title="Portfolio" description="Open positions, cost basis and marked-to-market equity." session={session} actions={<button className="desk-button desk-button--primary" type="button" onClick={() => navigate('/markets')}>New order</button>} />
 
-          <div className="workspace-grid ledger-stats" style={{ marginBottom: 16 }}>
-            {[
-              ['Account equity', `₹${money(equity)}`],
-              ['Available balance', `₹${money(user.balance)}`],
-              ['Invested capital', `₹${money(invested)}`],
-              ['Unrealized P&L', `${unrealized >= 0 ? '+' : ''}₹${money(unrealized)}`],
-            ].map(([label, value]) => <Panel key={label}><div style={{ padding: 16 }}><p className="type-label" style={{ margin: 0 }}>{label}</p><p className="type-data-lg" style={{ margin: '7px 0 0', color: label === 'Unrealized P&L' ? (unrealized >= 0 ? 'var(--color-positive)' : 'var(--color-negative)') : undefined }}>{value}</p></div></Panel>)}
-          </div>
+          <MetricStrip ariaLabel="Portfolio summary" items={[
+            { label: 'Account equity', value: `₹${money(equity)}` },
+            { label: 'Available balance', value: `₹${money(user.balance)}` },
+            { label: 'Invested capital', value: `₹${money(invested)}` },
+            { label: 'Unrealized P&L', value: `${unrealized >= 0 ? '+' : ''}₹${money(unrealized)}`, tone: unrealized >= 0 ? 'positive' : 'negative' },
+          ]} />
 
           {metrics && (
             <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', padding: '10px 2px 20px', color: 'var(--color-text-muted)', fontSize: 'var(--text-caption)' }}>
@@ -99,7 +95,7 @@ export default function Portfolio() {
             </div>
           )}
 
-          <div className="workspace-grid workspace-grid--two">
+          <div className="workspace-grid portfolio-layout">
             <Panel title="Open positions" meta={`${positions.length} active`}>
               {loading ? <EmptyDesk title="Loading positions" detail="Updating portfolio marks." /> : positions.length === 0 ? <EmptyDesk title="No open positions" detail="Your first filled buy order will appear here." /> : (
                 <div className="desk-table-wrap"><table className="desk-table"><thead><tr><th>Symbol</th><th>Mode</th><th data-numeric>Qty</th><th data-numeric>Average</th><th data-numeric>Last</th><th data-numeric>Value</th><th data-numeric>P&L</th><th aria-label="Actions" /></tr></thead><tbody>

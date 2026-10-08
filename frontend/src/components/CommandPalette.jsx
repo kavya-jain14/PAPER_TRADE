@@ -10,14 +10,14 @@ const TOP_STOCKS = [
 const INDICES = ['NIFTY 50', 'SENSEX', 'NIFTY BANK'];
 
 const ROUTES = [
-  { path: '/dashboard', label: 'Dashboard', icon: 'grid_view' },
-  { path: '/markets',   label: 'Markets',   icon: 'monitoring' },
-  { path: '/portfolio', label: 'Portfolio', icon: 'pie_chart' },
-  { path: '/academy',   label: 'Study',     icon: 'school' },
-  { path: '/history',   label: 'Ledger',    icon: 'history' },
-  { path: '/leaderboard', label: 'Rankings', icon: 'social_leaderboard' },
-  { path: '/ai',        label: 'Market Desk', icon: 'forum' },
-  { path: '/profile',   label: 'Profile',   icon: 'person' },
+  { path: '/dashboard', label: 'Dashboard', mark: '01' },
+  { path: '/markets', label: 'Markets', mark: '02' },
+  { path: '/portfolio', label: 'Portfolio', mark: '03' },
+  { path: '/history', label: 'Ledger', mark: '04' },
+  { path: '/study', label: 'Study', mark: '05' },
+  { path: '/leaderboard', label: 'Rankings', mark: '06' },
+  { path: '/desk', label: 'Market Desk', mark: '07' },
+  { path: '/profile', label: 'Profile', mark: 'AC' },
 ];
 
 export default function CommandPalette() {
@@ -48,9 +48,10 @@ export default function CommandPalette() {
 
   useEffect(() => {
     if (isOpen) {
-      // Focus element after the animation frames
-      setTimeout(() => inputRef.current?.focus(), 50);
+      const timer = window.setTimeout(() => inputRef.current?.focus(), 50);
+      return () => window.clearTimeout(timer);
     }
+    return undefined;
   }, [isOpen]);
 
   const searchResults = () => {
@@ -106,25 +107,27 @@ export default function CommandPalette() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-[100] flex items-start justify-center pt-[15vh] px-4"
-          style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)' }}
+          style={{ background: 'rgba(7,6,5,0.82)' }}
           onClick={() => setIsOpen(false)}
         >
           <Motion.div
-            initial={{ opacity: 0, scale: 0.95, y: -20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: -10 }}
+            initial={{ opacity: 0, y: -12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
-            className="w-full max-w-2xl overflow-hidden rounded-lg"
+            className="w-full max-w-2xl overflow-hidden"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Quick navigation"
             style={{ 
               background: 'var(--color-surface)',
               border: '1px solid var(--color-border)',
-              boxShadow: 'var(--shadow-3)'
             }}
             onClick={e => e.stopPropagation()}
           >
             {/* Input Header */}
             <div className="flex items-center px-4 py-4" style={{ borderBottom: '1px solid var(--color-border)' }}>
-              <span className="material-symbols-outlined mr-3" style={{ color: 'var(--color-text-tertiary)' }}>search</span>
+              <span className="type-label mr-3" aria-hidden="true">FIND</span>
               <input
                 ref={inputRef}
                 type="text"
@@ -135,10 +138,11 @@ export default function CommandPalette() {
                 }}
                 onKeyDown={handleKeyDown}
                 placeholder="Search stocks, indices, or navigation..."
+                aria-label="Search stocks, indices, or pages"
                 className="flex-1 bg-transparent border-none outline-none type-h3 placeholder:text-text-tertiary"
               />
               <div className="flex items-center gap-2">
-                <span className="px-2 py-1 rounded text-[10px] font-bold tracking-widest" style={{ background: 'var(--color-surface-raised)', border: '1px solid var(--color-border)', color: 'var(--color-text-tertiary)' }}>
+                <span className="px-2 py-1 text-[10px] font-bold tracking-widest" style={{ border: '1px solid var(--color-border)', color: 'var(--color-text-tertiary)' }}>
                   ESC
                 </span>
               </div>
@@ -155,25 +159,24 @@ export default function CommandPalette() {
                   {results.map((res, idx) => {
                     const isSelected = idx === selectedIndex;
                     return (
-                      <div
-                        key={idx}
+                      <button
+                        key={`${res.type}-${res.type === 'route' ? res.data.path : res.data}`}
+                        type="button"
                         onMouseEnter={() => setSelectedIndex(idx)}
                         onClick={() => handleSelect(res)}
-                        className="flex items-center justify-between px-4 py-3 rounded-md cursor-pointer transition-colors"
+                        className="flex items-center justify-between px-4 py-3 cursor-pointer transition-colors w-full text-left"
                         style={{
                           background: isSelected ? 'var(--color-surface-overlay)' : 'transparent',
-                          border: `1px solid ${isSelected ? 'var(--color-border-strong)' : 'transparent'}`
+                          border: 0,
+                          borderLeft: `2px solid ${isSelected ? 'var(--color-accent)' : 'transparent'}`,
+                          color: 'inherit',
                         }}
                       >
                         <div className="flex items-center gap-3">
                           {res.type === 'route' ? (
-                            <div className="w-8 h-8 rounded-md flex items-center justify-center" style={{ background: 'var(--color-surface-raised)', color: 'var(--color-text-primary)' }}>
-                              <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>{res.data.icon}</span>
-                            </div>
+                            <span className="command-mark">{res.data.mark}</span>
                           ) : (
-                            <div className="w-8 h-8 rounded-md flex items-center justify-center font-bold" style={{ background: 'var(--color-surface-raised)', color: 'var(--color-text-primary)' }}>
-                              {res.data.substring(0, 1)}
-                            </div>
+                            <span className="command-mark">{res.data.substring(0, 2)}</span>
                           )}
                           <div>
                             <p className="type-body" style={{ fontWeight: isSelected ? 500 : 400 }}>
@@ -186,10 +189,10 @@ export default function CommandPalette() {
                         </div>
                         {isSelected && (
                           <span className="type-label flex items-center gap-1" style={{ color: 'var(--color-text-tertiary)' }}>
-                            Jump to <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>subdirectory_arrow_left</span>
+                            Open ↵
                           </span>
                         )}
-                      </div>
+                      </button>
                     );
                   })}
                 </div>

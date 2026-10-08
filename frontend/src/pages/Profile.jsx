@@ -4,9 +4,7 @@ import toast from 'react-hot-toast';
 import { AppShell } from '../components/AppShell';
 import { PageHeader, Panel } from '../components/workspace/Workspace';
 import { useMarketSession } from '../hooks/useMarketStatus';
-import { apiFetch } from '../lib/api';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+import { API_URL, apiFetch } from '../lib/api';
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -66,7 +64,7 @@ export default function Profile() {
         <div className="workspace-page__inner" style={{ maxWidth: 1000 }}>
           <PageHeader title="Profile" description="Personal details used inside your paper-trading workspace." session={session} actions={<button className="desk-button" type="button" onClick={signOut}>Sign out</button>} />
 
-          <div className="workspace-grid workspace-grid--two">
+          <div className="workspace-grid profile-layout">
             <Panel title="Trader profile" actions={!editing && <button className="desk-button" type="button" onClick={() => setEditing(true)}>Edit</button>}>
               <div className="profile-editor">
                 <div>

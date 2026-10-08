@@ -7,14 +7,13 @@ const User = require('../models/User');
 const AuthChallenge = require('../models/AuthChallenge');
 const fetchuser = require('../middleware/fetchuser');
 const { validateEmail, validatePassword, domainAcceptsEmail, normalizeEmail } = require('../security/emailPolicy');
+const { sessionCookiePolicy } = require('../security/sessionCookiePolicy');
 const { sendVerificationEmail } = require('../services/verificationEmail');
 
 const router = express.Router();
-const isProd = process.env.NODE_ENV === 'production';
-const ACCESS_COOKIE = isProd ? '__Host-pt_at' : 'pt_at';
-const REFRESH_COOKIE = isProd ? '__Host-pt_rt' : 'pt_rt';
-const ACCESS_TTL_MS = 15 * 60 * 1000;
-const REFRESH_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const cookiePolicy = sessionCookiePolicy();
+const ACCESS_COOKIE = cookiePolicy.accessName;
+const REFRESH_COOKIE = cookiePolicy.refreshName;
 const CHALLENGE_TTL_MS = 10 * 60 * 1000;
 const RESEND_COOLDOWN_MS = 60 * 1000;
 const MAX_CODE_ATTEMPTS = 5;
@@ -24,17 +23,14 @@ const DUMMY_PASSWORD_HASH = '$2b$12$pV4m4AoYxaJGmYh1eD6txuW1tQ3knC4YfLr7S0b5s3z2
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID?.trim());
 
 const refreshSecret = () => process.env.JWT_REFRESH_SECRET || `${process.env.JWT_SECRET}_refresh`;
-const cookieOptions = (maxAge, path = '/') => ({ httpOnly: true, secure: isProd, sameSite: isProd ? 'none' : 'lax', path, maxAge });
-const clearCookieOptions = (path = '/') => ({ httpOnly: true, secure: isProd, sameSite: isProd ? 'none' : 'lax', path });
-
 function setSessionCookies(res, accessToken, refreshToken) {
-  res.cookie(ACCESS_COOKIE, accessToken, cookieOptions(ACCESS_TTL_MS));
-  res.cookie(REFRESH_COOKIE, refreshToken, cookieOptions(REFRESH_TTL_MS, '/api/auth'));
+  res.cookie(ACCESS_COOKIE, accessToken, cookiePolicy.accessOptions);
+  res.cookie(REFRESH_COOKIE, refreshToken, cookiePolicy.refreshOptions);
 }
 
 function clearSessionCookies(res) {
-  res.clearCookie(ACCESS_COOKIE, clearCookieOptions());
-  res.clearCookie(REFRESH_COOKIE, clearCookieOptions('/api/auth'));
+  res.clearCookie(ACCESS_COOKIE, cookiePolicy.clearOptions);
+  res.clearCookie(REFRESH_COOKIE, cookiePolicy.clearOptions);
 }
 
 function signAccessToken(user) {
@@ -256,9 +252,25 @@ router.post('/refresh', async (req, res) => {
   }
 });
 
-router.post('/logout', fetchuser, async (req, res) => {
+router.post('/logout', async (req, res) => {
+  const accessToken = req.cookies?.[ACCESS_COOKIE];
+  const refreshToken = req.cookies?.[REFRESH_COOKIE];
+  let userId = null;
   try {
-    await User.findByIdAndUpdate(req.user.userId, { $inc: { sessionVersion: 1 }, $set: { refreshToken: '' } });
+    if (accessToken) {
+      const decoded = jwt.verify(accessToken, process.env.JWT_SECRET, { issuer: 'papertrade-api', audience: 'papertrade-web', ignoreExpiration: true });
+      if (decoded.type === 'access') userId = decoded.userId;
+    }
+  } catch { /* cookie clearing must still continue */ }
+  if (!userId && refreshToken) {
+    try {
+      const decoded = jwt.verify(refreshToken, refreshSecret(), { issuer: 'papertrade-api', audience: 'papertrade-web', ignoreExpiration: true });
+      if (decoded.type === 'refresh') userId = decoded.userId;
+    } catch { /* cookie clearing must still continue */ }
+  }
+
+  try {
+    if (userId) await User.findByIdAndUpdate(userId, { $inc: { sessionVersion: 1 }, $set: { refreshToken: '' } });
     clearSessionCookies(res);
     return res.json({ success: true, message: 'Logged out.' });
   } catch {

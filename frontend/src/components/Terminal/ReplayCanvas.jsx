@@ -116,7 +116,7 @@ const ReplayCanvas = memo(({ symbol, interval, targetDate, onPriceUpdate, onExit
   return (
     <div className="w-full h-full relative" style={{ background: 'var(--color-bg)' }}>
       {loading && (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm">
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/70">
           <div className="w-8 h-8 rounded-full border-2 border-border-strong border-t-accent animate-spin mb-3"></div>
           <p className="type-label">Loading historical replay data...</p>
         </div>

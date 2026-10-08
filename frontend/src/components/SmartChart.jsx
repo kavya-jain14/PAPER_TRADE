@@ -1,9 +1,7 @@
 import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { createChart, AreaSeries, CandlestickSeries } from 'lightweight-charts';
 import useMarketStatus from '../hooks/useMarketStatus';
-import { apiFetch } from '../lib/api';
-
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+import { API_URL as BASE_URL, apiFetch } from '../lib/api';
 
 // ── Safe series creators ───────────────────────────────────────────────────
 const addAreaSafe = (chart, options) => {
@@ -69,7 +67,7 @@ export const CandlestickModal = ({ symbol, onClose }) => {
       layout: {
         background:  { type: 'solid', color: '#000000' },
         textColor:   'rgba(229,229,229,0.4)',
-        fontFamily:  '"Roboto", sans-serif',
+        fontFamily:  '"General Sans", sans-serif',
         fontSize:    11,
       },
       grid: {
@@ -277,7 +275,7 @@ export const CandlestickModal = ({ symbol, onClose }) => {
     : '#eab308';
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-[100] flex flex-col" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/90 z-[100] flex flex-col" onClick={onClose}>
       <div
         className="flex flex-col w-full h-full max-w-7xl mx-auto"
         onClick={e => e.stopPropagation()}
@@ -286,14 +284,14 @@ export const CandlestickModal = ({ symbol, onClose }) => {
         <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-[#000000] shrink-0">
           <div className="flex items-center gap-4">
             <div>
-              <h2 className="text-xl font-black text-text-primary tracking-tight">{symbol}</h2>
-              <p className="text-[10px] text-text-secondary uppercase tracking-widest font-semibold mt-0.5">
+              <h2 className="type-h2">{symbol}</h2>
+              <p className="type-label mt-1">
                 Candlestick Chart · {marketStatus === 'UNKNOWN' ? '—' : marketStatus === 'LIVE' ? 'Live Market' : 'Simulation'} · 5m Candles
               </p>
             </div>
             {/* Status badges */}
             <div className="flex items-center gap-2 ml-4">
-              <div className="px-2.5 py-1 rounded-lg bg-[#141414] border border-border text-[9px] font-black text-text-secondary uppercase tracking-widest">
+              <div className="type-data-sm text-text-secondary">
                 {candleCount} candles
               </div>
             </div>
@@ -316,7 +314,7 @@ export const CandlestickModal = ({ symbol, onClose }) => {
               </div>
               {bias.bullishProbability != null && (
                 <div className="text-center">
-                  <p className="text-[8px] text-text-primary/30 uppercase tracking-widest font-bold">Bull%</p>
+                  <p className="text-[8px] text-text-primary/30 uppercase tracking-widest font-bold">Bull score</p>
                   <p className={`text-[11px] font-black font-mono mt-0.5 ${bias.bullishProbability > 50 ? 'text-green-400' : 'text-red-400'}`}>
                     {bias.bullishProbability}%
                   </p>
@@ -327,9 +325,10 @@ export const CandlestickModal = ({ symbol, onClose }) => {
 
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-lg bg-[#141414] hover:bg-[#222222] border border-border flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors"
+            className="w-9 h-9 flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors"
+            aria-label="Close candlestick chart"
           >
-            <span className="material-symbols-outlined text-[18px]">close</span>
+            <span aria-hidden="true" className="text-2xl leading-none">×</span>
           </button>
         </div>
 
@@ -416,7 +415,7 @@ const SmartChart = ({ symbol, currentPrice, isGreen, mini = false }) => {
       layout: {
         background:  { type: 'solid', color: 'transparent' },
         textColor:   'rgba(229,229,229,0.4)',
-        fontFamily:  '"Roboto", sans-serif',
+        fontFamily:  '"General Sans", sans-serif',
       },
       grid: {
         vertLines: { visible: !mini, color: 'rgba(42,35,24,0.6)' },

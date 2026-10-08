@@ -1,7 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { apiFetch } from '../lib/api';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+import { API_URL, apiFetch } from '../lib/api';
 
 export default function useChartData(symbol, interval, onTick) {
   const [history, setHistory]       = useState([]);

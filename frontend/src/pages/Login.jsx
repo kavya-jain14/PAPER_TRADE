@@ -232,6 +232,7 @@ export default function Login() {
       }
     } catch {
       setServerError('Network / server failure');
+    } finally {
       setIsSubmitting(false);
     }
   };

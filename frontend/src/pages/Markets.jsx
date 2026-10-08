@@ -5,9 +5,7 @@ import { AppShell } from '../components/AppShell';
 import TradeModal from '../components/TradeModal';
 import { PageHeader, Panel, SegmentedControl } from '../components/workspace/Workspace';
 import { useMarketSession } from '../hooks/useMarketStatus';
-import { apiFetch } from '../lib/api';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+import { API_URL, apiFetch } from '../lib/api';
 const STOCKS = ['RELIANCE', 'TCS', 'HDFCBANK', 'ICICIBANK', 'INFY', 'ITC', 'SBIN', 'BHARTIARTL', 'LT', 'AXISBANK'];
 const INDICES = ['NIFTY 50', 'SENSEX', 'NIFTY BANK'];
 const SECTOR = {

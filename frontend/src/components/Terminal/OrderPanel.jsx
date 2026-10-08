@@ -26,22 +26,22 @@ export default function OrderPanel({ symbol, quote, balance, ownedQty, isReplayM
 
       {/* ── SCROLLABLE FORM ─────────────────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-        <div 
-          className="flex p-1 rounded-md mb-6 transition-fast"
-          style={{ background: 'var(--color-bg)', border: '1px solid var(--color-border)' }}
+        <div
+          className="flex mb-6"
+          style={{ borderTop: '1px solid var(--color-border)', borderBottom: '1px solid var(--color-border)' }}
         >
           {['BUY', 'SELL'].map(s => (
             <button
               key={s}
               type="button"
               onClick={() => setSide(s)}
-              className="flex-1 py-1.5 rounded transition-all type-label"
+              className="flex-1 py-2 transition-colors type-label"
               style={{
-                background: side === s ? 'var(--color-surface-overlay)' : 'transparent',
+                background: 'transparent',
                 color: side === s
                   ? s === 'BUY' ? 'var(--color-positive)' : 'var(--color-negative)'
                   : 'var(--color-text-tertiary)',
-                boxShadow: side === s ? 'var(--shadow-1)' : 'none',
+                borderBottom: side === s ? `2px solid ${s === 'BUY' ? 'var(--color-positive)' : 'var(--color-negative)'}` : '2px solid transparent',
               }}
             >
               {s}
@@ -81,7 +81,7 @@ export default function OrderPanel({ symbol, quote, balance, ownedQty, isReplayM
           </div>
 
           {/* Price Summary */}
-          <div className="rounded-md p-3" style={{ background: 'var(--color-bg)', border: '1px solid var(--color-border)' }}>
+          <div className="py-3" style={{ borderTop: '1px solid var(--color-border)', borderBottom: '1px solid var(--color-border)' }}>
             <div className="flex justify-between items-baseline mb-2">
               <span className="type-label">Market Price</span>
               <span className="type-data-md">
@@ -108,7 +108,7 @@ export default function OrderPanel({ symbol, quote, balance, ownedQty, isReplayM
           <Button
             type="submit"
             size="lg"
-            className="w-full h-12 shadow-1"
+            className="w-full h-12"
             disabled={priceInvalid || (Number(qty) <= 0)}
             style={{ 
               background: priceInvalid ? 'var(--color-surface-raised)' : side === 'BUY' ? 'var(--color-positive)' : 'var(--color-negative)',
