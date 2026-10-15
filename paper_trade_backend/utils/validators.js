@@ -45,8 +45,10 @@ function normalizeInterval(interval) {
 }
 
 function validateQuantity(quantity) {
+  if (typeof quantity !== 'number' && typeof quantity !== 'string') return false;
+  if (typeof quantity === 'string' && quantity.trim() === '') return false;
   const qty = Number(quantity);
-  if (!Number.isFinite(qty) || qty <= 0 || !Number.isInteger(qty)) {
+  if (qty <= 0 || !Number.isSafeInteger(qty)) {
     return false;
   }
   return true;
