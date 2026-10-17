@@ -12,7 +12,7 @@ Run `npm test` in `paper_trade_backend`. The HTTP regression suite exercises the
 
 ## Remaining release gates
 
-- Bring current `main` changes into the auth branch and run backend and frontend checks again before merging.
+- Current `main` trade-quantity validation changes have been integrated into the auth branch and checked. Recheck for newer base changes before merging.
 - Check desktop and mobile previews for login, registration, verification, Study, and trading routes.
 - Verify production configuration exists without exposing values: MongoDB, independent JWT/verification secrets, Google client ID, Resend delivery credentials/sender, HTTPS allowed origins, and the frontend Google client ID.
 - In the preview environment, complete real Google sign-in and email registration/verification/resend/expiry, then reload and refresh the session through the same-origin `/api` proxy.
