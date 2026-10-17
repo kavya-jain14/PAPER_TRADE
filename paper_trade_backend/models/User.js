@@ -11,7 +11,7 @@ const UserSchema = new mongoose.Schema({
   profilePic:     { type: String, default: '' },    // URL (Google OAuth) or base64 (manual upload)
   avatar:         { type: String, default: '' },    // User-uploaded base64 avatar
   bio:            { type: String, default: '' },    // Short user bio
-  refreshToken:   { type: String, default: '' },    // Hashed refresh token
+  refreshToken:   { type: String, default: '' },    // Versioned SHA-256 refresh-token digest
   sessionVersion: { type: Number, default: 0 },
   failedLoginAttempts: { type: Number, default: 0 },
   lockedUntil:    { type: Date },

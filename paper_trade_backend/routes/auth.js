@@ -8,6 +8,7 @@ const AuthChallenge = require('../models/AuthChallenge');
 const fetchuser = require('../middleware/fetchuser');
 const { validateEmail, validatePassword, domainAcceptsEmail, normalizeEmail } = require('../security/emailPolicy');
 const { sessionCookiePolicy } = require('../security/sessionCookiePolicy');
+const { hashRefreshToken } = require('../security/refreshTokenHash');
 const { sendVerificationEmail } = require('../services/verificationEmail');
 
 const router = express.Router();
@@ -57,7 +58,7 @@ async function establishSession(userId) {
   );
   const accessToken = signAccessToken(user);
   const refreshToken = signRefreshToken(user);
-  user.refreshToken = await bcrypt.hash(refreshToken, 10);
+  user.refreshToken = hashRefreshToken(refreshToken);
   await user.save();
   return { user, accessToken, refreshToken };
 }
@@ -238,12 +239,16 @@ router.post('/refresh', async (req, res) => {
     if (decoded.type !== 'refresh') throw new Error('Unexpected token type');
     const user = await User.findById(decoded.userId);
     if (!user || !user.refreshToken || user.sessionVersion !== decoded.sessionVersion) throw new Error('Invalid session');
-    if (!(await bcrypt.compare(token, user.refreshToken))) throw new Error('Invalid refresh token');
-
     const accessToken = signAccessToken(user);
     const refreshToken = signRefreshToken(user);
-    user.refreshToken = await bcrypt.hash(refreshToken, 10);
-    await user.save();
+    // Compare and replace in one database operation. A token can be consumed
+    // only once, even when refresh requests overlap or logout revokes it.
+    const rotated = await User.findOneAndUpdate(
+      { _id: user._id, sessionVersion: decoded.sessionVersion, refreshToken: hashRefreshToken(token) },
+      { $set: { refreshToken: hashRefreshToken(refreshToken) } },
+      { new: true },
+    );
+    if (!rotated) throw new Error('Invalid or already rotated refresh token');
     setSessionCookies(res, accessToken, refreshToken);
     return res.json({ success: true });
   } catch {
