@@ -15,14 +15,14 @@ import React from 'react';
 
 export const Card = ({ className = '', variant = 'default', children, ...props }) => {
   const variants = {
-    default:  'bg-surface border border-border shadow-1',
+    default:  'bg-transparent border-y border-border',
     flat:     'bg-surface border border-border',
     ghost:    'border border-border bg-transparent',
-    elevated: 'bg-surface-raised border border-border shadow-2',
+    elevated: 'bg-surface-raised border border-border',
   };
 
   return (
-    <div className={`rounded-lg ${variants[variant]} ${className}`} {...props}>
+    <div className={`rounded-sm ${variants[variant]} ${className}`} {...props}>
       {children}
     </div>
   );
