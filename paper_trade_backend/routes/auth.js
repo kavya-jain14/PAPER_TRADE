@@ -82,8 +82,11 @@ async function createChallenge({ purpose, email, name = '', pendingPasswordHash 
   const now = Date.now();
   const recent = await AuthChallenge.findOne({ purpose, email, expiresAt: { $gt: new Date(now) } }).sort({ createdAt: -1 });
   const elapsed = recent ? now - new Date(recent.lastSentAt).getTime() : Infinity;
-  if (reuseRecent && recent && elapsed < RESEND_COOLDOWN_MS) {
-    return { challenge: recent, sent: false, retryAfter: Math.ceil((RESEND_COOLDOWN_MS - elapsed) / 1000) };
+  if (recent && elapsed < RESEND_COOLDOWN_MS) {
+    const retryAfter = Math.ceil((RESEND_COOLDOWN_MS - elapsed) / 1000);
+    // A fresh registration must never inherit another client's pending password.
+    if (!reuseRecent) return { cooldown: true, retryAfter };
+    return { challenge: recent, sent: false, retryAfter };
   }
 
   const challengeId = crypto.randomBytes(24).toString('hex');
@@ -128,7 +131,11 @@ router.post('/register', async (req, res) => {
     if (mx.temporaryFailure) return res.status(503).json({ code: 'EMAIL_CHECK_UNAVAILABLE', message: 'Email verification is temporarily unavailable. Try again.' });
 
     const pendingPasswordHash = await bcrypt.hash(String(req.body.password), 12);
-    const result = await createChallenge({ purpose: 'registration', email: emailCheck.email, name, pendingPasswordHash });
+    const result = await createChallenge({ purpose: 'registration', email: emailCheck.email, name, pendingPasswordHash, reuseRecent: false });
+    if (result.cooldown) {
+      res.set('Retry-After', String(result.retryAfter));
+      return res.status(429).json({ code: 'VERIFICATION_COOLDOWN', retryAfter: result.retryAfter, message: 'A registration code was recently sent. Wait a minute, then restart registration.' });
+    }
     return res.status(202).json(challengeResponse(result, 'Verification code sent.'));
   } catch (error) {
     console.error('[Register Error]:', error.message);

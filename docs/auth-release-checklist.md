@@ -10,6 +10,12 @@ Earlier bcrypt refresh hashes are intentionally rejected. Bcrypt only considers 
 
 Run `npm test` in `paper_trade_backend`. The HTTP regression suite exercises the actual Express login/refresh routes with in-memory User-model stubs. It covers full-token storage, old-token replay, simultaneous rotation, legacy hashes, revoked sessions, tampered signatures, and wrong token types. These tests do not prove live MongoDB or provider integration.
 
+## Registration challenges
+
+A fresh registration during the email's resend cooldown returns 429 with `VERIFICATION_COOLDOWN` and `Retry-After`, without returning the earlier challenge ID. Reusing that earlier challenge would also reuse its pending password, which may have been supplied by another client. After the cooldown, restart registration to create a challenge bound to the newly submitted password; the earlier challenge is invalidated. A client already holding its own challenge ID can still use the resend endpoint.
+
+The registration HTTP regressions cover initial verification, refusal to inherit an earlier registration, resend cooldown, and replacement after cooldown. Email delivery and database operations are stubbed; real delivery and MongoDB remain release gates below.
+
 ## Remaining release gates
 
 - Current `main` trade-quantity validation changes have been integrated into the auth branch and checked. Recheck for newer base changes before merging.
