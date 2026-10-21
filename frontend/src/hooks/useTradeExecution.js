@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+import { API_URL, apiFetch } from '../lib/api';
 
 /**
  * useTradeExecution — Manages trade math and API execution logic.
@@ -10,10 +9,9 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
  * @param {object} quote - Current quote object { price, priceMode, symbol, receivedAt }
  * @param {number} balance - User's available margin
  * @param {number} ownedQty - Units currently held by user
- * @param {string} token - Auth token
  * @param {function} onSuccess - Callback upon successful trade
  */
-export default function useTradeExecution(symbol, quote, balance, ownedQty, token, onSuccess, isReplayMode = false) {
+export default function useTradeExecution(symbol, quote, balance, ownedQty, onSuccess, isReplayMode = false) {
   const [qty, setQty] = useState('');
   const [side, setSide] = useState('BUY');
   const [aiFeedback, setAiFeedback] = useState(null);
@@ -81,9 +79,8 @@ export default function useTradeExecution(symbol, quote, balance, ownedQty, toke
 
     // ── LIVE TRADING ──
     try {
-      const res = await fetch(`${API_URL}/api/trade/${side === 'BUY' ? 'buy' : 'sell'}`, {
+      const res = await apiFetch(`${API_URL}/api/trade/${side === 'BUY' ? 'buy' : 'sell'}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'auth-token': token },
         body: JSON.stringify({ symbol, quantity: n }),
       });
       const d = await res.json();

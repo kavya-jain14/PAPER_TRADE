@@ -4,7 +4,6 @@
    All tokens live in @theme. Nothing is hardcoded anywhere else.
    ============================================================================= */
 
-@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..24,300..400,0,0');
 
 /* 2. TAILWIND v4 ENGINE ----------------------------------------------------- */
 @import "tailwindcss";
@@ -108,7 +107,7 @@
    --radius-full: 9999px;
 
    /* ── COLOR TOKENS ─────────────────────────────────────────────────────
-     Monochromatic dark palette.
+     Tonal warm-black palette with restrained semantic color.
      Background layers form a clear depth hierarchy without glow effects.
   ─────────────────────────────────────────────────────────────────────── */
    /* Backgrounds */
@@ -618,27 +617,47 @@ input[type="number"] {
 
 .workspace-grid {
    display: grid;
-   gap: 16px;
+   gap: 32px;
 }
 
 .workspace-grid--two {
    grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
 }
 
-.ledger-stats {
-   grid-template-columns: repeat(4, minmax(0, 1fr));
-}
+.portfolio-layout { grid-template-columns: minmax(0, 2.2fr) minmax(260px, 0.8fr); }
+.profile-layout { grid-template-columns: minmax(0, 1.55fr) minmax(280px, 0.75fr); }
+.desk-layout { grid-template-columns: minmax(0, 1.7fr) minmax(270px, 0.65fr); }
 
 .market-index-grid {
    grid-template-columns: repeat(3, minmax(0, 1fr));
+   gap: 0;
+   margin-bottom: 28px !important;
+   border-top: 1px solid var(--color-border);
+   border-bottom: 1px solid var(--color-border);
 }
 
 .workspace-panel {
    min-width: 0;
    overflow: hidden;
+   background: transparent;
+   border-top: 1px solid var(--color-border);
+   border-bottom: 1px solid var(--color-border);
+   border-radius: 0;
+}
+
+.workspace-panel--contained {
    background: var(--color-surface);
    border: 1px solid var(--color-border);
-   border-radius: var(--radius-lg);
+   border-radius: var(--radius-md);
+}
+
+.market-index-grid > .workspace-panel {
+   border: 0;
+   border-right: 1px solid var(--color-border);
+}
+
+.market-index-grid > .workspace-panel:last-child {
+   border-right: 0;
 }
 
 .workspace-panel__header {
@@ -656,6 +675,50 @@ input[type="number"] {
    color: var(--color-text-primary);
    font-size: var(--text-body);
    font-weight: 600;
+}
+
+.metric-strip {
+   display: grid;
+   grid-template-columns: repeat(var(--metric-columns), minmax(0, 1fr));
+   margin: 0 0 28px;
+   border-top: 1px solid var(--color-border);
+   border-bottom: 1px solid var(--color-border);
+}
+
+.metric-strip__item {
+   min-width: 0;
+   padding: 18px 20px;
+   border-right: 1px solid var(--color-border);
+}
+
+.metric-strip__item:last-child {
+   border-right: 0;
+}
+
+.metric-strip dt {
+   color: var(--color-text-tertiary);
+   font-size: var(--text-label);
+   font-weight: 500;
+   letter-spacing: var(--tracking-metadata);
+   text-transform: uppercase;
+}
+
+.metric-strip dd {
+   margin: 7px 0 0;
+   color: var(--color-text-primary);
+   font-family: var(--font-mono);
+   font-size: clamp(17px, 2vw, 22px);
+   font-variant-numeric: tabular-nums;
+}
+
+.metric-strip dd.is-positive { color: var(--color-positive); }
+.metric-strip dd.is-negative { color: var(--color-negative); }
+
+.metric-strip small {
+   display: block;
+   margin-top: 5px;
+   color: var(--color-text-tertiary);
+   font-size: 10px;
 }
 
 .workspace-panel__header p {
@@ -796,14 +859,14 @@ input[type="number"] {
 }
 
 .empty-desk {
-   min-height: 180px;
+   min-height: 140px;
    display: flex;
    flex-direction: column;
-   align-items: center;
+   align-items: flex-start;
    justify-content: center;
    gap: 5px;
-   padding: 32px;
-   text-align: center;
+   padding: 32px 18px;
+   text-align: left;
 }
 
 .empty-desk strong {
@@ -818,11 +881,63 @@ input[type="number"] {
    font-size: var(--text-caption);
 }
 
-.study-layout {
+.study-spread {
    display: grid;
-   grid-template-columns: minmax(300px, 0.85fr) minmax(0, 1.65fr);
-   gap: 16px;
-   align-items: start;
+   grid-template-columns: minmax(280px, 0.72fr) minmax(0, 1.8fr);
+   min-height: 610px;
+   border-top: 1px solid var(--color-border);
+   border-bottom: 1px solid var(--color-border);
+}
+
+.study-spread--patterns { min-height: 720px; }
+
+.study-index {
+   min-width: 0;
+   border-right: 1px solid var(--color-border);
+}
+
+.study-detail { min-width: 0; }
+
+.study-section-heading {
+   min-height: 68px;
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   gap: 20px;
+   padding: 14px 18px;
+   border-bottom: 1px solid var(--color-border);
+}
+
+.study-section-heading h2,
+.study-section-heading p { margin: 0; }
+
+.study-section-heading h2 {
+   color: var(--color-text-primary);
+   font-size: var(--text-body);
+   font-weight: 600;
+}
+
+.study-section-heading p:not(.type-label),
+.study-section-heading > span {
+   margin-top: 3px;
+   color: var(--color-text-tertiary);
+   font-family: var(--font-mono);
+   font-size: 10px;
+}
+
+.study-toolbar {
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   gap: 12px;
+   margin-bottom: 20px;
+}
+
+.study-index__scroll {
+   max-height: 652px;
+   overflow-y: auto;
+   scrollbar-width: thin;
+   scrollbar-color: var(--color-border-strong) transparent;
 }
 
 .study-row {
@@ -842,7 +957,11 @@ input[type="number"] {
 
 .study-row:hover,
 .study-row.is-active {
-   background: var(--color-surface-elevated);
+   background: rgba(188, 116, 48, 0.055);
+}
+
+.study-row.is-active {
+   box-shadow: inset 2px 0 0 var(--color-accent);
 }
 
 .study-row > span,
@@ -877,7 +996,107 @@ input[type="number"] {
 
 .study-article,
 .pattern-study {
-   padding: 24px;
+   padding: 28px 32px 36px;
+}
+
+.pattern-canvas { border-bottom: 1px solid var(--color-border); }
+
+.pattern-canvas__toolbar,
+.pattern-canvas__footer {
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   gap: 16px;
+}
+
+.pattern-canvas__toolbar { padding: 14px 18px; }
+
+.pattern-canvas__toolbar p {
+   margin: 3px 0 0;
+   color: var(--color-text-tertiary);
+   font-family: var(--font-mono);
+   font-size: 10px;
+}
+
+.pattern-canvas__actions {
+   display: flex;
+   align-items: center;
+   gap: 8px;
+}
+
+.pattern-canvas__plot {
+   padding: 0 10px;
+   overflow-x: auto;
+   background: linear-gradient(180deg, rgba(244, 238, 230, 0.012), transparent 72%);
+}
+
+.pattern-canvas__plot svg {
+   width: 100%;
+   min-width: 680px;
+   height: auto;
+   display: block;
+}
+
+.pattern-grid-line { stroke: rgba(244, 238, 230, 0.055); stroke-width: 1; }
+.pattern-boundary { stroke: rgba(188, 116, 48, 0.38); stroke-width: 1; stroke-dasharray: 4 5; }
+
+.pattern-axis-label,
+.pattern-segment-label {
+   fill: var(--color-text-tertiary);
+   font-family: var(--font-mono);
+   font-size: 9px;
+   letter-spacing: 0.08em;
+}
+
+.pattern-segment-label.is-focus { fill: var(--color-accent); }
+
+.pattern-canvas__footer {
+   padding: 11px 18px 14px;
+   color: var(--color-text-tertiary);
+   font-size: 10px;
+}
+
+.pattern-canvas__footer > div {
+   width: 120px;
+   height: 2px;
+   overflow: hidden;
+   background: var(--color-border);
+}
+
+.pattern-canvas__footer i {
+   display: block;
+   height: 100%;
+   background: var(--color-accent);
+   transition: width 100ms linear;
+}
+
+.nav-mark,
+.command-mark,
+.mobile-sheet-row > span {
+   width: 24px;
+   flex: 0 0 24px;
+   color: var(--color-text-tertiary);
+   font-family: var(--font-mono);
+   font-size: 10px;
+   letter-spacing: 0.08em;
+}
+
+.mobile-sheet-row {
+   width: 100%;
+   display: flex;
+   align-items: center;
+   gap: 12px;
+   padding: 12px;
+   border: 0;
+   border-bottom: 1px solid var(--color-border);
+   background: transparent;
+   color: var(--color-text-secondary);
+   font-size: var(--text-body);
+   text-align: left;
+}
+
+.command-mark {
+   color: var(--color-accent);
 }
 
 .profile-editor {
@@ -1281,25 +1500,47 @@ input[type="number"] {
 
 .pattern-study {
    display: grid;
-   grid-template-columns: minmax(0, 1fr) minmax(280px, 0.9fr);
-   gap: 24px;
+   grid-template-columns: minmax(0, 0.9fr) minmax(320px, 1.1fr);
+   gap: 40px;
 }
 
 @media (max-width: 900px) {
    .workspace-page { padding: 16px; padding-bottom: 88px; }
    .workspace-header { align-items: flex-start; flex-direction: column; }
    .workspace-header__aside { width: 100%; justify-content: space-between; }
-   .workspace-grid--two { grid-template-columns: 1fr; }
-   .ledger-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+   .workspace-grid--two,
+   .portfolio-layout,
+   .profile-layout,
+   .desk-layout { grid-template-columns: 1fr; }
+   .metric-strip { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+   .metric-strip__item:nth-child(2n) { border-right: 0; }
+   .metric-strip__item:nth-child(-n + 2) { border-bottom: 1px solid var(--color-border); }
    .market-index-grid { grid-template-columns: 1fr; }
-   .study-layout,
+   .market-index-grid > .workspace-panel {
+      border-right: 0;
+      border-bottom: 1px solid var(--color-border);
+   }
+   .market-index-grid > .workspace-panel:last-child { border-bottom: 0; }
+   .study-spread,
    .pattern-study { grid-template-columns: 1fr; }
+   .study-spread { min-height: 0; }
+   .study-index { border-right: 0; border-bottom: 1px solid var(--color-border); }
+   .study-index__scroll { max-height: 340px; }
 }
 
 @media (max-width: 560px) {
    .workspace-header__aside { align-items: flex-start; flex-direction: column; }
    .segmented-control { max-width: 100%; overflow-x: auto; }
    .workspace-panel__header { align-items: flex-start; flex-direction: column; }
-   .ledger-stats { grid-template-columns: 1fr; }
+   .metric-strip { grid-template-columns: 1fr !important; }
+   .metric-strip__item,
+   .metric-strip__item:nth-child(2n) { border-right: 0; border-bottom: 1px solid var(--color-border); }
+   .metric-strip__item:last-child { border-bottom: 0; }
    .profile-editor { grid-template-columns: 1fr; }
+   .study-toolbar,
+   .pattern-canvas__toolbar { align-items: stretch; flex-direction: column; }
+   .study-toolbar .desk-input { width: 100%; }
+   .pattern-canvas__actions { justify-content: space-between; }
+   .study-article,
+   .pattern-study { padding: 22px 18px 28px; }
 }
