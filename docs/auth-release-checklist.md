@@ -16,6 +16,10 @@ A fresh registration during the email's resend cooldown returns 429 with `VERIFI
 
 The registration HTTP regressions cover initial verification, refusal to inherit an earlier registration, resend cooldown, and replacement after cooldown. Email delivery and database operations are stubbed; real delivery and MongoDB remain release gates below.
 
+Email verification now reserves each attempt with a conditional MongoDB increment, capped at five attempts. A matching code must then atomically consume its unexpired challenge before creating an account or establishing a session. Concurrent requests cannot reuse the code. An exhausted challenge returns 429 until its expiry; an already consumed or expired challenge returns 410. If a later account/session write fails, restart verification to obtain a new challenge.
+
+For the isolated MongoDB HTTP regressions, run `PAPERTRADE_TEST_MONGODB_URI=mongodb://127.0.0.1:27017/ node --test test/authVerification.integration.test.js` from `paper_trade_backend` with a local MongoDB instance. The URI must be loopback-only, with no credentials or database path. The suite creates a random `papertrade_auth_test_*` database, uses real Mongoose writes, and drops only that test database afterward. It covers eight competing wrong codes, competing registration and existing-account verification, replay, fifth-attempt success, and expiry. Without the variable, this suite is explicitly skipped. Local database results do not prove production/provider integration.
+
 ## Remaining release gates
 
 - Current `main` trade-quantity validation changes have been integrated into the auth branch and checked. Recheck for newer base changes before merging.

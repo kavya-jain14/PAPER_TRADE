@@ -149,29 +149,36 @@ router.post('/verify-email', async (req, res) => {
     const code = String(req.body?.code || '').replace(/\D/g, '');
     if (!/^[a-f0-9]{48}$/.test(challengeId) || !/^\d{6}$/.test(code)) return res.status(400).json({ code: 'INVALID_CODE', message: 'Enter the 6-digit code.' });
 
-    const challenge = await AuthChallenge.findOne({ challengeId });
-    if (!challenge || challenge.expiresAt <= new Date()) return res.status(410).json({ code: 'CODE_EXPIRED', message: 'This code has expired. Request a new one.' });
-    if (challenge.attempts >= MAX_CODE_ATTEMPTS) {
-      await AuthChallenge.deleteOne({ _id: challenge._id });
+    // Reserve one of the allowed attempts in MongoDB, including when requests overlap.
+    const challenge = await AuthChallenge.findOneAndUpdate(
+      { challengeId, expiresAt: { $gt: new Date() }, attempts: { $lt: MAX_CODE_ATTEMPTS } },
+      { $inc: { attempts: 1 } },
+      { returnDocument: 'after' },
+    );
+    if (!challenge) {
+      const previous = await AuthChallenge.findOne({ challengeId });
+      if (!previous || previous.expiresAt <= new Date()) return res.status(410).json({ code: 'CODE_EXPIRED', message: 'This code has expired. Request a new one.' });
       return res.status(429).json({ code: 'CODE_ATTEMPTS_EXCEEDED', message: 'Too many incorrect attempts. Request a new code.' });
     }
     if (!codeMatches(challenge, code)) {
-      challenge.attempts += 1;
-      await challenge.save();
       const left = MAX_CODE_ATTEMPTS - challenge.attempts;
       return res.status(400).json({ code: 'INVALID_CODE', message: `Incorrect code. ${left} attempt${left === 1 ? '' : 's'} left.` });
     }
 
+    // Consume the challenge before account/session writes. Only one request can win.
+    const consumed = await AuthChallenge.findOneAndDelete({
+      _id: challenge._id, codeHash: challenge.codeHash, expiresAt: { $gt: new Date() },
+    });
+    if (!consumed) return res.status(410).json({ code: 'CODE_EXPIRED', message: 'This code has expired. Request a new one.' });
+
     if (challenge.purpose === 'registration') {
       if (await User.exists({ email: challenge.email })) {
-        await AuthChallenge.deleteOne({ _id: challenge._id });
         return res.status(409).json({ code: 'ACCOUNT_EXISTS', message: 'An account already exists for this email.' });
       }
       const user = await User.create({
         name: challenge.name, email: challenge.email, password: challenge.pendingPasswordHash,
         authProvider: 'local', emailVerified: true, emailVerifiedAt: new Date(),
       });
-      await AuthChallenge.deleteOne({ _id: challenge._id });
       return res.status(201).json({ success: true, registered: true, user: safeUser(user), message: 'Email verified. Your account is ready.' });
     }
 
@@ -180,7 +187,6 @@ router.post('/verify-email', async (req, res) => {
     user.emailVerified = true;
     user.emailVerifiedAt = new Date();
     await user.save();
-    await AuthChallenge.deleteOne({ _id: challenge._id });
     const session = await establishSession(user._id);
     setSessionCookies(res, session.accessToken, session.refreshToken);
     return res.json({ success: true, authenticated: true, user: safeUser(session.user) });

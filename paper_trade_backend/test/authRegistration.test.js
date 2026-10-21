@@ -41,6 +41,17 @@ before(async () => {
   mock.method(AuthChallenge, 'deleteOne', async (filter) => {
     challenges = challenges.filter((item) => item._id !== filter._id);
   });
+  mock.method(AuthChallenge, 'findOneAndUpdate', async (filter, update) => {
+    const challenge = challenges.find((item) => item.challengeId === filter.challengeId && item.expiresAt > filter.expiresAt.$gt && item.attempts < filter.attempts.$lt);
+    if (!challenge) return null;
+    challenge.attempts += update.$inc.attempts;
+    return challenge;
+  });
+  mock.method(AuthChallenge, 'findOneAndDelete', async (filter) => {
+    const challenge = challenges.find((item) => item._id === filter._id && item.codeHash === filter.codeHash && item.expiresAt > filter.expiresAt.$gt);
+    if (challenge) challenges = challenges.filter((item) => item !== challenge);
+    return challenge || null;
+  });
   mock.method(AuthChallenge, 'create', async (values) => {
     const challenge = { _id: `challenge-${++nextId}`, createdAt: new Date(), ...values, async save() {} };
     challenges.push(challenge);
