@@ -33,6 +33,12 @@ before(async () => {
     return snapshot();
   });
   mock.method(User, 'findOneAndUpdate', async (filter, update) => {
+    if (filter._id === record._id && filter.$or) {
+      if (record.lockedUntil && record.lockedUntil > filter.$or[1].lockedUntil.$lte) return null;
+      record.sessionVersion += update.$inc?.sessionVersion || 0;
+      Object.assign(record, update.$set);
+      return snapshot();
+    }
     if (filter._id !== record._id || filter.sessionVersion !== record.sessionVersion || filter.refreshToken !== record.refreshToken) return null;
     Object.assign(record, update.$set);
     return snapshot();

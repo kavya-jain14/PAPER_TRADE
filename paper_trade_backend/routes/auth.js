@@ -50,12 +50,41 @@ function signRefreshToken(user) {
   );
 }
 
-async function establishSession(userId) {
-  const user = await User.findByIdAndUpdate(
-    userId,
-    { $inc: { sessionVersion: 1 }, $set: { failedLoginAttempts: 0, lockedUntil: null } },
-    { new: true },
+function unlockedAccount(now) {
+  return { $or: [{ lockedUntil: null }, { lockedUntil: { $lte: now } }] };
+}
+
+async function recordFailedLogin(userId) {
+  const now = new Date();
+  // Increment against current database state. Active locks neither advance nor extend;
+  // an expired lock begins a new attempt window in the same atomic write.
+  await User.updateOne(
+    { _id: userId, ...unlockedAccount(now) },
+    [
+      { $set: {
+        failedLoginAttempts: { $min: [MAX_LOGIN_ATTEMPTS, { $add: [
+          { $cond: [
+            { $and: [{ $ne: [{ $ifNull: ['$lockedUntil', null] }, null] }, { $lte: ['$lockedUntil', now] }] },
+            0, { $ifNull: ['$failedLoginAttempts', 0] },
+          ] },
+          1,
+        ] }] },
+        lockedUntil: null,
+      } },
+      { $set: { lockedUntil: { $cond: [
+        { $gte: ['$failedLoginAttempts', MAX_LOGIN_ATTEMPTS] }, new Date(now.getTime() + LOCK_DURATION_MS), null,
+      ] } } },
+    ],
+    { updatePipeline: true },
   );
+}
+
+async function establishSession(userId, requireUnlocked = false) {
+  const update = { $inc: { sessionVersion: 1 }, $set: { failedLoginAttempts: 0, lockedUntil: null } };
+  const user = requireUnlocked
+    ? await User.findOneAndUpdate({ _id: userId, ...unlockedAccount(new Date()) }, update, { returnDocument: 'after' })
+    : await User.findByIdAndUpdate(userId, update, { returnDocument: 'after' });
+  if (!user) return null;
   const accessToken = signAccessToken(user);
   const refreshToken = signRefreshToken(user);
   user.refreshToken = hashRefreshToken(refreshToken);
@@ -220,12 +249,7 @@ router.post('/login', async (req, res) => {
     const user = await User.findOne({ email });
     const passwordMatches = await bcrypt.compare(password, user?.password || DUMMY_PASSWORD_HASH).catch(() => false);
     if (!user || !user.password || !passwordMatches) {
-      if (user) {
-        const attempts = (user.failedLoginAttempts || 0) + 1;
-        const update = { failedLoginAttempts: attempts };
-        if (attempts >= MAX_LOGIN_ATTEMPTS) update.lockedUntil = new Date(Date.now() + LOCK_DURATION_MS);
-        await User.findByIdAndUpdate(user._id, { $set: update });
-      }
+      if (user) await recordFailedLogin(user._id);
       return res.status(401).json({ code: 'INVALID_CREDENTIALS', message: 'Invalid email or password.' });
     }
     if (user.lockedUntil && user.lockedUntil > new Date()) return res.status(429).json({ code: 'ACCOUNT_LOCKED', message: 'Too many failed attempts. Try again in 15 minutes.' });
@@ -235,7 +259,8 @@ router.post('/login', async (req, res) => {
       return res.status(403).json(challengeResponse(result, 'Verify your email to finish signing in.'));
     }
 
-    const session = await establishSession(user._id);
+    const session = await establishSession(user._id, true);
+    if (!session) return res.status(429).json({ code: 'ACCOUNT_LOCKED', message: 'Too many failed attempts. Try again in 15 minutes.' });
     setSessionCookies(res, session.accessToken, session.refreshToken);
     return res.json({ success: true, user: safeUser(session.user) });
   } catch (error) {

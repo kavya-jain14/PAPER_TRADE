@@ -20,6 +20,12 @@ Email verification now reserves each attempt with a conditional MongoDB incremen
 
 For the isolated MongoDB HTTP regressions, run `PAPERTRADE_TEST_MONGODB_URI=mongodb://127.0.0.1:27017/ node --test test/authVerification.integration.test.js` from `paper_trade_backend` with a local MongoDB instance. The URI must be loopback-only, with no credentials or database path. The suite creates a random `papertrade_auth_test_*` database, uses real Mongoose writes, and drops only that test database afterward. It covers eight competing wrong codes, competing registration and existing-account verification, replay, fifth-attempt success, and expiry. Without the variable, this suite is explicitly skipped. Local database results do not prove production/provider integration.
 
+## Password login lockout
+
+Failed passwords update the current MongoDB counter atomically instead of overwriting it from an earlier account read. Five failures acquire a 15-minute lock. Wrong passwords still return the generic 401 response, but requests during an active lock neither increase the counter nor extend the deadline. After expiry, the next failure starts a fresh attempt window. A valid password establishes a session only if the account is still unlocked in the same database operation that resets the counter; a delayed valid-password request cannot clear a lock acquired while its password comparison was pending.
+
+Run `PAPERTRADE_TEST_MONGODB_URI=mongodb://127.0.0.1:27017/ node --test test/authLogin.integration.test.js` from `paper_trade_backend`. This uses the same loopback-only URI restrictions and per-suite random database cleanup as the verification suite. Its four real MongoDB HTTP regressions cover eight overlapping wrong passwords, active-lock preservation, expiry recovery and a delayed valid password racing the fifth failure. Run both optional suites and the default tests together by setting the variable with `npm run check`. These isolated checks do not establish production/provider behavior.
+
 ## Remaining release gates
 
 - Current `main` trade-quantity validation changes have been integrated into the auth branch and checked. Recheck for newer base changes before merging.
