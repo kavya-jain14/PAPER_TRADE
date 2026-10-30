@@ -162,12 +162,12 @@ const ChartCanvas = memo(forwardRef(({ symbol, interval, quote }, ref) => {
   return (
     <div className="w-full h-full relative" style={{ background: 'var(--color-bg)' }}>
       {marketMode === 'UNKNOWN' ? (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-bg/80 backdrop-blur-sm">
-          <span className="material-symbols-outlined text-text-tertiary mb-2 text-2xl">schedule</span>
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-bg/90">
+          <span className="type-data-sm text-text-tertiary mb-2" aria-hidden="true">NSE</span>
           <p className="type-label text-text-tertiary">Checking market status…</p>
         </div>
       ) : loading && (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm">
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/70">
           <div className="w-8 h-8 rounded-full border-2 border-border-strong border-t-accent animate-spin mb-3"></div>
           <p className="type-label">Loading {interval} data...</p>
         </div>

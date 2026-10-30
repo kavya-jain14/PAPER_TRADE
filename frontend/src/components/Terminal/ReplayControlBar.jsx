@@ -42,15 +42,14 @@ export default function ReplayControlBar({
     <AnimatePresence>
       {active && (
         <Motion.div
-          initial={{ y: 100, opacity: 0, scale: 0.95 }}
-          animate={{ y: 0, opacity: 1, scale: 1 }}
-          exit={{ y: 100, opacity: 0, scale: 0.95 }}
-          transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-          className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 rounded-lg shadow-3 border flex flex-col overflow-hidden"
+          initial={{ y: 18, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: 18, opacity: 0 }}
+          transition={{ duration: 0.18, ease: 'easeOut' }}
+          className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 border flex flex-col overflow-hidden"
           style={{ 
             background: 'var(--color-surface-overlay)', 
             borderColor: 'var(--color-border-strong)',
-            backdropFilter: 'blur(12px)',
             minWidth: '320px'
           }}
         >
@@ -65,12 +64,12 @@ export default function ReplayControlBar({
           <div className="flex items-center justify-between px-4 py-3 gap-6">
             
             {/* Speed Controls */}
-            <div className="flex items-center gap-1 bg-surface-raised p-1 rounded-md border border-border">
+            <div className="flex items-center border-b border-border" role="group" aria-label="Replay speed">
               {[1, 3, 10].map(s => (
                 <button
                   key={s}
                   onClick={() => setSpeed(s)}
-                  className={`type-caption px-2 py-1 rounded transition-colors ${speedMultiplier === s ? 'bg-surface text-accent shadow-1' : 'text-text-tertiary hover:text-text-primary'}`}
+                  className={`type-caption px-2 py-1 border-b-2 transition-colors ${speedMultiplier === s ? 'border-accent text-accent' : 'border-transparent text-text-tertiary hover:text-text-primary'}`}
                 >
                   {s}x
                 </button>
@@ -81,28 +80,25 @@ export default function ReplayControlBar({
             <div className="flex items-center gap-2">
               <button 
                 onClick={togglePlay}
-                className="w-10 h-10 rounded-full flex items-center justify-center bg-accent text-bg shadow-1 hover:brightness-110 transition-all"
+                className="h-9 px-3 flex items-center justify-center bg-accent text-bg type-caption hover:brightness-110 transition-colors"
                 title="Play/Pause (Space)"
               >
-                <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
-                  {isPlaying ? 'pause' : 'play_arrow'}
-                </span>
+                {isPlaying ? 'Pause' : 'Play'}
               </button>
               <button 
                 onClick={stepForward}
-                className="w-10 h-10 rounded-full flex items-center justify-center bg-surface-raised text-text-secondary hover:text-text-primary hover:bg-surface border border-border transition-all"
+                className="h-9 px-3 flex items-center justify-center text-text-secondary hover:text-text-primary border border-border transition-colors type-caption"
                 title="Step Forward (Right Arrow)"
               >
-                <span className="material-symbols-outlined">skip_next</span>
+                Step
               </button>
             </div>
 
             {/* Exit/Close */}
             <button 
               onClick={onExit}
-              className="flex items-center gap-1 type-caption text-negative hover:brightness-125 transition-colors px-2 py-1 rounded hover:bg-negative/10"
+              className="type-caption text-negative hover:brightness-125 transition-colors px-2 py-1"
             >
-              <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>power_settings_new</span>
               Exit Replay
             </button>
           </div>

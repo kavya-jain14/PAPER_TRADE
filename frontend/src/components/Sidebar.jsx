@@ -7,27 +7,28 @@
  * - Sidebar blends into the app background (no separate surface color).
  * - Single right border divides sidebar from content. No duplicate borders.
  * - User section: inline, not a card. No decorative container.
- * - Footer: Legal/Support/Logout aligned flat, no icons except logout.
+ * - Typographic route markers replace generic iconography.
+ * - Footer: Legal/Support/Logout aligned flat.
  */
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { LayoutGrid, LineChart, PieChart, History, GraduationCap, Trophy, MessageSquareText, Menu, User, FileText, LifeBuoy, LogOut, X } from 'lucide-react';
+import { apiFetch } from '../lib/api';
 
 const NAV_ITEMS = [
-  { path: '/dashboard', icon: LayoutGrid,  label: 'Dashboard' },
-  { path: '/markets',   icon: LineChart,   label: 'Markets'   },
-  { path: '/portfolio', icon: PieChart,    label: 'Portfolio' },
-  { path: '/history',   icon: History,     label: 'Ledger'    },
-  { path: '/academy',   icon: GraduationCap, label: 'Study'   },
-  { path: '/leaderboard', icon: Trophy,    label: 'Rankings'  },
-  { path: '/ai',        icon: MessageSquareText, label: 'Market Desk'  },
+  { path: '/dashboard', mark: '01', label: 'Dashboard' },
+  { path: '/markets', mark: '02', label: 'Markets' },
+  { path: '/portfolio', mark: '03', label: 'Portfolio' },
+  { path: '/history', mark: '04', label: 'Ledger' },
+  { path: '/study', mark: '05', label: 'Study' },
+  { path: '/leaderboard', mark: '06', label: 'Rankings' },
+  { path: '/desk', mark: '07', label: 'Market Desk' },
 ];
 
 const MOBILE_NAV_ITEMS = [
-  { path: '/dashboard', icon: LayoutGrid, label: 'Dashboard' },
-  { path: '/markets',   icon: LineChart,  label: 'Markets' },
-  { path: '/portfolio', icon: PieChart,   label: 'Portfolio' },
-  { path: '/history',   icon: History,    label: 'Ledger' },
+  { path: '/dashboard', mark: 'DB', label: 'Dashboard' },
+  { path: '/markets', mark: 'MK', label: 'Markets' },
+  { path: '/portfolio', mark: 'PF', label: 'Portfolio' },
+  { path: '/history', mark: 'LD', label: 'Ledger' },
 ];
 
 /* ── Mobile bottom navigation ─────────────────────────────────────────────── */
@@ -87,21 +88,20 @@ export function MobileBottomNav() {
 
   const handleLinkClick = () => closeMore();
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
+  const handleLogout = async () => {
+    try { await apiFetch('/api/auth/logout', { method: 'POST' }); } catch { /* navigation still proceeds */ }
     navigate('/login');
   };
 
   return (
     <>
       <nav
-        className="md:hidden fixed bottom-0 left-0 right-0 z-50 backdrop-blur-md border-t"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t"
         style={{ background: 'rgba(12,12,12,0.96)', borderColor: 'var(--color-border)' }}
         aria-label="Mobile navigation"
       >
         <div className="flex items-stretch h-16">
-          {MOBILE_NAV_ITEMS.map(({ path, icon, label }) => {
-            const Icon = icon;
+          {MOBILE_NAV_ITEMS.map(({ path, mark, label }) => {
             const isActive = location.pathname === path;
             return (
               <Link
@@ -111,7 +111,7 @@ export function MobileBottomNav() {
                 className="flex-1 flex flex-col items-center justify-center gap-1 transition-colors"
                 style={{ color: isActive ? 'var(--color-text-primary)' : 'var(--color-text-tertiary)' }}
               >
-                <Icon size={20} strokeWidth={isActive ? 2 : 1.5} className="shrink-0" />
+                <span className="nav-mark" aria-hidden="true">{mark}</span>
                 <span style={{ fontSize: '10px', fontWeight: isActive ? 500 : 400, color: isActive ? 'var(--color-text-secondary)' : 'var(--color-text-tertiary)' }}>
                   {label}
                 </span>
@@ -130,7 +130,7 @@ export function MobileBottomNav() {
             className="flex-1 flex flex-col items-center justify-center gap-1 transition-colors"
             style={{ color: isMoreOpen ? 'var(--color-text-primary)' : 'var(--color-text-tertiary)', background: 'none', border: 'none', cursor: 'pointer' }}
           >
-            {isMoreOpen ? <X size={20} strokeWidth={2} className="shrink-0" /> : <Menu size={20} strokeWidth={1.5} className="shrink-0" />}
+            <span className="nav-mark" aria-hidden="true">{isMoreOpen ? '×' : '••'}</span>
             <span style={{ fontSize: '10px', fontWeight: isMoreOpen ? 500 : 400, color: isMoreOpen ? 'var(--color-text-secondary)' : 'var(--color-text-tertiary)' }}>
               More
             </span>
@@ -143,7 +143,7 @@ export function MobileBottomNav() {
         /* Backdrop */
         <div
           className="md:hidden fixed inset-0 z-40"
-          style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+          style={{ background: 'rgba(0,0,0,0.72)' }}
           aria-hidden="true"
           onClick={closeMore}
         />
@@ -155,44 +155,33 @@ export function MobileBottomNav() {
         role="dialog"
         aria-modal="true"
         aria-label="More navigation options"
-        className="md:hidden fixed left-0 right-0 z-50 rounded-t-2xl border-t"
+        aria-hidden={!isMoreOpen}
+        inert={!isMoreOpen}
+        className="md:hidden fixed left-0 right-0 z-50 border-t"
         style={{
           bottom: '64px', // sits above the 64px nav bar
           background: 'var(--color-surface)',
           borderColor: 'var(--color-border)',
-          boxShadow: 'var(--shadow-3)',
           transform: isMoreOpen ? 'translateY(0)' : 'translateY(110%)',
           transition: 'transform 200ms cubic-bezier(0.2,0,0,1)',
           pointerEvents: isMoreOpen ? 'auto' : 'none',
         }}
       >
         <div style={{ padding: '8px' }}>
-          <Link ref={firstFocusRef} to="/academy" onClick={handleLinkClick} className="flex items-center gap-3 p-3 rounded-lg hover:bg-surface-raised transition-colors type-body">
-            <GraduationCap size={20} strokeWidth={1.5} style={{ color: 'var(--color-text-secondary)', flexShrink: 0 }} /> Academy
-          </Link>
-          <Link to="/leaderboard" onClick={handleLinkClick} className="flex items-center gap-3 p-3 rounded-lg hover:bg-surface-raised transition-colors type-body">
-            <Trophy size={20} strokeWidth={1.5} style={{ color: 'var(--color-text-secondary)', flexShrink: 0 }} /> Rankings
-          </Link>
-          <Link to="/ai" onClick={handleLinkClick} className="flex items-center gap-3 p-3 rounded-lg hover:bg-surface-raised transition-colors type-body">
-            <MessageSquareText size={20} strokeWidth={1.5} style={{ color: 'var(--color-text-secondary)', flexShrink: 0 }} /> Market Desk
-          </Link>
+          <Link ref={firstFocusRef} to="/study" onClick={handleLinkClick} className="mobile-sheet-row"><span>05</span> Study</Link>
+          <Link to="/leaderboard" onClick={handleLinkClick} className="mobile-sheet-row"><span>06</span> Rankings</Link>
+          <Link to="/desk" onClick={handleLinkClick} className="mobile-sheet-row"><span>07</span> Market Desk</Link>
           <div style={{ height: '1px', background: 'var(--color-border)', margin: '4px 0' }} />
-          <Link to="/profile" onClick={handleLinkClick} className="flex items-center gap-3 p-3 rounded-lg hover:bg-surface-raised transition-colors type-body">
-            <User size={20} strokeWidth={1.5} style={{ color: 'var(--color-text-secondary)', flexShrink: 0 }} /> Profile
-          </Link>
-          <Link to="/legal" onClick={handleLinkClick} className="flex items-center gap-3 p-3 rounded-lg hover:bg-surface-raised transition-colors type-body">
-            <FileText size={20} strokeWidth={1.5} style={{ color: 'var(--color-text-secondary)', flexShrink: 0 }} /> Legal
-          </Link>
-          <a href="mailto:kavyajain1407@gmail.com" onClick={handleLinkClick} className="flex items-center gap-3 p-3 rounded-lg hover:bg-surface-raised transition-colors type-body">
-            <LifeBuoy size={20} strokeWidth={1.5} style={{ color: 'var(--color-text-secondary)', flexShrink: 0 }} /> Support
-          </a>
+          <Link to="/profile" onClick={handleLinkClick} className="mobile-sheet-row"><span>AC</span> Profile</Link>
+          <Link to="/legal" onClick={handleLinkClick} className="mobile-sheet-row"><span>LG</span> Legal</Link>
+          <a href="mailto:kavyajain1407@gmail.com" onClick={handleLinkClick} className="mobile-sheet-row"><span>SP</span> Support</a>
           <button
             type="button"
             onClick={handleLogout}
             style={{ color: 'var(--color-negative)', background: 'none', border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left' }}
-            className="flex items-center gap-3 p-3 rounded-lg hover:bg-surface-raised transition-colors type-body"
+            className="mobile-sheet-row"
           >
-            <LogOut size={20} strokeWidth={1.5} style={{ flexShrink: 0 }} /> Logout
+            <span>OUT</span> Logout
           </button>
         </div>
       </div>
@@ -209,8 +198,8 @@ function Sidebar({ userName = '', avatar = '' }) {
     ? userName.trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2)
     : 'U';
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
+  const handleLogout = async () => {
+    try { await apiFetch('/api/auth/logout', { method: 'POST' }); } catch { /* navigation still proceeds */ }
     navigate('/login');
   };
 
@@ -245,21 +234,20 @@ function Sidebar({ userName = '', avatar = '' }) {
 
         {/* Navigation items */}
         <nav className="flex flex-col gap-2 xl:gap-0.5 px-3 xl:px-0" aria-label="App sections">
-          {NAV_ITEMS.map(({ path, icon, label }) => {
-            const Icon = icon;
+          {NAV_ITEMS.map(({ path, mark, label }) => {
             const isActive = location.pathname === path;
             return (
               <Link
                 key={path}
                 to={path}
                 aria-current={isActive ? 'page' : undefined}
-                className="flex items-center gap-3 relative rounded-md transition-colors group justify-center xl:justify-start"
+                className="flex items-center gap-3 relative transition-colors group justify-center xl:justify-start"
                 style={{
                   padding: '10px',
                   color: isActive
                     ? 'var(--color-text-primary)'
                     : 'var(--color-text-tertiary)',
-                  background: isActive ? 'var(--color-surface)' : 'transparent',
+                  background: 'transparent',
                   fontWeight: isActive ? 500 : 400,
                   fontSize: 'var(--text-caption)',
                 }}
@@ -279,7 +267,7 @@ function Sidebar({ userName = '', avatar = '' }) {
                     aria-hidden="true"
                   />
                 )}
-                <Icon size={20} strokeWidth={isActive ? 2 : 1.5} className={`shrink-0 ${isActive ? 'text-text-primary' : ''}`} />
+                <span className="nav-mark" aria-hidden="true" style={{ color: isActive ? 'var(--color-accent)' : 'inherit' }}>{mark}</span>
                 <span className="hidden xl:block">{label}</span>
               </Link>
             );
@@ -352,7 +340,7 @@ function Sidebar({ userName = '', avatar = '' }) {
             title="Logout"
             aria-label="Logout"
           >
-            <LogOut size={16} strokeWidth={1.5} className="text-text-tertiary" />
+            <span className="type-label">OUT</span>
           </button>
         </div>
       </div>
