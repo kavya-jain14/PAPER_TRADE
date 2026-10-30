@@ -39,7 +39,8 @@ before(async () => {
       Object.assign(record, update.$set);
       return snapshot();
     }
-    if (filter._id !== record._id || filter.sessionVersion !== record.sessionVersion || filter.refreshToken !== record.refreshToken) return null;
+    if (filter._id !== record._id || filter.sessionVersion !== record.sessionVersion || (filter.refreshToken !== undefined && filter.refreshToken !== record.refreshToken)) return null;
+    record.sessionVersion += update.$inc?.sessionVersion || 0;
     Object.assign(record, update.$set);
     return snapshot();
   });
@@ -74,6 +75,11 @@ async function login() {
 
 function refresh(token) {
   return fetch(`${baseUrl}/refresh`, { method: 'POST', headers: { Cookie: `pt_rt=${encodeURIComponent(token)}` } });
+}
+
+function logout(accessToken, refreshToken) {
+  const cookies = [accessToken && `pt_at=${encodeURIComponent(accessToken)}`, refreshToken && `pt_rt=${encodeURIComponent(refreshToken)}`].filter(Boolean).join('; ');
+  return fetch(`${baseUrl}/logout`, { method: 'POST', headers: { Cookie: cookies } });
 }
 
 test('login stores a versioned full-token digest and sends HttpOnly session cookies', async () => {
@@ -122,4 +128,48 @@ test('revoked sessions and invalid JWTs cannot rotate a refresh token', async ()
   assert.equal((await refresh(`${token}tampered`)).status, 401);
   const wrongType = jwt.sign({ userId: record._id, sessionVersion: record.sessionVersion, type: 'access' }, process.env.JWT_REFRESH_SECRET, { issuer: 'papertrade-api', audience: 'papertrade-web' });
   assert.equal((await refresh(wrongType)).status, 401);
+});
+
+test('a stale access cookie cannot log out a newer session', async () => {
+  const original = await login();
+  const rotated = await refresh(original);
+  const oldAccess = cookieToken(rotated, 'pt_at');
+  const replacement = await login();
+  const version = record.sessionVersion;
+  const response = await logout(oldAccess);
+  assert.equal(response.status, 200);
+  assert.equal(cookieToken(response, 'pt_at'), '');
+  assert.equal(cookieToken(response), '');
+  assert.equal(record.sessionVersion, version);
+  assert.equal((await refresh(replacement)).status, 200);
+});
+
+test('a rotated refresh cookie cannot revoke the current token in the same session version', async () => {
+  const original = await login();
+  const rotated = await refresh(original);
+  const replacement = cookieToken(rotated);
+  const version = record.sessionVersion;
+  assert.equal((await logout(null, original)).status, 200);
+  assert.equal(record.sessionVersion, version);
+  assert.equal((await refresh(replacement)).status, 200);
+});
+
+test('the current refresh cookie can log out without an access cookie', async () => {
+  const original = await login();
+  const version = record.sessionVersion;
+  assert.equal((await logout(null, original)).status, 200);
+  assert.equal(record.sessionVersion, version + 1);
+  assert.equal(record.refreshToken, '');
+  assert.equal((await refresh(original)).status, 401);
+});
+
+test('an expired access cookie can still log out its current session', async () => {
+  const original = await login();
+  const expiredAccess = jwt.sign({ userId: record._id, sessionVersion: record.sessionVersion, type: 'access' }, process.env.JWT_SECRET, {
+    issuer: 'papertrade-api', audience: 'papertrade-web', expiresIn: -1,
+  });
+  const version = record.sessionVersion;
+  assert.equal((await logout(expiredAccess)).status, 200);
+  assert.equal(record.sessionVersion, version + 1);
+  assert.equal((await refresh(original)).status, 401);
 });

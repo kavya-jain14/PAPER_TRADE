@@ -298,22 +298,28 @@ router.post('/refresh', async (req, res) => {
 router.post('/logout', async (req, res) => {
   const accessToken = req.cookies?.[ACCESS_COOKIE];
   const refreshToken = req.cookies?.[REFRESH_COOKIE];
-  let userId = null;
+  let sessionFilter = null;
   try {
     if (accessToken) {
       const decoded = jwt.verify(accessToken, process.env.JWT_SECRET, { issuer: 'papertrade-api', audience: 'papertrade-web', ignoreExpiration: true });
-      if (decoded.type === 'access') userId = decoded.userId;
+      if (decoded.type === 'access' && typeof decoded.userId === 'string' && Number.isSafeInteger(decoded.sessionVersion) && decoded.sessionVersion >= 0) {
+        sessionFilter = { _id: decoded.userId, sessionVersion: decoded.sessionVersion };
+      }
     }
   } catch { /* cookie clearing must still continue */ }
-  if (!userId && refreshToken) {
+  if (!sessionFilter && refreshToken) {
     try {
       const decoded = jwt.verify(refreshToken, refreshSecret(), { issuer: 'papertrade-api', audience: 'papertrade-web', ignoreExpiration: true });
-      if (decoded.type === 'refresh') userId = decoded.userId;
+      if (decoded.type === 'refresh' && typeof decoded.userId === 'string' && Number.isSafeInteger(decoded.sessionVersion) && decoded.sessionVersion >= 0) {
+        sessionFilter = { _id: decoded.userId, sessionVersion: decoded.sessionVersion, refreshToken: hashRefreshToken(refreshToken) };
+      }
     } catch { /* cookie clearing must still continue */ }
   }
 
   try {
-    if (userId) await User.findByIdAndUpdate(userId, { $inc: { sessionVersion: 1 }, $set: { refreshToken: '' } });
+    // Bind revocation to the presented session in the same write. A stale cookie
+    // must not revoke a newer login or a refresh token already rotated away.
+    if (sessionFilter) await User.findOneAndUpdate(sessionFilter, { $inc: { sessionVersion: 1 }, $set: { refreshToken: '' } });
     clearSessionCookies(res);
     return res.json({ success: true, message: 'Logged out.' });
   } catch {

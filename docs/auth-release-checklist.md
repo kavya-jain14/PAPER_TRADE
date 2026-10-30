@@ -10,6 +10,10 @@ Earlier bcrypt refresh hashes are intentionally rejected. Bcrypt only considers 
 
 Run `npm test` in `paper_trade_backend`. The HTTP regression suite exercises the actual Express login/refresh routes with in-memory User-model stubs. It covers full-token storage, old-token replay, simultaneous rotation, legacy hashes, revoked sessions, tampered signatures, and wrong token types. These tests do not prove live MongoDB or provider integration.
 
+Logout always clears browser cookies, but revokes database credentials only when the presented token still belongs to the current session version. When using only a refresh cookie, its full-token digest must also match, so a rotated token cannot revoke its replacement. An expired access token may still revoke its own current session. A token from an older login cannot revoke a newer login, including when the newer login is established while logout waits for its database write.
+
+The default HTTP regressions cover stale access cookies, rotated refresh cookies, current refresh-only logout and expired current access cookies. Run `PAPERTRADE_TEST_MONGODB_URI=mongodb://127.0.0.1:27017/ node --test test/authLogout.integration.test.js` for the real MongoDB stale-cookie and paused-write races. As with the other optional suites, the URI must be loopback-only with no credentials/database path; the suite creates and drops only its own random test database. It is skipped without that variable. This is local database evidence, not a deployed/provider check.
+
 ## Registration challenges
 
 A fresh registration during the email's resend cooldown returns 429 with `VERIFICATION_COOLDOWN` and `Retry-After`, without returning the earlier challenge ID. Reusing that earlier challenge would also reuse its pending password, which may have been supplied by another client. After the cooldown, restart registration to create a challenge bound to the newly submitted password; the earlier challenge is invalidated. A client already holding its own challenge ID can still use the resend endpoint.
